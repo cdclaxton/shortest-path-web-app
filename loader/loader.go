@@ -45,3 +45,49 @@ func findIndicesOfFields(header []string, fields []string) (map[string]int, erro
 
 	return needed, nil
 }
+
+// attributeToFieldIndex creates a mapping from the attribute name to the field index.
+func attributeToFieldIndex(header []string, fieldToAttribute map[string]string) (map[string]int, error) {
+
+	// Slice of field names
+	fieldNames := []string{}
+	for field := range fieldToAttribute {
+		fieldNames = append(fieldNames, field)
+	}
+
+	// Find the attribute field indices
+	fieldToIndex, err := findIndicesOfFields(header, fieldNames)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Map of attribute name to field index
+	attributeFieldIndex := map[string]int{}
+
+	for _, field := range fieldNames {
+		attributeName := fieldToAttribute[field]
+		attributeFieldIndex[attributeName] = fieldToIndex[field]
+	}
+
+	return attributeFieldIndex, nil
+}
+
+// extractAttributes from a row of data given the mapping from the attribute name to field index.
+func extractAttributes(row []string, attributeToFieldIndex map[string]int) (map[string]string, error) {
+
+	// Map of attribute name to its value
+	attributes := map[string]string{}
+
+	for attributeName, fieldIndex := range attributeToFieldIndex {
+
+		// Check the field index is valid
+		if fieldIndex < 0 || fieldIndex >= len(row) {
+			return nil, fmt.Errorf("Invalid field index: %v", fieldIndex)
+		}
+
+		attributes[attributeName] = row[fieldIndex]
+	}
+
+	return attributes, nil
+}

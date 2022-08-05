@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeaderOnly(t *testing.T) {
+func TestLinksHeaderOnly(t *testing.T) {
 
 	csv := NewLinksCsvFile("./test-data/links_0.csv", "entity_id", "document_id", ",")
 	reader := NewLinksCsvFileReader(csv)
@@ -21,32 +21,35 @@ func TestHeaderOnly(t *testing.T) {
 	assert.NoError(t, reader.Close())
 }
 
-func TestReadFile(t *testing.T) {
+func TestReadLinksFile(t *testing.T) {
 
 	testCases := []struct {
-		path            string
-		entityIdField   string
-		documentIdField string
-		delimiter       string
-		expected        []Link
+		csv           LinksCsvFile
+		expected      []Link
+		expectedError bool
 	}{
 		{
-			path:            "./test-data/links_1.csv",
-			entityIdField:   "entity_id",
-			documentIdField: "document_id",
-			delimiter:       ",",
+			csv: LinksCsvFile{
+				Path:            "./test-data/links_1.csv",
+				EntityIdField:   "entity_id",
+				DocumentIdField: "document_id",
+				Delimiter:       ",",
+			},
 			expected: []Link{
 				{
 					EntityId:   "e-100",
 					DocumentId: "d-3",
 				},
 			},
+			expectedError: false,
 		},
 		{
-			path:            "./test-data/links_2.csv",
-			entityIdField:   "entity_id",
-			documentIdField: "document_id",
-			delimiter:       ",",
+			csv: LinksCsvFile{
+				Path:            "./test-data/links_2.csv",
+				EntityIdField:   "entity_id",
+				DocumentIdField: "document_id",
+				Delimiter:       ",",
+			},
 			expected: []Link{
 				{
 					EntityId:   "e-100",
@@ -57,12 +60,15 @@ func TestReadFile(t *testing.T) {
 					DocumentId: "d-4",
 				},
 			},
+			expectedError: false,
 		},
 		{
-			path:            "./test-data/links_3.csv",
-			entityIdField:   "entity_id",
-			documentIdField: "document_id",
-			delimiter:       ",",
+			csv: LinksCsvFile{
+				Path:            "./test-data/links_3.csv",
+				EntityIdField:   "entity_id",
+				DocumentIdField: "document_id",
+				Delimiter:       ",",
+			},
 			expected: []Link{
 				{
 					EntityId:   "e-100",
@@ -77,17 +83,31 @@ func TestReadFile(t *testing.T) {
 					DocumentId: "d-10",
 				},
 			},
+			expectedError: false,
+		},
+		{
+			// CSV file is missing the entity ID field
+			csv: LinksCsvFile{
+				Path:            "./test-data/links_4.csv",
+				EntityIdField:   "entity_id",
+				DocumentIdField: "document_id",
+				Delimiter:       ",",
+			},
+			expected:      nil,
+			expectedError: true,
 		},
 	}
 
 	for _, testCase := range testCases {
-		csv := NewLinksCsvFile(testCase.path, testCase.entityIdField,
-			testCase.documentIdField, testCase.delimiter)
-
-		reader := NewLinksCsvFileReader(csv)
+		reader := NewLinksCsvFileReader(testCase.csv)
 
 		links, err := reader.ReadAll()
-		assert.NoError(t, err)
+
+		if testCase.expectedError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
 
 		assert.Equal(t, testCase.expected, links)
 	}

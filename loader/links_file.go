@@ -1,3 +1,16 @@
+// A link represents a connection between a document and an entity. More
+// specifically that an entity with a given ID is contained within the
+// document with the referenced ID.
+//
+// The LinksCsvFile represents the configuration for a single CSV file
+// containing links.
+//
+// A single file can be read with a LinksCsvFileReader. This iterates through
+// the file reading the links.
+//
+// If a line in the file contains an inconsistent number of fields, the line
+// is skipped.
+
 package loader
 
 import (
