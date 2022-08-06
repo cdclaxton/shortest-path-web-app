@@ -109,6 +109,21 @@ func TestReadDocumentsFile(t *testing.T) {
 			},
 			expectedError: false,
 		},
+		{
+			csv: DocumentsCsvFile{
+				Path:            "./test-data/documents_0.csv",
+				DocumentType:    "Source-1",
+				Delimiter:       ",",
+				DocumentIdField: "document_id",
+				FieldToAttribute: map[string]string{
+					"title":  "Title",
+					"date":   "Date",
+					"serial": "Serial",
+				},
+			},
+			expectedDocuments: nil,
+			expectedError:     true,
+		},
 	}
 
 	for _, testCase := range testCases {
