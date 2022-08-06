@@ -102,3 +102,29 @@ func (store *InMemoryGraphStore) Clear() error {
 
 	return nil
 }
+
+// HasDocument returns true if the graph store contains the document.
+func (store *InMemoryGraphStore) HasDocument(document *Document) bool {
+
+	// Try to retrieve the document from the graph store
+	retrieved := store.GetDocument(document.Id)
+	if retrieved == nil {
+		return false
+	}
+
+	// Check the document matches
+	return document.Equal(retrieved)
+}
+
+// Does the graph store contain the entity?
+func (store *InMemoryGraphStore) HasEntity(entity *Entity) bool {
+
+	// Try to retrieve the entity from the graph store
+	retrieved := store.GetEntity(entity.Id)
+	if retrieved == nil {
+		return false
+	}
+
+	// Check the entity matches
+	return entity.Equal(retrieved)
+}

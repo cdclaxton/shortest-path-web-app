@@ -7,6 +7,8 @@ type GraphStore interface {
 	Clear() error                 // Clear the store
 	GetEntity(string) *Entity     // Get an entity by entity ID
 	GetDocument(string) *Document // Get a document by document ID
+	HasDocument(*Document) bool   // Does the graph store contain the document?
+	HasEntity(*Entity) bool       // Does the graph store contain the entity?
 	NumberOfEntities() int        // Number of entities in the store
 	NumberOfDocuments() int       // Number of documents in the store
 }

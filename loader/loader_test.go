@@ -3,6 +3,8 @@ package loader
 import (
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -176,5 +178,161 @@ func TestExtractAttributes(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expected, actual)
+	}
+}
+
+func TestGraphStoreLoaderFromCsv(t *testing.T) {
+	g := graphstore.NewInMemoryGraphStore()
+
+	entityFiles := []EntitiesCsvFile{
+		{
+			Path:          "./test-data/set-0/entities_0.csv",
+			EntityType:    "Person",
+			Delimiter:     ",",
+			EntityIdField: "entity ID",
+			FieldToAttribute: map[string]string{
+				"Name": "Name",
+			},
+		},
+		{
+			Path:          "./test-data/set-0/entities_1.csv",
+			EntityType:    "Person",
+			Delimiter:     ",",
+			EntityIdField: "ENTITY ID",
+			FieldToAttribute: map[string]string{
+				"NAME": "Name",
+			},
+		},
+	}
+
+	documentFiles := []DocumentsCsvFile{
+		{
+			Path:            "./test-data/set-0/documents_0.csv",
+			DocumentType:    "Source A",
+			Delimiter:       ",",
+			DocumentIdField: "document ID",
+			FieldToAttribute: map[string]string{
+				"title": "Title",
+				"date":  "Date",
+			},
+		},
+		{
+			Path:            "./test-data/set-0/documents_1.csv",
+			DocumentType:    "Source B",
+			Delimiter:       ",",
+			DocumentIdField: "DOCUMENT ID",
+			FieldToAttribute: map[string]string{
+				"title": "Title",
+				"date":  "Date",
+			},
+		},
+	}
+
+	linksFiles := []LinksCsvFile{
+		{
+			Path:            "./test-data/set-0/links_0.csv",
+			EntityIdField:   "entity ID",
+			DocumentIdField: "document ID",
+			Delimiter:       ",",
+		},
+		{
+			Path:            "./test-data/set-0/links_1.csv",
+			EntityIdField:   "ENTITY ID",
+			DocumentIdField: "DOCUMENT ID",
+			Delimiter:       ",",
+		},
+	}
+
+	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles)
+
+	err := loader.Load()
+	assert.NoError(t, err)
+
+	// Check the entities
+	assert.Equal(t, 4, g.NumberOfEntities())
+
+	expectedEntities := []graphstore.Entity{
+		{
+			Id:         "e-1",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Name": "Bob Smith",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-1", "d-2", "d-3"}),
+		},
+		{
+			Id:         "e-2",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Name": "Sally Jones",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-1", "d-2"}),
+		},
+		{
+			Id:         "e-3",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Name": "Sandra Jackson",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-3", "d-4"}),
+		},
+		{
+			Id:         "e-4",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Name": "Samuel Taylor",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-4"}),
+		},
+	}
+
+	for _, expectedEntity := range expectedEntities {
+		assert.True(t, g.HasEntity(&expectedEntity))
+	}
+
+	// Check the documents
+	assert.Equal(t, 4, g.NumberOfDocuments())
+
+	expectedDocuments := []graphstore.Document{
+		{
+			Id:           "d-1",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 1",
+				"Date":  "06/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-2"}),
+		},
+		{
+			Id:           "d-2",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 2",
+				"Date":  "07/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-2"}),
+		},
+		{
+			Id:           "d-3",
+			DocumentType: "Source B",
+			Attributes: map[string]string{
+				"Title": "Summary 3",
+				"Date":  "09/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-3"}),
+		},
+		{
+			Id:           "d-4",
+			DocumentType: "Source B",
+			Attributes: map[string]string{
+				"Title": "Summary 4",
+				"Date":  "10/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet([]string{"e-3", "e-4"}),
+		},
+	}
+
+	for _, expectedDocument := range expectedDocuments {
+		assert.True(t, g.HasDocument(&expectedDocument))
 	}
 }
