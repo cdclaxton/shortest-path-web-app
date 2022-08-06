@@ -74,7 +74,9 @@ func AddLink(t *testing.T, store GraphStore) {
 	assert.NoError(t, store.AddEntity(entities[0]))
 	assert.NoError(t, store.AddDocument(documents[0]))
 
-	assert.NoError(t, store.AddLink(entities[0].Id, documents[0].Id))
+	l := NewLink(entities[0].Id, documents[0].Id)
+
+	assert.NoError(t, store.AddLink(l))
 
 	e0 := store.GetEntity(entities[0].Id)
 	assert.NotNil(t, e0)

@@ -3,6 +3,7 @@ package loader
 import (
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +26,7 @@ func TestReadLinksFile(t *testing.T) {
 
 	testCases := []struct {
 		csv           LinksCsvFile
-		expected      []Link
+		expected      []graphstore.Link
 		expectedError bool
 	}{
 		{
@@ -35,7 +36,7 @@ func TestReadLinksFile(t *testing.T) {
 				DocumentIdField: "document_id",
 				Delimiter:       ",",
 			},
-			expected: []Link{
+			expected: []graphstore.Link{
 				{
 					EntityId:   "e-100",
 					DocumentId: "d-3",
@@ -50,7 +51,7 @@ func TestReadLinksFile(t *testing.T) {
 				DocumentIdField: "document_id",
 				Delimiter:       ",",
 			},
-			expected: []Link{
+			expected: []graphstore.Link{
 				{
 					EntityId:   "e-100",
 					DocumentId: "d-3",
@@ -69,7 +70,7 @@ func TestReadLinksFile(t *testing.T) {
 				DocumentIdField: "document_id",
 				Delimiter:       ",",
 			},
-			expected: []Link{
+			expected: []graphstore.Link{
 				{
 					EntityId:   "e-100",
 					DocumentId: "d-3",

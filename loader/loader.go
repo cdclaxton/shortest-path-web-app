@@ -8,10 +8,164 @@ import (
 )
 
 type GraphStoreLoaderFromCsv struct {
-	graphStore    *graphstore.GraphStore
+	graphStore    graphstore.GraphStore
 	entityFiles   []EntitiesCsvFile
 	documentFiles []DocumentsCsvFile
 	linkFiles     []LinksCsvFile
+}
+
+func NewGraphStoreLoaderFromCsv(graphStore graphstore.GraphStore,
+	entityFiles []EntitiesCsvFile, documentFiles []DocumentsCsvFile, linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
+
+	return &GraphStoreLoaderFromCsv{
+		graphStore:    graphStore,
+		entityFiles:   entityFiles,
+		documentFiles: documentFiles,
+		linkFiles:     linkFiles,
+	}
+}
+
+// loadEntitiesFromFile into the graph store from a CSV file.
+func (loader *GraphStoreLoaderFromCsv) loadEntitiesFromFile(file EntitiesCsvFile) error {
+
+	// Create an entities CSV file reader
+	reader := NewEntitiesCsvFileReader(file)
+
+	// Initialise the CSV reader
+	err := reader.Initialise()
+	if err != nil {
+		return err
+	}
+
+	// While the file has entities to read, add the entities to the graph store
+	for reader.hasNext {
+		entity, err := reader.Next()
+
+		if err != nil {
+			return err
+		}
+
+		if err := loader.graphStore.AddEntity(entity); err != nil {
+			return err
+		}
+	}
+
+	return reader.Close()
+}
+
+// loadEntities from each of the CSV files.
+func (loader *GraphStoreLoaderFromCsv) loadEntities() error {
+
+	for _, file := range loader.entityFiles {
+		err := loader.loadEntitiesFromFile(file)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// loadEntitiesFromFile into the graph store from a CSV file.
+func (loader *GraphStoreLoaderFromCsv) loadDocumentsFromFile(file DocumentsCsvFile) error {
+
+	// Create a documents CSV file reader
+	reader := NewDocumentsCsvFileReader(file)
+
+	// Initialise the CSV reader
+	err := reader.Initialise()
+	if err != nil {
+		return err
+	}
+
+	// While the file has documents to read, add the documents to the graph store
+	for reader.hasNext {
+		document, err := reader.Next()
+
+		if err != nil {
+			return err
+		}
+
+		if err := loader.graphStore.AddDocument(document); err != nil {
+			return err
+		}
+	}
+
+	return reader.Close()
+}
+
+// loadDocuments from each of the CSV files.
+func (loader *GraphStoreLoaderFromCsv) loadDocuments() error {
+
+	for _, file := range loader.documentFiles {
+		err := loader.loadDocumentsFromFile(file)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// loadLinksFromFile into the graph store from a CSV file.
+func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) error {
+
+	// Create a links CSV file reader
+	reader := NewLinksCsvFileReader(file)
+
+	// Initialise the CSV reader
+	err := reader.Initialise()
+	if err != nil {
+		return err
+	}
+
+	// While the file has links to read, add the links to the graph store
+	for reader.hasNext {
+		link, err := reader.Next()
+
+		if err != nil {
+			return err
+		}
+
+		if err := loader.graphStore.AddLink(link); err != nil {
+			return err
+		}
+	}
+
+	return reader.Close()
+}
+
+// loadLinks from each of the CSV files.
+func (loader *GraphStoreLoaderFromCsv) loadLinks() error {
+
+	for _, file := range loader.linkFiles {
+		err := loader.loadLinksFromFile(file)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Load the graph store from the CSV files.
+func (loader *GraphStoreLoaderFromCsv) Load() error {
+
+	// Load the entities
+	err := loader.loadEntities()
+	if err != nil {
+		return err
+	}
+
+	// Load the documents
+	err = loader.loadDocuments()
+	if err != nil {
+		return err
+	}
+
+	// Load the links
+	err = loader.loadLinks()
+	return err
 }
 
 // findIndicesOfFields returns a mapping of the field name to index.

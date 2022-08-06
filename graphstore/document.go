@@ -7,6 +7,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// A Document represents a source of information about entities.
 type Document struct {
 	Id              string            // Unique document ID
 	DocumentType    string            // Document type

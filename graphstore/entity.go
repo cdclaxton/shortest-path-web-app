@@ -7,6 +7,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// An Entity represents a specific instance of a person, vehicle, address, etc.
 type Entity struct {
 	Id                string            // Unique entity ID
 	EntityType        string            // Entity type, e.g. address

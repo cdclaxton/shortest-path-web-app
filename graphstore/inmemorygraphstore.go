@@ -63,23 +63,23 @@ func (store *InMemoryGraphStore) GetDocument(documentId string) *Document {
 }
 
 // AddLink from an entity to a document.
-func (store *InMemoryGraphStore) AddLink(entityId string, documentId string) error {
+func (store *InMemoryGraphStore) AddLink(link Link) error {
 
 	// Get the entity from the store
-	entity := store.GetEntity(entityId)
+	entity := store.GetEntity(link.EntityId)
 	if entity == nil {
-		return fmt.Errorf("Entity with ID %v could not be found", entityId)
+		return fmt.Errorf("Entity with ID %v could not be found", link.EntityId)
 	}
 
 	// Get the document from the store
-	document := store.GetDocument(documentId)
+	document := store.GetDocument(link.DocumentId)
 	if document == nil {
-		return fmt.Errorf("Document with ID %v could not be found", documentId)
+		return fmt.Errorf("Document with ID %v could not be found", link.DocumentId)
 	}
 
 	// Make the connections
-	entity.AddDocument(documentId)
-	document.AddEntity(entityId)
+	entity.AddDocument(link.DocumentId)
+	document.AddEntity(link.EntityId)
 
 	return nil
 }

@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 )
 
 // LinksCsvFile represents the configuration of a single CSV file of entity-document links.
@@ -39,12 +41,6 @@ func NewLinksCsvFile(path string, entityIdField string, documentIdField string,
 	}
 }
 
-// Link represents that an entity ID was found in a document with a given ID.
-type Link struct {
-	EntityId   string
-	DocumentId string
-}
-
 // LinksCsvFileReader iterates through the CSV file producing Link structs.
 type LinksCsvFileReader struct {
 	linksCsvFile         LinksCsvFile
@@ -53,7 +49,7 @@ type LinksCsvFileReader struct {
 	entityIdFieldIndex   int
 	documentIdFieldIndex int
 
-	nextLinks Link
+	nextLinks graphstore.Link
 	hasNext   bool
 }
 
@@ -98,7 +94,7 @@ func (reader *LinksCsvFileReader) Initialise() error {
 }
 
 // readRecord from the CSV file.
-func (reader *LinksCsvFileReader) readRecord() (Link, bool) {
+func (reader *LinksCsvFileReader) readRecord() (graphstore.Link, bool) {
 
 	recordFound := false
 	var record []string
@@ -109,7 +105,7 @@ func (reader *LinksCsvFileReader) readRecord() (Link, bool) {
 
 		if err == io.EOF {
 			// End of file
-			return Link{}, false
+			return graphstore.Link{}, false
 		}
 
 		if err != nil {
@@ -120,18 +116,16 @@ func (reader *LinksCsvFileReader) readRecord() (Link, bool) {
 		recordFound = true
 	}
 
-	return Link{
-		EntityId:   record[reader.entityIdFieldIndex],
-		DocumentId: record[reader.documentIdFieldIndex],
-	}, true
+	return graphstore.NewLink(record[reader.entityIdFieldIndex], record[reader.documentIdFieldIndex]),
+		true
 }
 
 // Next links struct from the file.
-func (reader *LinksCsvFileReader) Next() (Link, error) {
+func (reader *LinksCsvFileReader) Next() (graphstore.Link, error) {
 
 	// Preconditions
 	if !reader.hasNext {
-		return Link{}, fmt.Errorf("Next() called when no next item exists")
+		return graphstore.Link{}, fmt.Errorf("Next() called when no next item exists")
 	}
 
 	// Get the current Links struct
@@ -149,7 +143,7 @@ func (reader *LinksCsvFileReader) Close() error {
 }
 
 // ReadALl the links from the CSV file.
-func (reader *LinksCsvFileReader) ReadAll() ([]Link, error) {
+func (reader *LinksCsvFileReader) ReadAll() ([]graphstore.Link, error) {
 
 	// Initialise the CSV readers
 	err := reader.Initialise()
@@ -158,7 +152,7 @@ func (reader *LinksCsvFileReader) ReadAll() ([]Link, error) {
 	}
 
 	// Read all the links from the file
-	links := []Link{}
+	links := []graphstore.Link{}
 
 	for reader.hasNext {
 		link, err := reader.Next()

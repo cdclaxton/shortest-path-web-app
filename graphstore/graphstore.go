@@ -3,7 +3,7 @@ package graphstore
 type GraphStore interface {
 	AddEntity(Entity) error       // Add an entity to the store
 	AddDocument(Document) error   // Add a document to the store
-	AddLink(string, string) error // Add a link from an entity to a document (by ID)
+	AddLink(Link) error           // Add a link from an entity to a document (by ID)
 	Clear() error                 // Clear the store
 	GetEntity(string) *Entity     // Get an entity by entity ID
 	GetDocument(string) *Document // Get a document by document ID

@@ -152,7 +152,7 @@ func (reader *EntitiesCsvFileReader) Close() error {
 // ReadAll the entities from the CSV file.
 func (reader *EntitiesCsvFileReader) ReadAll() ([]graphstore.Entity, error) {
 
-	// Initialise the CSV readers
+	// Initialise the CSV reader
 	err := reader.Initialise()
 	if err != nil {
 		return nil, err
