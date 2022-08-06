@@ -17,6 +17,13 @@ func NewSet[T comparable]() Set[T] {
 	}
 }
 
+// NewPopulatedSet of type T.
+func NewPopulatedSet[T comparable](elements []T) Set[T] {
+	s := NewSet[T]()
+	s.AddAll(elements)
+	return s
+}
+
 // Add an element to the set.
 func (s *Set[T]) Add(element T) {
 	s.values[element] = true
