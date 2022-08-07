@@ -128,3 +128,33 @@ func (store *InMemoryGraphStore) HasEntity(entity *Entity) bool {
 	// Check the entity matches
 	return entity.Equal(retrieved)
 }
+
+type InMemoryDocumentIterator struct {
+	documentIds  []string
+	currentIndex int
+}
+
+func (it *InMemoryDocumentIterator) nextDocumentId() string {
+	currentDocumentId := it.documentIds[it.currentIndex]
+	it.currentIndex += 1
+	return currentDocumentId
+}
+
+func (it *InMemoryDocumentIterator) hasNext() bool {
+	return it.currentIndex < len(it.documentIds)
+}
+
+func (store *InMemoryGraphStore) NewDocumentIdIterator() DocumentIdIterator {
+
+	// Create a slice of document IDs
+	documentIds := []string{}
+	for docId := range store.documents {
+		documentIds = append(documentIds, docId)
+	}
+
+	// Return a new iterator
+	return &InMemoryDocumentIterator{
+		documentIds:  documentIds,
+		currentIndex: 0,
+	}
+}

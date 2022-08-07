@@ -8,13 +8,13 @@ import (
 )
 
 type GraphStoreLoaderFromCsv struct {
-	graphStore    graphstore.GraphStore
+	graphStore    graphstore.BipartiteGraphStore
 	entityFiles   []EntitiesCsvFile
 	documentFiles []DocumentsCsvFile
 	linkFiles     []LinksCsvFile
 }
 
-func NewGraphStoreLoaderFromCsv(graphStore graphstore.GraphStore,
+func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 	entityFiles []EntitiesCsvFile, documentFiles []DocumentsCsvFile, linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
 
 	return &GraphStoreLoaderFromCsv{

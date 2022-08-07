@@ -29,7 +29,7 @@ func buildDocuments(t *testing.T) []Document {
 	return []Document{d1, d2}
 }
 
-func AddSingleEntity(t *testing.T, store GraphStore) {
+func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
 	assert.Equal(t, 0, store.NumberOfEntities())
@@ -48,7 +48,7 @@ func AddSingleEntity(t *testing.T, store GraphStore) {
 	assert.Nil(t, store.GetEntity("unknown"))
 }
 
-func AddSingleDocument(t *testing.T, store GraphStore) {
+func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
 	assert.Equal(t, 0, store.NumberOfEntities())
@@ -67,7 +67,7 @@ func AddSingleDocument(t *testing.T, store GraphStore) {
 	assert.Nil(t, store.GetDocument("unknown"))
 }
 
-func AddLink(t *testing.T, store GraphStore) {
+func AddLink(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 	documents := buildDocuments(t)
 
@@ -88,7 +88,7 @@ func AddLink(t *testing.T, store GraphStore) {
 	assert.True(t, d0.HasEntity(e0.Id))
 }
 
-func AddDuplicateEntity(t *testing.T, store GraphStore) {
+func AddDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
 	assert.NoError(t, store.AddEntity(entities[0]))
@@ -99,7 +99,7 @@ func AddDuplicateEntity(t *testing.T, store GraphStore) {
 	assert.Error(t, store.AddEntity(entities[1]))
 }
 
-func AddDuplicateDocument(t *testing.T, store GraphStore) {
+func AddDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
 	assert.NoError(t, store.AddDocument(documents[0]))
@@ -108,6 +108,27 @@ func AddDuplicateDocument(t *testing.T, store GraphStore) {
 	// Try to add the documents again
 	assert.Error(t, store.AddDocument(documents[0]))
 	assert.Error(t, store.AddDocument(documents[1]))
+}
+
+func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
+	documents := buildDocuments(t)
+
+	assert.NoError(t, store.AddDocument(documents[0]))
+	assert.NoError(t, store.AddDocument(documents[1]))
+
+	// Get a document ID iterator
+	it := store.NewDocumentIdIterator()
+
+	// Expected document IDs
+	expectedIds := []string{"doc-1", "doc-2"}
+
+	// Build a slice of the document IDs returned by the iterator
+	actualIds := []string{}
+	for it.hasNext() {
+		actualIds = append(actualIds, it.nextDocumentId())
+	}
+
+	assert.Equal(t, expectedIds, actualIds)
 }
 
 func TestInMemoryGraphStore(t *testing.T) {
@@ -126,4 +147,7 @@ func TestInMemoryGraphStore(t *testing.T) {
 
 	gs.Clear()
 	AddDuplicateDocument(t, gs)
+
+	gs.Clear()
+	DocumentIterator(t, gs)
 }
