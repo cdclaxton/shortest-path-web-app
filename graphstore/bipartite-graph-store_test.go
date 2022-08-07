@@ -3,6 +3,7 @@ package graphstore
 import (
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -120,20 +121,21 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	it := store.NewDocumentIdIterator()
 
 	// Expected document IDs
-	expectedIds := []string{"doc-1", "doc-2"}
+	expectedIds := set.NewPopulatedSet([]string{"doc-1", "doc-2"})
 
-	// Build a slice of the document IDs returned by the iterator
-	actualIds := []string{}
+	// Build a set of the document IDs returned by the iterator
+	actualIds := set.NewSet[string]()
 	for it.hasNext() {
-		actualIds = append(actualIds, it.nextDocumentId())
+		actualIds.Add(it.nextDocumentId())
 	}
 
-	assert.Equal(t, expectedIds, actualIds)
+	// Check the document IDs are expected
+	assert.True(t, expectedIds.Equal(&actualIds))
 }
 
 func TestInMemoryGraphStore(t *testing.T) {
 
-	gs := NewInMemoryGraphStore()
+	gs := NewInMemoryBipartiteGraphStore()
 	AddSingleEntity(t, gs)
 
 	gs.Clear()

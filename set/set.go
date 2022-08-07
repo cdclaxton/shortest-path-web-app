@@ -75,6 +75,7 @@ func (s *Set[T]) Equal(other *Set[T]) bool {
 	return true
 }
 
+// String representation of the set.
 func (s *Set[T]) String() string {
 	values := []string{}
 	for key := range s.values {
@@ -82,4 +83,17 @@ func (s *Set[T]) String() string {
 	}
 
 	return fmt.Sprintf("{%v}", strings.Join(values, ","))
+}
+
+// ToSlice converts the set to a slice. The usage of this function is sub-optimal
+// due to the conversion. This could be improved by changing the implementation to
+// an iterator
+func (s *Set[T]) ToSlice() []T {
+	ret := []T{}
+
+	for key := range s.values {
+		ret = append(ret, key)
+	}
+
+	return ret
 }

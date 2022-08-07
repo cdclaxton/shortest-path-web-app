@@ -1,6 +1,7 @@
 package set
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,4 +75,12 @@ func TestString(t *testing.T) {
 	expected := NewSet[string]()
 	expected.AddAll([]string{"A", "B"})
 	assert.True(t, s1_3.Equal(&expected))
+}
+
+func TestToSlice(t *testing.T) {
+	s := NewPopulatedSet([]string{"A", "B", "C"})
+	actual := s.ToSlice()
+	sort.Strings(actual)
+	expected := []string{"A", "B", "C"}
+	assert.Equal(t, expected, actual)
 }

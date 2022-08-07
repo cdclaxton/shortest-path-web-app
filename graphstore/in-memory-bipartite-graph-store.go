@@ -2,20 +2,20 @@ package graphstore
 
 import "fmt"
 
-type InMemoryGraphStore struct {
+type InMemoryBipartiteGraphStore struct {
 	entities  map[string]Entity   // Entity ID to Entity mapping
 	documents map[string]Document // Document ID to Document mapping
 }
 
-func NewInMemoryGraphStore() *InMemoryGraphStore {
-	return &InMemoryGraphStore{
+func NewInMemoryBipartiteGraphStore() *InMemoryBipartiteGraphStore {
+	return &InMemoryBipartiteGraphStore{
 		entities:  map[string]Entity{},
 		documents: map[string]Document{},
 	}
 }
 
 // AddEntity to the in-memory graph store.
-func (store *InMemoryGraphStore) AddEntity(entity Entity) error {
+func (store *InMemoryBipartiteGraphStore) AddEntity(entity Entity) error {
 
 	// Check whether the entity already exists in the store
 	if _, found := store.entities[entity.Id]; found {
@@ -28,7 +28,7 @@ func (store *InMemoryGraphStore) AddEntity(entity Entity) error {
 }
 
 // AddDocument to the in-memory graph store.
-func (store *InMemoryGraphStore) AddDocument(document Document) error {
+func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
 
 	// Check whether the document already exists in the store
 	if _, found := store.documents[document.Id]; found {
@@ -41,7 +41,7 @@ func (store *InMemoryGraphStore) AddDocument(document Document) error {
 }
 
 // GetEntity given its ID.
-func (store *InMemoryGraphStore) GetEntity(entityId string) *Entity {
+func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) *Entity {
 
 	entity, found := store.entities[entityId]
 
@@ -52,7 +52,7 @@ func (store *InMemoryGraphStore) GetEntity(entityId string) *Entity {
 }
 
 // GetDocument given its ID.
-func (store *InMemoryGraphStore) GetDocument(documentId string) *Document {
+func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) *Document {
 
 	document, found := store.documents[documentId]
 
@@ -63,7 +63,7 @@ func (store *InMemoryGraphStore) GetDocument(documentId string) *Document {
 }
 
 // AddLink from an entity to a document.
-func (store *InMemoryGraphStore) AddLink(link Link) error {
+func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 
 	// Get the entity from the store
 	entity := store.GetEntity(link.EntityId)
@@ -85,17 +85,17 @@ func (store *InMemoryGraphStore) AddLink(link Link) error {
 }
 
 // NumberOfEntities in the graph store.
-func (store *InMemoryGraphStore) NumberOfEntities() int {
+func (store *InMemoryBipartiteGraphStore) NumberOfEntities() int {
 	return len(store.entities)
 }
 
 // NumberOfDocuments in the graph store.
-func (store *InMemoryGraphStore) NumberOfDocuments() int {
+func (store *InMemoryBipartiteGraphStore) NumberOfDocuments() int {
 	return len(store.documents)
 }
 
 // Clear the store
-func (store *InMemoryGraphStore) Clear() error {
+func (store *InMemoryBipartiteGraphStore) Clear() error {
 
 	store.entities = map[string]Entity{}
 	store.documents = map[string]Document{}
@@ -104,7 +104,7 @@ func (store *InMemoryGraphStore) Clear() error {
 }
 
 // HasDocument returns true if the graph store contains the document.
-func (store *InMemoryGraphStore) HasDocument(document *Document) bool {
+func (store *InMemoryBipartiteGraphStore) HasDocument(document *Document) bool {
 
 	// Try to retrieve the document from the graph store
 	retrieved := store.GetDocument(document.Id)
@@ -117,7 +117,7 @@ func (store *InMemoryGraphStore) HasDocument(document *Document) bool {
 }
 
 // Does the graph store contain the entity?
-func (store *InMemoryGraphStore) HasEntity(entity *Entity) bool {
+func (store *InMemoryBipartiteGraphStore) HasEntity(entity *Entity) bool {
 
 	// Try to retrieve the entity from the graph store
 	retrieved := store.GetEntity(entity.Id)
@@ -129,6 +129,9 @@ func (store *InMemoryGraphStore) HasEntity(entity *Entity) bool {
 	return entity.Equal(retrieved)
 }
 
+// An InMemoryDocumentIterator walks through all of the IDs of the documents held
+// within the bipartite graph store. Note that the order of the document IDs is not
+// guaranteed to be same on different runs.
 type InMemoryDocumentIterator struct {
 	documentIds  []string
 	currentIndex int
@@ -144,7 +147,7 @@ func (it *InMemoryDocumentIterator) hasNext() bool {
 	return it.currentIndex < len(it.documentIds)
 }
 
-func (store *InMemoryGraphStore) NewDocumentIdIterator() DocumentIdIterator {
+func (store *InMemoryBipartiteGraphStore) NewDocumentIdIterator() DocumentIdIterator {
 
 	// Create a slice of document IDs
 	documentIds := []string{}

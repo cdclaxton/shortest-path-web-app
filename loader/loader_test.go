@@ -182,7 +182,7 @@ func TestExtractAttributes(t *testing.T) {
 }
 
 func TestGraphStoreLoaderFromCsv(t *testing.T) {
-	g := graphstore.NewInMemoryGraphStore()
+	g := graphstore.NewInMemoryBipartiteGraphStore()
 
 	entityFiles := []EntitiesCsvFile{
 		{
