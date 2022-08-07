@@ -36,7 +36,7 @@ func (graph *InMemoryUnipartiteGraphStorage) AddDirected(src string, dst string)
 	return nil
 }
 
-// AddUnidirected edge between two entities.
+// AddUndirected edge between two entities.
 func (graph *InMemoryUnipartiteGraphStorage) AddUndirected(v1 string, v2 string) error {
 
 	// Add the connection v1 ---> v2
@@ -45,10 +45,11 @@ func (graph *InMemoryUnipartiteGraphStorage) AddUndirected(v1 string, v2 string)
 		return err
 	}
 
-	// Add the connection v2 ---> v1
-	return graph.AddDirected(v1, v2)
+	// Add the connection v1 <--- v2
+	return graph.AddDirected(v2, v1)
 }
 
+// Clear the unipartite graph store.
 func (graph *InMemoryUnipartiteGraphStorage) Clear() error {
 	graph.vertices = map[string]set.Set[string]{}
 	return nil
