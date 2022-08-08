@@ -6,18 +6,26 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
-type InMemoryUnipartiteGraphStorage struct {
+type InMemoryUnipartiteGraphStore struct {
 	vertices map[string]set.Set[string]
 }
 
-func NewInMemoryUnipartiteGraphStorage() *InMemoryUnipartiteGraphStorage {
-	return &InMemoryUnipartiteGraphStorage{
+func NewInMemoryUnipartiteGraphStore() *InMemoryUnipartiteGraphStore {
+	return &InMemoryUnipartiteGraphStore{
 		vertices: map[string]set.Set[string]{},
 	}
 }
 
+// AddEntity to the unipartite graph.
+func (graph *InMemoryUnipartiteGraphStore) AddEntity(entity string) {
+	// If the entity hasn't been seen before, add it to the graph
+	if _, present := graph.vertices[entity]; !present {
+		graph.vertices[entity] = set.NewSet[string]()
+	}
+}
+
 // AddDirected edge between two vertices.
-func (graph *InMemoryUnipartiteGraphStorage) AddDirected(src string, dst string) error {
+func (graph *InMemoryUnipartiteGraphStore) AddDirected(src string, dst string) error {
 
 	// Preconditions
 	if src == dst {
@@ -25,9 +33,7 @@ func (graph *InMemoryUnipartiteGraphStorage) AddDirected(src string, dst string)
 	}
 
 	// If the source hasn't been seen before, add it to the graph
-	if _, present := graph.vertices[src]; !present {
-		graph.vertices[src] = set.NewSet[string]()
-	}
+	graph.AddEntity(src)
 
 	// Add the connection from the source to the destination
 	x := graph.vertices[src]
@@ -37,7 +43,7 @@ func (graph *InMemoryUnipartiteGraphStorage) AddDirected(src string, dst string)
 }
 
 // AddUndirected edge between two entities.
-func (graph *InMemoryUnipartiteGraphStorage) AddUndirected(v1 string, v2 string) error {
+func (graph *InMemoryUnipartiteGraphStore) AddUndirected(v1 string, v2 string) error {
 
 	// Add the connection v1 ---> v2
 	err := graph.AddDirected(v1, v2)
@@ -50,13 +56,13 @@ func (graph *InMemoryUnipartiteGraphStorage) AddUndirected(v1 string, v2 string)
 }
 
 // Clear the unipartite graph store.
-func (graph *InMemoryUnipartiteGraphStorage) Clear() error {
+func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 	graph.vertices = map[string]set.Set[string]{}
 	return nil
 }
 
 // EntityIdsAdjacentTo a given vertex with a given entity ID.
-func (graph *InMemoryUnipartiteGraphStorage) EntityIdsAdjacentTo(entityId string) (*set.Set[string], error) {
+func (graph *InMemoryUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.Set[string], error) {
 
 	entityIds, found := graph.vertices[entityId]
 
@@ -68,7 +74,7 @@ func (graph *InMemoryUnipartiteGraphStorage) EntityIdsAdjacentTo(entityId string
 }
 
 // EntityIds held within the graph.
-func (graph *InMemoryUnipartiteGraphStorage) EntityIds() *set.Set[string] {
+func (graph *InMemoryUnipartiteGraphStore) EntityIds() *set.Set[string] {
 
 	ids := set.NewSet[string]()
 
@@ -80,7 +86,7 @@ func (graph *InMemoryUnipartiteGraphStorage) EntityIds() *set.Set[string] {
 }
 
 // Are two unipartite graph stores identical? This is for testing purposes.
-func (graph *InMemoryUnipartiteGraphStorage) Equal(g2 UnipartiteGraphStorage) bool {
+func (graph *InMemoryUnipartiteGraphStore) Equal(g2 UnipartiteGraphStore) bool {
 
 	// Get lists of entity IDs
 	entityIds1 := graph.EntityIds()

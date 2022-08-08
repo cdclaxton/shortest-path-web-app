@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SelfConnection(t *testing.T, g UnipartiteGraphStorage) {
+func SelfConnection(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.Error(t, g.AddDirected("a", "a"))
 	assert.Error(t, g.AddUndirected("a", "a"))
@@ -19,7 +19,7 @@ type connection struct {
 }
 
 // checkConnections in a unipartite graph.
-func checkConnections(t *testing.T, g UnipartiteGraphStorage, conns []connection) {
+func checkConnections(t *testing.T, g UnipartiteGraphStore, conns []connection) {
 	for _, conn := range conns {
 		expected := set.NewPopulatedSet(conn.destinations)
 		actual, err := g.EntityIdsAdjacentTo(conn.source)
@@ -31,7 +31,7 @@ func checkConnections(t *testing.T, g UnipartiteGraphStorage, conns []connection
 // SimpleGraph1 with the structure:
 //
 //    A--B
-func SimpleGraph1(t *testing.T, g UnipartiteGraphStorage) {
+func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 
@@ -63,7 +63,7 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStorage) {
 //   C--D--E--F---G
 //         |      |
 //         H-------
-func SimpleGraph2(t *testing.T, g UnipartiteGraphStorage) {
+func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 	assert.NoError(t, g.AddUndirected("A", "E"))
@@ -129,7 +129,7 @@ func SimpleGraph2(t *testing.T, g UnipartiteGraphStorage) {
 //   A--B--C
 //   |     |
 //   -------
-func EqualGraphs(t *testing.T, g1 UnipartiteGraphStorage, g2 UnipartiteGraphStorage) {
+func EqualGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) {
 
 	// Test 1
 	g1.Clear()
@@ -157,12 +157,12 @@ func EqualGraphs(t *testing.T, g1 UnipartiteGraphStorage, g2 UnipartiteGraphStor
 }
 
 func TestInMemory(t *testing.T) {
-	g := NewInMemoryUnipartiteGraphStorage()
+	g := NewInMemoryUnipartiteGraphStore()
 
 	SelfConnection(t, g)
 	SimpleGraph1(t, g)
 	SimpleGraph2(t, g)
 
-	g2 := NewInMemoryUnipartiteGraphStorage()
+	g2 := NewInMemoryUnipartiteGraphStore()
 	EqualGraphs(t, g, g2)
 }
