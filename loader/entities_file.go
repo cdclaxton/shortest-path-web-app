@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/rs/zerolog/log"
 )
 
 type EntitiesCsvFile struct {
@@ -99,7 +100,9 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		}
 
 		if err != nil {
-			// TODO log message
+			log.Info().Str("Component", "EntitiesCsvFileReader").
+				Str("Parse error", err.Error()).
+				Msg("Line failed to parse")
 			continue
 		}
 
@@ -110,7 +113,9 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		attributes, err := extractAttributes(record, reader.attributeFieldIndex)
 
 		if err != nil {
-			// TODO log message
+			log.Info().Str("Component", "EntitiesCsvFileReader").
+				Str("Error", err.Error()).
+				Msg("Failed to extract attributes from record")
 			continue
 		}
 
@@ -118,7 +123,9 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		entity, err = graphstore.NewEntity(entityId, reader.entitiesCsvFile.EntityType, attributes)
 
 		if err != nil {
-			// TODO log message
+			log.Info().Str("Component", "DocumentsCsvFileReader").
+				Str("Error", err.Error()).
+				Msg("Failed to build an entity from record")
 			continue
 		}
 

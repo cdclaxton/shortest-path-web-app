@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/rs/zerolog/log"
 )
 
 // LinksCsvFile represents the configuration of a single CSV file of entity-document links.
@@ -109,7 +110,9 @@ func (reader *LinksCsvFileReader) readRecord() (graphstore.Link, bool) {
 		}
 
 		if err != nil {
-			// TODO log message
+			log.Warn().Str("Component", "LinksCsvFileReader").
+				Str("Parse error", err.Error()).
+				Msg("Line failed to parse")
 			continue
 		}
 
