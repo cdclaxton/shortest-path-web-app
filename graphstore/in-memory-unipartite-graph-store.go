@@ -109,3 +109,21 @@ func (graph *InMemoryUnipartiteGraphStore) Equal(g2 UnipartiteGraphStore) bool {
 
 	return true
 }
+
+// HasEntity returns whether the store contains the entity.
+func (graph *InMemoryUnipartiteGraphStore) HasEntity(id string) bool {
+	_, found := graph.vertices[id]
+	return found
+}
+
+// BuildFromEdgeList builds the graph from an undirected edge list.
+func (graph *InMemoryUnipartiteGraphStore) BuildFromEdgeList(edges []Edge) error {
+	for _, edge := range edges {
+		err := graph.AddUndirected(edge.V1, edge.V2)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

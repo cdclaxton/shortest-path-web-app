@@ -35,6 +35,10 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 
+	assert.True(t, g.HasEntity("A"))
+	assert.True(t, g.HasEntity("B"))
+	assert.False(t, g.HasEntity("C"))
+
 	expectedEntityIds := set.NewPopulatedSet([]string{"A", "B"})
 	assert.True(t, expectedEntityIds.Equal(g.EntityIds()))
 
