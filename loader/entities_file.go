@@ -100,7 +100,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		}
 
 		if err != nil {
-			log.Info().Str("Component", "EntitiesCsvFileReader").
+			log.Warn().Str("Component", "EntitiesCsvFileReader").
 				Str("Parse error", err.Error()).
 				Msg("Line failed to parse")
 			continue
@@ -113,7 +113,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		attributes, err := extractAttributes(record, reader.attributeFieldIndex)
 
 		if err != nil {
-			log.Info().Str("Component", "EntitiesCsvFileReader").
+			log.Warn().Str("Component", "EntitiesCsvFileReader").
 				Str("Error", err.Error()).
 				Msg("Failed to extract attributes from record")
 			continue
@@ -123,7 +123,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		entity, err = graphstore.NewEntity(entityId, reader.entitiesCsvFile.EntityType, attributes)
 
 		if err != nil {
-			log.Info().Str("Component", "DocumentsCsvFileReader").
+			log.Warn().Str("Component", "EntitiesCsvFileReader").
 				Str("Error", err.Error()).
 				Msg("Failed to build an entity from record")
 			continue
