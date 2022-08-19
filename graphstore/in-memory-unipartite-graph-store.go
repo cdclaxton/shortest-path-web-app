@@ -7,12 +7,12 @@ import (
 )
 
 type InMemoryUnipartiteGraphStore struct {
-	vertices map[string]set.Set[string]
+	vertices map[string]*set.Set[string]
 }
 
 func NewInMemoryUnipartiteGraphStore() *InMemoryUnipartiteGraphStore {
 	return &InMemoryUnipartiteGraphStore{
-		vertices: map[string]set.Set[string]{},
+		vertices: map[string]*set.Set[string]{},
 	}
 }
 
@@ -57,7 +57,7 @@ func (graph *InMemoryUnipartiteGraphStore) AddUndirected(v1 string, v2 string) e
 
 // Clear the unipartite graph store.
 func (graph *InMemoryUnipartiteGraphStore) Clear() error {
-	graph.vertices = map[string]set.Set[string]{}
+	graph.vertices = map[string]*set.Set[string]{}
 	return nil
 }
 
@@ -70,7 +70,7 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) 
 		return nil, fmt.Errorf("Entity ID not found: %v", entityId)
 	}
 
-	return &entityIds, nil
+	return entityIds, nil
 }
 
 // EntityIds held within the graph.
@@ -82,7 +82,7 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIds() *set.Set[string] {
 		ids.Add(id)
 	}
 
-	return &ids
+	return ids
 }
 
 // Are two unipartite graph stores identical? This is for testing purposes.

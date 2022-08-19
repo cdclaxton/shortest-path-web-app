@@ -37,7 +37,7 @@ func entityIdToSetsEqual(e1 map[string]*set.Set[string], e2 map[string]*set.Set[
 		keys2.Add(name)
 	}
 
-	if !keys1.Equal(&keys2) {
+	if !keys1.Equal(keys2) {
 		return false
 	}
 
@@ -94,7 +94,7 @@ func (n *NetworkConnections) AddEntity(entity string, entitySet string) {
 	// If the entity hasn't been seen before, then add an entry
 	if _, found := n.EntityIdToSetNames[entity]; !found {
 		s := set.NewSet[string]()
-		n.EntityIdToSetNames[entity] = &s
+		n.EntityIdToSetNames[entity] = s
 	}
 
 	// Store the entity set that the entity appears in

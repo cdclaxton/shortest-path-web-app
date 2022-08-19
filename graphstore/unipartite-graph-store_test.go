@@ -21,7 +21,7 @@ type connection struct {
 // checkConnections in a unipartite graph.
 func checkConnections(t *testing.T, g UnipartiteGraphStore, conns []connection) {
 	for _, conn := range conns {
-		expected := set.NewPopulatedSet(conn.destinations)
+		expected := set.NewPopulatedSet(conn.destinations...)
 		actual, err := g.EntityIdsAdjacentTo(conn.source)
 		assert.NoError(t, err)
 		assert.True(t, expected.Equal(actual))
@@ -39,7 +39,7 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	assert.True(t, g.HasEntity("B"))
 	assert.False(t, g.HasEntity("C"))
 
-	expectedEntityIds := set.NewPopulatedSet([]string{"A", "B"})
+	expectedEntityIds := set.NewPopulatedSet("A", "B")
 	assert.True(t, expectedEntityIds.Equal(g.EntityIds()))
 
 	expectedConnections := []connection{
@@ -79,7 +79,7 @@ func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	assert.NoError(t, g.AddUndirected("F", "G"))
 	assert.NoError(t, g.AddUndirected("H", "G"))
 
-	expectedEntityIds := set.NewPopulatedSet([]string{"A", "B", "C", "D", "E", "F", "G", "H"})
+	expectedEntityIds := set.NewPopulatedSet("A", "B", "C", "D", "E", "F", "G", "H")
 	assert.True(t, expectedEntityIds.Equal(g.EntityIds()))
 
 	expectedConnections := []connection{

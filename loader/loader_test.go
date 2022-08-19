@@ -258,7 +258,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			Attributes: map[string]string{
 				"Name": "Bob Smith",
 			},
-			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-1", "d-2", "d-3"}),
+			LinkedDocumentIds: set.NewPopulatedSet("d-1", "d-2", "d-3"),
 		},
 		{
 			Id:         "e-2",
@@ -266,7 +266,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			Attributes: map[string]string{
 				"Name": "Sally Jones",
 			},
-			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-1", "d-2"}),
+			LinkedDocumentIds: set.NewPopulatedSet("d-1", "d-2"),
 		},
 		{
 			Id:         "e-3",
@@ -274,7 +274,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			Attributes: map[string]string{
 				"Name": "Sandra Jackson",
 			},
-			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-3", "d-4"}),
+			LinkedDocumentIds: set.NewPopulatedSet("d-3", "d-4"),
 		},
 		{
 			Id:         "e-4",
@@ -282,7 +282,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			Attributes: map[string]string{
 				"Name": "Samuel Taylor",
 			},
-			LinkedDocumentIds: set.NewPopulatedSet([]string{"d-4"}),
+			LinkedDocumentIds: set.NewPopulatedSet("d-4"),
 		},
 	}
 
@@ -301,7 +301,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 				"Title": "Summary 1",
 				"Date":  "06/08/2022",
 			},
-			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-2"}),
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2"),
 		},
 		{
 			Id:           "d-2",
@@ -310,7 +310,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 				"Title": "Summary 2",
 				"Date":  "07/08/2022",
 			},
-			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-2"}),
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2"),
 		},
 		{
 			Id:           "d-3",
@@ -319,7 +319,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 				"Title": "Summary 3",
 				"Date":  "09/08/2022",
 			},
-			LinkedEntityIds: set.NewPopulatedSet([]string{"e-1", "e-3"}),
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-3"),
 		},
 		{
 			Id:           "d-4",
@@ -328,7 +328,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 				"Title": "Summary 4",
 				"Date":  "10/08/2022",
 			},
-			LinkedEntityIds: set.NewPopulatedSet([]string{"e-3", "e-4"}),
+			LinkedEntityIds: set.NewPopulatedSet("e-3", "e-4"),
 		},
 	}
 

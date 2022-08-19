@@ -12,7 +12,7 @@ type Document struct {
 	Id              string            // Unique document ID
 	DocumentType    string            // Document type
 	Attributes      map[string]string // Document attributes (e.g. date)
-	LinkedEntityIds set.Set[string]   // IDs of entities to which the document is connected
+	LinkedEntityIds *set.Set[string]  // IDs of entities to which the document is connected
 }
 
 // NewDocument with a given identifier, type and attributes
@@ -63,7 +63,7 @@ func (e *Document) Equal(other *Document) bool {
 	}
 
 	// Check the linked entities
-	if !e.LinkedEntityIds.Equal(&other.LinkedEntityIds) {
+	if !e.LinkedEntityIds.Equal(other.LinkedEntityIds) {
 		return false
 	}
 

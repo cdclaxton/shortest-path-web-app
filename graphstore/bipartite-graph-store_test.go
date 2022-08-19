@@ -121,7 +121,7 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	it := store.NewDocumentIdIterator()
 
 	// Expected document IDs
-	expectedIds := set.NewPopulatedSet([]string{"doc-1", "doc-2"})
+	expectedIds := set.NewPopulatedSet("doc-1", "doc-2")
 
 	// Build a set of the document IDs returned by the iterator
 	actualIds := set.NewSet[string]()
@@ -130,7 +130,7 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	}
 
 	// Check the document IDs are expected
-	assert.True(t, expectedIds.Equal(&actualIds))
+	assert.True(t, expectedIds.Equal(actualIds))
 }
 
 func TestInMemoryGraphStore(t *testing.T) {

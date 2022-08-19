@@ -36,9 +36,9 @@ func TestEqual(t *testing.T) {
 	s4 := NewSet[int]()
 	s4.AddAll([]int{2, 3})
 
-	assert.True(t, s1.Equal(&s2))
-	assert.False(t, s1.Equal(&s3))
-	assert.False(t, s1.Equal(&s4))
+	assert.True(t, s1.Equal(s2))
+	assert.False(t, s1.Equal(s3))
+	assert.False(t, s1.Equal(s4))
 }
 
 func TestIntersection(t *testing.T) {
@@ -50,7 +50,7 @@ func TestIntersection(t *testing.T) {
 	s2.AddAll([]int{2, 3, 4, 5})
 	assert.Equal(t, 4, s2.Len())
 
-	s3 := s1.Intersection(&s2)
+	s3 := s1.Intersection(s2)
 	assert.Equal(t, 2, s3.Len())
 }
 
@@ -65,20 +65,20 @@ func TestString(t *testing.T) {
 
 	s2 := NewSet[string]()
 	s2.AddAll([]string{"A", "B", "C"})
-	assert.True(t, s1.Equal(&s2))
+	assert.True(t, s1.Equal(s2))
 
 	s3 := NewSet[string]()
 	s3.AddAll([]string{"A", "B", "D", "E"})
-	assert.False(t, s1.Equal(&s3))
+	assert.False(t, s1.Equal(s3))
 
-	s1_3 := s1.Intersection(&s3)
+	s1_3 := s1.Intersection(s3)
 	expected := NewSet[string]()
 	expected.AddAll([]string{"A", "B"})
-	assert.True(t, s1_3.Equal(&expected))
+	assert.True(t, s1_3.Equal(expected))
 }
 
 func TestToSlice(t *testing.T) {
-	s := NewPopulatedSet([]string{"A", "B", "C"})
+	s := NewPopulatedSet("A", "B", "C")
 	actual := s.ToSlice()
 	sort.Strings(actual)
 	expected := []string{"A", "B", "C"}

@@ -105,65 +105,65 @@ func TestReachableVertices(t *testing.T) {
 	testCases := []struct {
 		root     string
 		maxDepth int
-		expected set.Set[string]
+		expected *set.Set[string]
 	}{
 		// Small connected component
 		{
 			root:     "1",
 			maxDepth: 0,
-			expected: set.NewPopulatedSet([]string{"1"}),
+			expected: set.NewPopulatedSet("1"),
 		},
 		{
 			root:     "1",
 			maxDepth: 1,
-			expected: set.NewPopulatedSet([]string{"1", "2"}),
+			expected: set.NewPopulatedSet("1", "2"),
 		},
 		{
 			root:     "1",
 			maxDepth: 2,
-			expected: set.NewPopulatedSet([]string{"1", "2", "3", "4"}),
+			expected: set.NewPopulatedSet("1", "2", "3", "4"),
 		},
 		{
 			root:     "1",
 			maxDepth: 3,
-			expected: set.NewPopulatedSet([]string{"1", "2", "3", "4", "5"}),
+			expected: set.NewPopulatedSet("1", "2", "3", "4", "5"),
 		},
 		{
 			root:     "1",
 			maxDepth: 10,
-			expected: set.NewPopulatedSet([]string{"1", "2", "3", "4", "5"}),
+			expected: set.NewPopulatedSet("1", "2", "3", "4", "5"),
 		},
 		// Isolated node
 		{
 			root:     "6",
 			maxDepth: 0,
-			expected: set.NewPopulatedSet([]string{"6"}),
+			expected: set.NewPopulatedSet("6"),
 		},
 		{
 			root:     "6",
 			maxDepth: 1,
-			expected: set.NewPopulatedSet([]string{"6"}),
+			expected: set.NewPopulatedSet("6"),
 		},
 		// Large connected component
 		{
 			root:     "7",
 			maxDepth: 0,
-			expected: set.NewPopulatedSet([]string{"7"}),
+			expected: set.NewPopulatedSet("7"),
 		},
 		{
 			root:     "7",
 			maxDepth: 1,
-			expected: set.NewPopulatedSet([]string{"7", "11", "8", "10", "12"}),
+			expected: set.NewPopulatedSet("7", "11", "8", "10", "12"),
 		},
 		{
 			root:     "7",
 			maxDepth: 2,
-			expected: set.NewPopulatedSet([]string{"7", "11", "8", "10", "12", "9", "13"}),
+			expected: set.NewPopulatedSet("7", "11", "8", "10", "12", "9", "13"),
 		},
 		{
 			root:     "7",
 			maxDepth: 3,
-			expected: set.NewPopulatedSet([]string{"7", "11", "8", "10", "12", "9", "13", "14", "15", "16"}),
+			expected: set.NewPopulatedSet("7", "11", "8", "10", "12", "9", "13", "14", "15", "16"),
 		},
 	}
 

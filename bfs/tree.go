@@ -4,7 +4,16 @@ import (
 	"fmt"
 )
 
-// TreeNode represents a node in a tree data structure.
+// TreeNode represents a node in a tree data structure. A node can
+// have zero or one parents and zero or more children.
+//
+// An example of a tree is:
+//
+//   a --> b --> c
+//         |
+//         ----> d
+//
+// Node 'b' has the parent 'a' and children 'c' and 'd'.
 type TreeNode struct {
 	name     string      // Name of the node from the graph
 	parent   *TreeNode   // Parent of the node
@@ -45,10 +54,12 @@ func (t *TreeNode) MakeChild(name string, marked bool) (*TreeNode, error) {
 func (t *TreeNode) ContainsParentNode(name string) bool {
 
 	p := t
-	for p != nil {
-		if p.name == name {
+
+	for p.parent != nil {
+		if p.parent.name == name {
 			return true
 		}
+
 		p = p.parent
 	}
 

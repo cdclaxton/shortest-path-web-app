@@ -65,5 +65,5 @@ func ReachableVertices(g graphstore.UnipartiteGraphStore, root string,
 		}
 	}
 
-	return &discovered, nil
+	return discovered, nil
 }

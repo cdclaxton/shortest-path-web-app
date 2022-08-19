@@ -25,19 +25,18 @@ import (
 func TestBipartiteToUnipartite(t *testing.T) {
 	testCases := []struct {
 		documents           []Document
-		skipEntities        set.Set[string]
+		skipEntities        *set.Set[string]
 		expectedConnections []connection
 	}{
 		// One document, one entity
 		{
 			documents: []Document{
 				{
-					Id: "doc-1",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1"}),
+					Id:              "doc-1",
+					LinkedEntityIds: set.NewPopulatedSet("e-1"),
 				},
 			},
-			skipEntities: set.Set[string]{},
+			skipEntities: set.NewSet[string](),
 			expectedConnections: []connection{
 				{
 					source:       "e-1",
@@ -50,11 +49,11 @@ func TestBipartiteToUnipartite(t *testing.T) {
 			documents: []Document{
 				{
 					Id: "doc-1",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1", "e-2"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-1", "e-2"),
 				},
 			},
-			skipEntities: set.Set[string]{},
+			skipEntities: set.NewSet[string](),
 			expectedConnections: []connection{
 				{
 					source:       "e-1",
@@ -71,36 +70,36 @@ func TestBipartiteToUnipartite(t *testing.T) {
 			documents: []Document{
 				{
 					Id: "doc-1",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1", "e-2"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-1", "e-2"),
 				},
 				{
 					Id: "doc-2",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1", "e-2", "e-4"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-1", "e-2", "e-4"),
 				},
 				{
 					Id: "doc-3",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-2", "e-3"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-2", "e-3"),
 				},
 				{
 					Id: "doc-4",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-4", "e-5"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-4", "e-5"),
 				},
 				{
 					Id: "doc-5",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-3", "e-6"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-3", "e-6"),
 				},
 				{
 					Id: "doc-6",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-5", "e-6"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-5", "e-6"),
 				},
 			},
-			skipEntities: set.Set[string]{},
+			skipEntities: set.NewSet[string](),
 			expectedConnections: []connection{
 				{
 					source:       "e-1",
@@ -133,36 +132,36 @@ func TestBipartiteToUnipartite(t *testing.T) {
 			documents: []Document{
 				{
 					Id: "doc-1",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1", "e-2"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-1", "e-2"),
 				},
 				{
 					Id: "doc-2",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-1", "e-2", "e-4"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-1", "e-2", "e-4"),
 				},
 				{
 					Id: "doc-3",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-2", "e-3"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-2", "e-3"),
 				},
 				{
 					Id: "doc-4",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-4", "e-5"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-4", "e-5"),
 				},
 				{
 					Id: "doc-5",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-3", "e-6"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-3", "e-6"),
 				},
 				{
 					Id: "doc-6",
-					LinkedEntityIds: set.NewPopulatedSet([]string{
-						"e-5", "e-6"}),
+					LinkedEntityIds: set.NewPopulatedSet(
+						"e-5", "e-6"),
 				},
 			},
-			skipEntities: set.NewPopulatedSet([]string{"e-2"}),
+			skipEntities: set.NewPopulatedSet("e-2"),
 			expectedConnections: []connection{
 				{
 					source:       "e-1",
@@ -198,7 +197,7 @@ func TestBipartiteToUnipartite(t *testing.T) {
 		}
 
 		// Convert bipartite graph to unipartite graph
-		assert.NoError(t, BipartiteToUnipartite(bi, uni, &testCase.skipEntities))
+		assert.NoError(t, BipartiteToUnipartite(bi, uni, testCase.skipEntities))
 
 		// Check the unipartite graph
 		checkConnections(t, uni, testCase.expectedConnections)

@@ -12,7 +12,7 @@ type Entity struct {
 	Id                string            // Unique entity ID
 	EntityType        string            // Entity type, e.g. address
 	Attributes        map[string]string // Entity attributes
-	LinkedDocumentIds set.Set[string]   // IDs of documents to which the entity is connected
+	LinkedDocumentIds *set.Set[string]  // IDs of documents to which the entity is connected
 }
 
 // NewEntity with a given identifier, type and attributes.
@@ -63,7 +63,7 @@ func (e *Entity) Equal(other *Entity) bool {
 	}
 
 	// Check the linked documents
-	if !e.LinkedDocumentIds.Equal(&other.LinkedDocumentIds) {
+	if !e.LinkedDocumentIds.Equal(other.LinkedDocumentIds) {
 		return false
 	}
 

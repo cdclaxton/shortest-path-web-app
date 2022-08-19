@@ -11,14 +11,14 @@ type Set[T comparable] struct {
 }
 
 // NewSet of a given type T.
-func NewSet[T comparable]() Set[T] {
-	return Set[T]{
+func NewSet[T comparable]() *Set[T] {
+	return &Set[T]{
 		values: map[T]bool{},
 	}
 }
 
 // NewPopulatedSet of type T.
-func NewPopulatedSet[T comparable](elements []T) Set[T] {
+func NewPopulatedSet[T comparable](elements ...T) *Set[T] {
 	s := NewSet[T]()
 	s.AddAll(elements)
 	return s
@@ -42,7 +42,7 @@ func (s *Set[T]) Has(element T) bool {
 }
 
 // Intersection of the set with another set.
-func (s *Set[T]) Intersection(s2 *Set[T]) Set[T] {
+func (s *Set[T]) Intersection(s2 *Set[T]) *Set[T] {
 	common := NewSet[T]()
 
 	for key := range s.values {
@@ -87,7 +87,7 @@ func (s *Set[T]) String() string {
 
 // ToSlice converts the set to a slice. The usage of this function is sub-optimal
 // due to the conversion. This could be improved by changing the implementation to
-// an iterator
+// an iterator.
 func (s *Set[T]) ToSlice() []T {
 	ret := []T{}
 
