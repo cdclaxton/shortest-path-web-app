@@ -17,6 +17,16 @@ func NewPath(route ...string) Path {
 	}
 }
 
+// Start entity ID on a path.
+func (p Path) Start() string {
+	return p.route[0]
+}
+
+// End (last) entity ID on a path.
+func (p Path) End() string {
+	return p.route[len(p.route)-1]
+}
+
 // Equal returns true if two paths have the same route.
 func (p Path) Equal(other Path) bool {
 	if len(p.route) != len(other.route) {
@@ -77,6 +87,9 @@ func treeNodesToPaths(nodes []*TreeNode) []Path {
 	return paths
 }
 
+const RootVertexNotFoundError = "Root vertex not found"
+const GoalVertexNotFoundError = "Goal vertex not found"
+
 // AllPaths from a root vertex to a goal vertex up to a maximum depth.
 //
 // The function assumes that the root and goal vertices are present in the graph.
@@ -85,11 +98,11 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 
 	// Preconditions
 	if !graph.HasEntity(root) {
-		return nil, fmt.Errorf("Root vertex not found: %v", root)
+		return nil, fmt.Errorf("%v: %v", RootVertexNotFoundError, root)
 	}
 
 	if !graph.HasEntity(goal) {
-		return nil, fmt.Errorf("Goal vertex not found: %v", goal)
+		return nil, fmt.Errorf("%v: %v", GoalVertexNotFoundError, goal)
 	}
 
 	if maxDepth < 0 {

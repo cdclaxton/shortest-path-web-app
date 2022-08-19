@@ -177,3 +177,32 @@ func TestAllPaths(t *testing.T) {
 	}
 
 }
+
+func TestStartEndOfPath(t *testing.T) {
+	testCases := []struct {
+		path  Path
+		start string
+		end   string
+	}{
+		{
+			path:  NewPath("A"),
+			start: "A",
+			end:   "A",
+		},
+		{
+			path:  NewPath("A", "B"),
+			start: "A",
+			end:   "B",
+		},
+		{
+			path:  NewPath("A", "B", "C"),
+			start: "A",
+			end:   "C",
+		},
+	}
+
+	for _, testCase := range testCases {
+		assert.Equal(t, testCase.start, testCase.path.Start())
+		assert.Equal(t, testCase.end, testCase.path.End())
+	}
+}
