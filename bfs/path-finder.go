@@ -104,9 +104,14 @@ func (n *NetworkConnections) AddEntity(entity string, entitySet string) {
 func (n *NetworkConnections) AddConnections(entity1 string, entity1Set string,
 	entity2 string, entity2Set string, paths []Path) {
 
+	// Insert the entities
 	n.AddEntity(entity1, entity1Set)
 	n.AddEntity(entity2, entity2Set)
 
+	// Add the connections
+	if _, found := n.Connections[entity1]; !found {
+		n.Connections[entity1] = map[string][]Path{}
+	}
 	n.Connections[entity1][entity2] = paths
 }
 
