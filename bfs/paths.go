@@ -171,5 +171,14 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 	}
 
 	// Flatten the paths
-	return treeNodesToPaths(complete), nil
+	paths := treeNodesToPaths(complete)
+
+	// Postconditions
+	for _, path := range paths {
+		if path.Start() != root || path.End() != goal {
+			return nil, fmt.Errorf("Invalid path generated")
+		}
+	}
+
+	return paths, nil
 }
