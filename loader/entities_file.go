@@ -10,12 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// An EntitiesCsvFile specifies the location and format of a single CSV file containing entities.
 type EntitiesCsvFile struct {
-	Path             string            // Location of the file
-	EntityType       string            // Type of entities in the file
-	Delimiter        string            // Delimiter
-	EntityIdField    string            // Name of the field with the entity ID
-	FieldToAttribute map[string]string // Mapping of field name to attribute
+	Path             string            `json:"path"`             // Location of the file
+	EntityType       string            `json:"entityType"`       // Type of entities in the file
+	Delimiter        string            `json:"delimiter"`        // Delimiter
+	EntityIdField    string            `json:"entityIdField"`    // Name of the field with the entity ID
+	FieldToAttribute map[string]string `json:"fieldToAttribute"` // Mapping of field name to attribute
 }
 
 func NewEntitiesCsvFile(path string, entityType string, delimiter string,

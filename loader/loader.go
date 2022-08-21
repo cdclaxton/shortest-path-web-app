@@ -15,7 +15,9 @@ type GraphStoreLoaderFromCsv struct {
 }
 
 func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
-	entityFiles []EntitiesCsvFile, documentFiles []DocumentsCsvFile, linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
+	entityFiles []EntitiesCsvFile,
+	documentFiles []DocumentsCsvFile,
+	linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
 
 	return &GraphStoreLoaderFromCsv{
 		graphStore:    graphStore,
@@ -201,7 +203,8 @@ func findIndicesOfFields(header []string, fields []string) (map[string]int, erro
 }
 
 // attributeToFieldIndex creates a mapping from the attribute name to the field index.
-func attributeToFieldIndex(header []string, fieldToAttribute map[string]string) (map[string]int, error) {
+func attributeToFieldIndex(header []string, fieldToAttribute map[string]string) (
+	map[string]int, error) {
 
 	// Slice of field names
 	fieldNames := []string{}
@@ -228,7 +231,8 @@ func attributeToFieldIndex(header []string, fieldToAttribute map[string]string) 
 }
 
 // extractAttributes from a row of data given the mapping from the attribute name to field index.
-func extractAttributes(row []string, attributeToFieldIndex map[string]int) (map[string]string, error) {
+func extractAttributes(row []string, attributeToFieldIndex map[string]int) (
+	map[string]string, error) {
 
 	// Map of attribute name to its value
 	attributes := map[string]string{}

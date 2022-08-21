@@ -10,12 +10,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// A DocumentsCsvFile specifies the location and format of a CSV file containing documents.
 type DocumentsCsvFile struct {
-	Path             string            // Location of the file
-	DocumentType     string            // Type of documents in the file
-	Delimiter        string            // Delimiter
-	DocumentIdField  string            // Name of the field with the document ID
-	FieldToAttribute map[string]string // Mapping of field name to attribute
+	Path             string            `json:"path"`             // Location of the file
+	DocumentType     string            `json:"documentType"`     // Type of documents in the file
+	Delimiter        string            `json:"delimiter"`        // Delimiter
+	DocumentIdField  string            `json:"documentIdField"`  // Name of the field with the document ID
+	FieldToAttribute map[string]string `json:"fieldToAttribute"` // Mapping of field name to attribute
 }
 
 func NewDocumentsCsvFile(path string, documentType string, delimiter string,

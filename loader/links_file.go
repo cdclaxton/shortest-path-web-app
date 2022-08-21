@@ -25,10 +25,10 @@ import (
 
 // LinksCsvFile represents the configuration of a single CSV file of entity-document links.
 type LinksCsvFile struct {
-	Path            string // Location of the file
-	EntityIdField   string // Name of the field holding the entity ID
-	DocumentIdField string // Name of the field holding the document ID
-	Delimiter       string // Delimiter
+	Path            string `json:"path"`            // Location of the file
+	EntityIdField   string `json:"entityIdField"`   // Name of the field holding the entity ID
+	DocumentIdField string `json:"documentIdField"` // Name of the field holding the document ID
+	Delimiter       string `json:"delimiter"`       // Delimiter
 }
 
 func NewLinksCsvFile(path string, entityIdField string, documentIdField string,
