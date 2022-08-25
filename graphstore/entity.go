@@ -72,5 +72,5 @@ func (e *Entity) Equal(other *Entity) bool {
 
 func (e *Entity) String() string {
 	return fmt.Sprintf("Entity[id=%v, type=%v, attributes=%v, documents=%v]",
-		e.Id, e.EntityType, e.Attributes, &e.LinkedDocumentIds)
+		e.Id, e.EntityType, e.Attributes, e.LinkedDocumentIds.String())
 }

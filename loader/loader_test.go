@@ -188,7 +188,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 
 	entityFiles := []EntitiesCsvFile{
 		{
-			Path:          testDataSetFolder + "/set-0/entities_0.csv",
+			Path:          testDataSetFolder + "/set-0/data/entities_0.csv",
 			EntityType:    "Person",
 			Delimiter:     ",",
 			EntityIdField: "entity ID",
@@ -197,7 +197,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			},
 		},
 		{
-			Path:          testDataSetFolder + "/set-0/entities_1.csv",
+			Path:          testDataSetFolder + "/set-0/data/entities_1.csv",
 			EntityType:    "Person",
 			Delimiter:     ",",
 			EntityIdField: "ENTITY ID",
@@ -209,7 +209,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 
 	documentFiles := []DocumentsCsvFile{
 		{
-			Path:            testDataSetFolder + "/set-0/documents_0.csv",
+			Path:            testDataSetFolder + "/set-0/data/documents_0.csv",
 			DocumentType:    "Source A",
 			Delimiter:       ",",
 			DocumentIdField: "document ID",
@@ -219,7 +219,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 			},
 		},
 		{
-			Path:            testDataSetFolder + "/set-0/documents_1.csv",
+			Path:            testDataSetFolder + "/set-0/data/documents_1.csv",
 			DocumentType:    "Source B",
 			Delimiter:       ",",
 			DocumentIdField: "DOCUMENT ID",
@@ -232,13 +232,13 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 
 	linksFiles := []LinksCsvFile{
 		{
-			Path:            testDataSetFolder + "/set-0/links_0.csv",
+			Path:            testDataSetFolder + "/set-0/data/links_0.csv",
 			EntityIdField:   "entity ID",
 			DocumentIdField: "document ID",
 			Delimiter:       ",",
 		},
 		{
-			Path:            testDataSetFolder + "/set-0/links_1.csv",
+			Path:            testDataSetFolder + "/set-0/data/links_1.csv",
 			EntityIdField:   "ENTITY ID",
 			DocumentIdField: "DOCUMENT ID",
 			Delimiter:       ",",

@@ -40,6 +40,11 @@ func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
 	return nil
 }
 
+// Equal returns true if two stores have the same contents.
+func (store *InMemoryBipartiteGraphStore) Equal(other BipartiteGraphStore) bool {
+	return bipartiteGraphStoresEqual(store, other)
+}
+
 // GetEntity given its ID.
 func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) *Entity {
 
@@ -158,6 +163,36 @@ func (store *InMemoryBipartiteGraphStore) NewDocumentIdIterator() DocumentIdIter
 	// Return a new iterator
 	return &InMemoryDocumentIterator{
 		documentIds:  documentIds,
+		currentIndex: 0,
+	}
+}
+
+type InMemoryEntityIterator struct {
+	entityIds    []string
+	currentIndex int
+}
+
+func (it *InMemoryEntityIterator) nextEntityId() string {
+	currentEntityId := it.entityIds[it.currentIndex]
+	it.currentIndex += 1
+	return currentEntityId
+}
+
+func (it *InMemoryEntityIterator) hasNext() bool {
+	return it.currentIndex < len(it.entityIds)
+}
+
+func (store *InMemoryBipartiteGraphStore) NewEntityIdIterator() EntityIdIterator {
+
+	// Create a slice of entity IDs
+	entityIds := []string{}
+	for entityId := range store.entities {
+		entityIds = append(entityIds, entityId)
+	}
+
+	// Return a new iterator
+	return &InMemoryEntityIterator{
+		entityIds:    entityIds,
 		currentIndex: 0,
 	}
 }
