@@ -14,6 +14,7 @@ type EntityIdIterator interface {
 	hasNext() bool        // Does the iterator have another entity ID?
 }
 
+// A BipartiteGraphStore holds entities and documents.
 type BipartiteGraphStore interface {
 	AddEntity(Entity) error                    // Add an entity to the store
 	AddDocument(Document) error                // Add a document to the store
@@ -58,6 +59,7 @@ func BulkLoadBipartiteGraphStore(graph BipartiteGraphStore, entities []Entity,
 	return nil
 }
 
+// equalEntities in two bipartite graph stores?
 func equalEntities(ref BipartiteGraphStore, test BipartiteGraphStore) bool {
 
 	refEntityIdIterator := ref.NewEntityIdIterator()
@@ -91,6 +93,7 @@ func equalEntities(ref BipartiteGraphStore, test BipartiteGraphStore) bool {
 	return true
 }
 
+// equalDocuments exist in two bipartite graph stores?
 func equalDocuments(ref BipartiteGraphStore, test BipartiteGraphStore) bool {
 
 	refDocumentIterator := ref.NewDocumentIdIterator()
