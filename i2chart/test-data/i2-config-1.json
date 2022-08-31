@@ -1,0 +1,35 @@
+{
+    "columns": [
+        "icon",
+        "id",
+        "label",
+        "datasets",
+        "description"
+    ],
+    "entities": [
+        {
+            "type": "Person",
+            "columns": {
+                "icon": "Person",
+                "id": "Person-<ID>",
+                "label": "<Surname>, <Forename> [<ENTITY-SET-NAMES>]",
+                "entitySets": "<ENTITY-SET-NAMES>",
+                "description": "Person <Forename> <Surname> can be found at http://network-display/<id>"
+            }
+        },
+        {
+            "type": "Address",
+            "columns": {
+                "icon": "Location",
+                "id": "Address-<ID>",
+                "label": "<First line>, <City>, <Country> [<DATASETS>]",
+                "entitySets": "<ENTITY-SET-NAMES>",
+                "description": "Address can be found at http://network-display/<id>"
+            }
+        }
+    ],
+    "links": {
+        "label": "<DOCUMENT-TYPES> (<DOCUMENT-DATE-RANGE>)"
+    },
+    "attributeNotKnownPlaceholder": "Unknown"
+}
