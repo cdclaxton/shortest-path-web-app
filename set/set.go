@@ -55,6 +55,20 @@ func (s *Set[T]) Intersection(s2 *Set[T]) *Set[T] {
 	return common
 }
 
+// Difference is defined as those in the set, but not in the other s2.
+func (s *Set[T]) Difference(s2 *Set[T]) *Set[T] {
+
+	diff := NewSet[T]()
+
+	for key := range s.values {
+		if !s2.Has(key) {
+			diff.Add(key)
+		}
+	}
+
+	return diff
+}
+
 // Length (cardinality) of the set.
 func (s *Set[T]) Len() int {
 	return len(s.values)

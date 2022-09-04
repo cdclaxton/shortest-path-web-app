@@ -84,3 +84,21 @@ func TestToSlice(t *testing.T) {
 	expected := []string{"A", "B", "C"}
 	assert.Equal(t, expected, actual)
 }
+
+func TestDifference(t *testing.T) {
+	s1 := NewPopulatedSet("A", "B", "C", "D")
+	s2 := NewPopulatedSet("B", "C", "D", "E", "F")
+	s3 := NewPopulatedSet("A", "B", "C", "D")
+
+	// Set difference s1\s2
+	expected1 := NewPopulatedSet("A")
+	assert.True(t, expected1.Equal(s1.Difference(s2)))
+
+	// Set difference s2\s1
+	expected2 := NewPopulatedSet("E", "F")
+	assert.True(t, expected2.Equal(s2.Difference(s1)))
+
+	// Set difference s3\s1
+	assert.Equal(t, 0, s3.Difference(s1).Len())
+	assert.Equal(t, 0, s1.Difference(s3).Len())
+}

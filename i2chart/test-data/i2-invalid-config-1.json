@@ -4,7 +4,8 @@
         "id",
         "label",
         "entitySets",
-        "description"
+        "description",
+        "comments"
     ],
     "entities": {
         "Person": {
@@ -23,9 +24,7 @@
         }
     },
     "links": {
-        "label": "<NUM-DOCS> docs (<DOCUMENT-TYPES> <DOCUMENT-DATE-RANGE>)",
-        "dateAttribute": "Date",
-        "dateFormat": "02/01/2006"
+        "label": "<DOCUMENT-TYPES> (<DOCUMENT-DATE-RANGE>)"
     },
     "attributeNotKnown": "Unknown"
 }
