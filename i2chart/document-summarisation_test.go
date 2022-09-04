@@ -133,3 +133,156 @@ func TestDateRange(t *testing.T) {
 		assert.Equal(t, testCase.expected, actual)
 	}
 }
+
+func TestDocumentDates(t *testing.T) {
+	testCases := []struct {
+		docs          []*graphstore.Document
+		dateAttribute string
+		dateFormat    string
+		expected      string
+	}{
+		{
+			// No dates
+			docs: []*graphstore.Document{
+				{Attributes: map[string]string{
+					"created": "04/09/2022",
+				}},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected:      "",
+		},
+		{
+			// One date (both valid)
+			docs: []*graphstore.Document{
+				{Attributes: map[string]string{
+					"date": "04/09/2022",
+				}},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected:      "04/09/2022",
+		},
+		{
+			// Two dates (both valid)
+			docs: []*graphstore.Document{
+				{Attributes: map[string]string{
+					"date": "04/09/2022",
+				}},
+				{Attributes: map[string]string{
+					"date": "01/07/2021",
+				}},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected:      "01/07/2021 - 04/09/2022",
+		},
+		{
+			// Three dates (all valid)
+			docs: []*graphstore.Document{
+				{Attributes: map[string]string{
+					"date": "04/09/2022",
+				}},
+				{Attributes: map[string]string{
+					"date": "01/07/2021",
+				}},
+				{Attributes: map[string]string{
+					"date": "21/02/2022",
+				}},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected:      "01/07/2021 - 04/09/2022",
+		},
+		{
+			// Two dates (one invalid)
+			docs: []*graphstore.Document{
+				{Attributes: map[string]string{
+					"date": "04/09/2022",
+				}},
+				{Attributes: map[string]string{
+					"date": "01/07/1800",
+				}},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected:      "04/09/2022",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := documentDates(testCase.docs, testCase.dateAttribute, testCase.dateFormat)
+		assert.Equal(t, testCase.expected, actual)
+	}
+}
+
+func TestKeywordsForDoc(t *testing.T) {
+	testCases := []struct {
+		docs          []*graphstore.Document
+		dateAttribute string
+		dateFormat    string
+		expected      map[string]string
+	}{
+		{
+			// No date, one document type
+			docs: []*graphstore.Document{
+				{
+					DocumentType: "Type-A",
+					Attributes: map[string]string{
+						"created": "04/09/2022"},
+				},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected: map[string]string{
+				numDocsKeyword:      "1",
+				docTypesKeyword:     "Type-A",
+				docDateRangeKeyword: "",
+			},
+		},
+		{
+			// One date, one document type
+			docs: []*graphstore.Document{
+				{
+					DocumentType: "Type-A",
+					Attributes: map[string]string{
+						"date": "04/09/2022"},
+				},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected: map[string]string{
+				numDocsKeyword:      "1",
+				docTypesKeyword:     "Type-A",
+				docDateRangeKeyword: "04/09/2022",
+			},
+		},
+		{
+			// Two dates, two document types
+			docs: []*graphstore.Document{
+				{
+					DocumentType: "Type-A",
+					Attributes: map[string]string{
+						"date": "04/09/2022"},
+				},
+				{
+					DocumentType: "Type-B",
+					Attributes: map[string]string{
+						"date": "01/02/2021"},
+				},
+			},
+			dateAttribute: "date",
+			dateFormat:    "02/01/2006",
+			expected: map[string]string{
+				numDocsKeyword:      "2",
+				docTypesKeyword:     "Type-A, Type-B",
+				docDateRangeKeyword: "01/02/2021 - 04/09/2022",
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := keywordsForDocs(testCase.docs, testCase.dateAttribute, testCase.dateFormat)
+		assert.Equal(t, testCase.expected, actual)
+	}
+}

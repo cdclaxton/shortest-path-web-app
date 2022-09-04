@@ -18,6 +18,13 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// Keywords
+const (
+	numDocsKeyword      = "NUM-DOCS"
+	docTypesKeyword     = "DOCUMENT-TYPES"
+	docDateRangeKeyword = "DOCUMENT-DATE-RANGE"
+)
+
 // Maximum document age for it to be retained
 const maxDocumentAgeInYears = 100
 
@@ -34,8 +41,11 @@ func documentTypes(docs []*graphstore.Document, separator string) string {
 		types.Add(doc.DocumentType)
 	}
 
-	// List of the unique document types
-	return strings.Join(types.ToSlice(), separator)
+	// Sorted list of the unique document types
+	typesSlice := types.ToSlice()
+	sort.Strings(typesSlice)
+
+	return strings.Join(typesSlice, separator)
 }
 
 // parseDate and exclude those too far in the past or in the future.
@@ -125,8 +135,8 @@ func keywordsForDocs(docs []*graphstore.Document, dateAttribute string,
 	dateFormat string) map[string]string {
 
 	return map[string]string{
-		"NUM-DOCS":            fmt.Sprintf("%d", len(docs)),
-		"DOCUMENT-TYPES":      documentTypes(docs, ", "),
-		"DOCUMENT-DATE-RANGE": documentDates(docs, dateAttribute, dateFormat),
+		numDocsKeyword:      fmt.Sprintf("%d", len(docs)),
+		docTypesKeyword:     documentTypes(docs, ", "),
+		docDateRangeKeyword: documentDates(docs, dateAttribute, dateFormat),
 	}
 }
