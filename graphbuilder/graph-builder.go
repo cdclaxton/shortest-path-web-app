@@ -173,3 +173,18 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 
 	return &builder, nil
 }
+
+func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
+
+	// Read the config from file
+	graphConfig, err := readGraphConfig(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Modify the data file paths to be based on the location of the config file
+	makePathsRelativeToConfig(filepath, graphConfig)
+
+	// Instantiate the graph builder
+	return NewGraphBuilder(*graphConfig)
+}

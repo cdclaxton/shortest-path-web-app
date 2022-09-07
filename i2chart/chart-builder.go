@@ -14,7 +14,9 @@ import (
 )
 
 type LinksSpec struct {
-	Label string `json:"label"` // Specification of the label connecting entities
+	Label         string `json:"label"` // Specification of the label connecting entities
+	DateAttribute string `json:"dateAttribute"`
+	DateFormat    string `json:"dateFormat"`
 }
 
 // An entity is the specification of the fields for a given entity type. By making this field
@@ -112,7 +114,8 @@ func validateI2Config(config I2ChartConfig) (bool, []string) {
 }
 
 type I2ChartBuilder struct {
-	config I2ChartConfig
+	config    I2ChartConfig                  // Configuration for the output
+	bipartite graphstore.BipartiteGraphStore // Bipartite store
 }
 
 func NewI2ChartBuilder(filepath string) (*I2ChartBuilder, error) {
@@ -134,6 +137,10 @@ func NewI2ChartBuilder(filepath string) (*I2ChartBuilder, error) {
 	return &I2ChartBuilder{
 		config: *config,
 	}, nil
+}
+
+func (i *I2ChartBuilder) SetBipartite(bipartite graphstore.BipartiteGraphStore) {
+	i.bipartite = bipartite
 }
 
 // header of the i2 chart.
@@ -168,7 +175,8 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 	// Document IDs in common between the two entities
 	docsInCommon := docs1.Intersection(docs2)
 	if docsInCommon.Len() == 0 {
-		return nil, fmt.Errorf("No documents in common for entities %v and %v", entity1.Id, entity2.Id)
+		return nil, fmt.Errorf("No documents in common for entities %v and %v", entity1.Id,
+			entity2.Id)
 	}
 
 	// Documents in common given their IDs
@@ -178,18 +186,93 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 		if doc == nil {
 			return nil, fmt.Errorf("Unable to get document with ID %v", docId)
 		}
+		docs = append(docs, doc)
 	}
 
 	return docs, nil
 }
 
-func link(docs []*graphstore.Document, dateAttribute string, dateFormat string,
-	linkFormat string, missingAttribute string) (string, error) {
+func substituteForLink(docs []*graphstore.Document, spec LinksSpec,
+	missingAttribute string) (string, error) {
 
 	// Keywords for the documents
-	keywordToValue := keywordsForDocs(docs, dateAttribute, dateFormat)
+	keywordToValue := keywordsForDocs(docs, spec.DateAttribute, spec.DateFormat)
 
-	return Substitute(linkFormat, keywordToValue, missingAttribute)
+	return Substitute(spec.Label, keywordToValue, missingAttribute)
+}
+
+func makeLinkLabel(entity1 *graphstore.Entity, entity2 *graphstore.Entity,
+	bipartite graphstore.BipartiteGraphStore, spec LinksSpec,
+	missingAttribute string) (string, error) {
+
+	// Documents linking the two entities
+	docs, err := documentsLinkingEntities(entity1, entity2, bipartite)
+	if err != nil {
+		return "", err
+	}
+
+	// Build the link label
+	return substituteForLink(docs, spec, missingAttribute)
+}
+
+func mergeKeywords(m1 map[string]string, m2 map[string]string) map[string]string {
+	merged := map[string]string{}
+
+	for key, value := range m1 {
+		merged[key] = value
+	}
+
+	for key, value := range m2 {
+		merged[key] = value
+	}
+
+	return merged
+}
+
+func makeI2Entity(entity *graphstore.Entity, columns []string,
+	entitySpec map[string]map[string]string, missingAttribute string,
+	keywordToValue map[string]string) ([]string, error) {
+
+	// Preconditions
+	if entity == nil {
+		return nil, fmt.Errorf("Nil entity")
+	}
+
+	if len(columns) == 0 {
+		return nil, fmt.Errorf("No columns specified")
+	}
+
+	if len(entity.EntityType) == 0 {
+		return nil, fmt.Errorf("Entity has an empty type")
+	}
+
+	// Get the specification of the fields given the entity type
+	fieldSpecs, found := entitySpec[entity.EntityType]
+	if !found {
+		return nil, fmt.Errorf("Specification for entity type %v not found", entity.EntityType)
+	}
+
+	// Add the entity's attributes to the keywords
+	mergedKeywords := mergeKeywords(keywordToValue, entity.Attributes)
+
+	// Build the fields
+	fields := make([]string, len(columns))
+	for idx, column := range columns {
+
+		specForColumn, found := fieldSpecs[column]
+		if !found {
+			return nil, fmt.Errorf("Field spec for %v not found", column)
+		}
+
+		field, err := Substitute(specForColumn, mergedKeywords, missingAttribute)
+		if err != nil {
+			return nil, err
+		}
+
+		fields[idx] = field
+	}
+
+	return fields, nil
 }
 
 //
@@ -207,18 +290,42 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId2)
 	}
 
-	return []string{}, nil
+	// Row
+	row := []string{}
+
+	// Add the fields for entity 1
+
+	// Add the fields for entity 2
+
+	// Add the link
+	linkLabel, err := makeLinkLabel(entity1, entity2, i.bipartite, i.config.Links,
+		i.config.AttributeNotKnown)
+
+	if err != nil {
+		return nil, err
+	}
+
+	row = append(row, linkLabel)
+
+	// Return the constructed row
+	return row, nil
 }
 
 // Build the rows of the i2 chart from the network connections. The entity details are held
 // within the bipartite graph store.
-func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections,
-	bipartite graphstore.BipartiteGraphStore) [][]string {
+func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error) {
+
+	// Preconditions
+	if i.bipartite == nil {
+		return nil, fmt.Errorf("Bipartite graph store is not defined")
+	}
 
 	rows := [][]string{}
 
 	// Add the header row
 	rows = append(rows, header(i.config.Columns))
 
-	return rows
+	// Walk though each set of connected entities
+
+	return rows, nil
 }
