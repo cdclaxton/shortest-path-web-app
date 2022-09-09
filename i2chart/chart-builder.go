@@ -13,6 +13,11 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+// Keywords
+const (
+	entityIdKeyword = "ID"
+)
+
 type LinksSpec struct {
 	Label         string `json:"label"` // Specification of the label connecting entities
 	DateAttribute string `json:"dateAttribute"`
@@ -252,8 +257,9 @@ func makeI2Entity(entity *graphstore.Entity, columns []string,
 		return nil, fmt.Errorf("Specification for entity type %v not found", entity.EntityType)
 	}
 
-	// Add the entity's attributes to the keywords
+	// Add the entity's attributes to the keywords and the entity's ID
 	mergedKeywords := mergeKeywords(keywordToValue, entity.Attributes)
+	mergedKeywords[entityIdKeyword] = entity.Id
 
 	// Build the fields
 	fields := make([]string, len(columns))
@@ -277,25 +283,50 @@ func makeI2Entity(entity *graphstore.Entity, columns []string,
 
 //
 func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
-	bipartite graphstore.BipartiteGraphStore) ([]string, error) {
+	keywordToValue map[string]string) ([]string, error) {
+
+	// Preconditions
+	if i.bipartite == nil {
+		return nil, fmt.Errorf("Bipartite graph has not been defined")
+	}
 
 	// Get the entities from the store
-	entity1 := bipartite.GetEntity(entityId1)
+	entity1 := i.bipartite.GetEntity(entityId1)
 	if entity1 == nil {
 		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId1)
 	}
 
-	entity2 := bipartite.GetEntity(entityId2)
+	entity2 := i.bipartite.GetEntity(entityId2)
 	if entity2 == nil {
 		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId2)
 	}
 
 	// Row
-	row := []string{}
+	row := make([]string, len(i.config.Columns)*2+1)
 
 	// Add the fields for entity 1
+	entity1Fields, err := makeI2Entity(entity1, i.config.Columns,
+		i.config.Entities, i.config.AttributeNotKnown, keywordToValue)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for idx := range entity1Fields {
+		row[idx] = entity1Fields[idx]
+	}
 
 	// Add the fields for entity 2
+	entity2Fields, err := makeI2Entity(entity2, i.config.Columns,
+		i.config.Entities, i.config.AttributeNotKnown, keywordToValue)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for idx := range entity1Fields {
+		row[idx+len(i.config.Columns)] = entity2Fields[idx]
+	}
 
 	// Add the link
 	linkLabel, err := makeLinkLabel(entity1, entity2, i.bipartite, i.config.Links,
@@ -305,7 +336,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 		return nil, err
 	}
 
-	row = append(row, linkLabel)
+	row[len(row)-1] = linkLabel
 
 	// Return the constructed row
 	return row, nil

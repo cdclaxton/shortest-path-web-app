@@ -308,6 +308,42 @@ func TestMakeI2Entity(t *testing.T) {
 			expectedColumns: []string{"Bob Smith"},
 			expectedError:   false,
 		},
+		{
+			// Two columns, one missing from the spec
+			columns: []string{"Name", "Age"},
+			entitySpec: map[string]map[string]string{
+				"Person": {
+					"Name": "<Forename> <Surname>",
+				},
+			},
+			expectedColumns: nil,
+			expectedError:   true,
+		},
+		{
+			// Two columns
+			columns: []string{"Name", "Age"},
+			entitySpec: map[string]map[string]string{
+				"Person": {
+					"Name": "<Forename> <Surname>",
+					"Age":  "Age is <Age>",
+				},
+			},
+			expectedColumns: []string{"Bob Smith", "Age is 23"},
+			expectedError:   false,
+		},
+		{
+			// Three columns, missing attribute
+			columns: []string{"Name", "Age", "Address"},
+			entitySpec: map[string]map[string]string{
+				"Person": {
+					"Name":    "<Forename> <Surname>",
+					"Age":     "Age is <Age>",
+					"Address": "Address is <Address>",
+				},
+			},
+			expectedColumns: []string{"Bob Smith", "Age is 23", "Address is MISSING"},
+			expectedError:   false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -321,5 +357,79 @@ func TestMakeI2Entity(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedColumns, actual)
+	}
+}
+
+func TestRowLinkingEntities(t *testing.T) {
+
+	// Make the bipartite graph store
+	dataFilepath := "../test-data-sets/set-1/data-config.json"
+	graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
+	assert.NoError(t, err)
+
+	// Make the i2 chart builder
+	filepath := "../test-data-sets/set-1/i2-config.json"
+	chartBuilder, err := NewI2ChartBuilder(filepath)
+	assert.NoError(t, err)
+
+	// Inject the chart builder's dependency on the bipartite store
+	chartBuilder.SetBipartite(graphBuilder.Bipartite)
+
+	keywordToValue := map[string]string{
+		"ENTITY-SET-NAMES": "Set-A",
+	}
+
+	testCases := []struct {
+		entityId1     string
+		entityId2     string
+		expectedError bool
+		expectedRow   []string
+	}{
+		{
+			entityId1:     "e-1",
+			entityId2:     "e-2",
+			expectedError: false,
+			expectedRow: []string{
+				"Person", "e-1", "Smith, Bob [Set-A]", "Set-A", "Bob Smith can be found at http://network-display/e-1",
+				"Person", "e-2", "Jones, Sally [Set-A]", "Set-A", "Sally Jones can be found at http://network-display/e-2",
+				"2 docs (Doc-A, Doc-B; 06/08/2022 - 07/08/2022)"},
+		},
+		{
+			entityId1:     "e-1",
+			entityId2:     "e-3",
+			expectedError: false,
+			expectedRow: []string{
+				"Person", "e-1", "Smith, Bob [Set-A]", "Set-A", "Bob Smith can be found at http://network-display/e-1",
+				"Location", "e-3", "31 Field Drive, EH36 5PB [Set-A]", "Set-A", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
+				"1 docs (Doc-A; 09/08/2022)"},
+		},
+		{
+			entityId1:     "e-3",
+			entityId2:     "e-4",
+			expectedError: false,
+			expectedRow: []string{
+				"Location", "e-3", "31 Field Drive, EH36 5PB [Set-A]", "Set-A", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
+				"Person", "e-4", "Taylor, Samuel [Set-A]", "Set-A", "Samuel Taylor can be found at http://network-display/e-4",
+				"1 docs (Doc-A; 10/08/2022)"},
+		},
+		{
+			entityId1:     "e-1",
+			entityId2:     "e-4",
+			expectedError: true,
+			expectedRow:   nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		row, err := chartBuilder.rowLinkingEntities(testCase.entityId1,
+			testCase.entityId2, keywordToValue)
+
+		if testCase.expectedError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+
+		assert.Equal(t, testCase.expectedRow, row)
 	}
 }

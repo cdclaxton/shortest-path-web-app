@@ -9,21 +9,21 @@
     "entities": {
         "Person": {
             "icon": "Person",
-            "id": "Person-<ID>",
+            "id": "<ID>",
             "label": "<Surname>, <Forename> [<ENTITY-SET-NAMES>]",
             "entitySets": "<ENTITY-SET-NAMES>",
-            "description": "Person <Forename> <Surname> can be found at http://network-display/<ID>"
+            "description": "<Forename> <Surname> can be found at http://network-display/<ID>"
         },
         "Address": {
             "icon": "Location",
-            "id": "Address-<ID>",
-            "label": "<First line>, <City>, <Country> [<ENTITY-SET-NAMES>]",
+            "id": "<ID>",
+            "label": "<First line>, <Postcode> [<ENTITY-SET-NAMES>]",
             "entitySets": "<ENTITY-SET-NAMES>",
-            "description": "Address can be found at http://network-display/<ID>"
+            "description": "<First line>, <Postcode> can be found at http://network-display/<ID>"
         }
     },
     "links": {
-        "label": "<NUM-DOCS> docs (<DOCUMENT-TYPES> <DOCUMENT-DATE-RANGE>)",
+        "label": "<NUM-DOCS> docs (<DOCUMENT-TYPES>; <DOCUMENT-DATE-RANGE>)",
         "dateAttribute": "Date",
         "dateFormat": "02/01/2006"
     },
