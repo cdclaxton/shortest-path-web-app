@@ -63,7 +63,7 @@ func (n *NetworkConnections) String() string {
 
 				sb.WriteString(" {")
 
-				for idx, node := range p.route {
+				for idx, node := range p.Route {
 					if idx > 0 {
 						sb.WriteString(", ")
 					}

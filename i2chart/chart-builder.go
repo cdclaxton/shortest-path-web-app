@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
@@ -15,7 +16,8 @@ import (
 
 // Keywords
 const (
-	entityIdKeyword = "ID"
+	entityIdKeyword       = "ID"
+	entitySetNamesKeyword = "ENTITY-SET-NAMES"
 )
 
 type LinksSpec struct {
@@ -194,6 +196,11 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 		docs = append(docs, doc)
 	}
 
+	// Sort the documents by ID
+	sort.Slice(docs, func(i, j int) bool {
+		return docs[i].Id < docs[j].Id
+	})
+
 	return docs, nil
 }
 
@@ -281,9 +288,10 @@ func makeI2Entity(entity *graphstore.Entity, columns []string,
 	return fields, nil
 }
 
-//
+// rowLinkingEntities given the specification for a row and the data.
 func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
-	keywordToValue map[string]string) ([]string, error) {
+	keywordToValueEntity1 map[string]string,
+	keywordToValueEntity2 map[string]string) ([]string, error) {
 
 	// Preconditions
 	if i.bipartite == nil {
@@ -306,7 +314,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 
 	// Add the fields for entity 1
 	entity1Fields, err := makeI2Entity(entity1, i.config.Columns,
-		i.config.Entities, i.config.AttributeNotKnown, keywordToValue)
+		i.config.Entities, i.config.AttributeNotKnown, keywordToValueEntity1)
 
 	if err != nil {
 		return nil, err
@@ -318,7 +326,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 
 	// Add the fields for entity 2
 	entity2Fields, err := makeI2Entity(entity2, i.config.Columns,
-		i.config.Entities, i.config.AttributeNotKnown, keywordToValue)
+		i.config.Entities, i.config.AttributeNotKnown, keywordToValueEntity2)
 
 	if err != nil {
 		return nil, err
@@ -342,6 +350,27 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 	return row, nil
 }
 
+// buildDatasetKeywords for a given entity.
+func buildDatasetKeywords(entityId string, conns *bfs.NetworkConnections) (map[string]string, error) {
+
+	// Preconditions
+	if conns.EntityIdToSetNames == nil {
+		return nil, fmt.Errorf("Mapping from entity ID to data set names is nil")
+	}
+
+	keywords := map[string]string{}
+
+	if datasets, found := conns.EntityIdToSetNames[entityId]; found {
+		sliceDatasets := datasets.ToSlice()
+		sort.Strings(sliceDatasets)
+		keywords[entitySetNamesKeyword] = strings.Join(sliceDatasets, ", ")
+	} else {
+		keywords[entitySetNamesKeyword] = ""
+	}
+
+	return keywords, nil
+}
+
 // Build the rows of the i2 chart from the network connections. The entity details are held
 // within the bipartite graph store.
 func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error) {
@@ -351,12 +380,65 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 		return nil, fmt.Errorf("Bipartite graph store is not defined")
 	}
 
+	if conns == nil {
+		return nil, fmt.Errorf("Nil connections passed to Build")
+	}
+
+	// Unipartite graph to store the entities that are connected in the i2 chart
+	i2Graph := graphstore.NewInMemoryUnipartiteGraphStore()
+
 	rows := [][]string{}
 
 	// Add the header row
 	rows = append(rows, header(i.config.Columns))
 
 	// Walk though each set of connected entities
+	for _, destinationsPaths := range conns.Connections {
+		for _, paths := range destinationsPaths {
+			for _, path := range paths {
+
+				// Check the path is valid
+				if len(path.Route) == 0 {
+					return nil, fmt.Errorf("Path with no entities encountered")
+				} else if len(path.Route) == 1 {
+					return nil, fmt.Errorf("Path has just one entity")
+				}
+
+				// Walk through each pair of entities on the path
+				for idx := 0; idx < len(path.Route)-1; idx++ {
+					src := path.Route[idx]
+					dst := path.Route[idx+1]
+
+					// An edge edge already exists between the two entities then a row doesn't
+					// need to be added to the i2 chart
+					if i2Graph.EdgeExists(src, dst) {
+						continue
+					}
+
+					// Build the keywords
+					keywordToValueEntity1, err := buildDatasetKeywords(src, conns)
+					if err != nil {
+						return nil, err
+					}
+					keywordToValueEntity2, err := buildDatasetKeywords(dst, conns)
+					if err != nil {
+						return nil, err
+					}
+
+					// Create the row
+					row, err := i.rowLinkingEntities(src, dst, keywordToValueEntity1,
+						keywordToValueEntity2)
+					if err != nil {
+						return nil, err
+					}
+					rows = append(rows, row)
+
+					// Record that the row contains linked entities
+					i2Graph.AddUndirected(src, dst)
+				}
+			}
+		}
+	}
 
 	return rows, nil
 }

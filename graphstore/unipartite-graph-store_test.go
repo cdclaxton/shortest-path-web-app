@@ -160,12 +160,38 @@ func EqualGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore)
 	assert.False(t, g1.Equal(g2))
 }
 
+// Connected checks that the vertices are connected as expected.
+//
+//         A--B
+//         |
+//   C--D--E
+func Connected(t *testing.T, g UnipartiteGraphStore) {
+
+	g.Clear()
+
+	assert.NoError(t, g.AddUndirected("A", "B"))
+	assert.NoError(t, g.AddUndirected("A", "E"))
+	assert.NoError(t, g.AddUndirected("C", "D"))
+	assert.NoError(t, g.AddUndirected("D", "E"))
+
+	assert.True(t, g.EdgeExists("A", "B"))
+	assert.True(t, g.EdgeExists("B", "A"))
+
+	assert.True(t, g.EdgeExists("A", "E"))
+	assert.True(t, g.EdgeExists("E", "A"))
+
+	assert.False(t, g.EdgeExists("A", "D"))
+	assert.False(t, g.EdgeExists("D", "A"))
+}
+
 func TestInMemory(t *testing.T) {
 	g := NewInMemoryUnipartiteGraphStore()
 
 	SelfConnection(t, g)
 	SimpleGraph1(t, g)
 	SimpleGraph2(t, g)
+
+	Connected(t, g)
 
 	g2 := NewInMemoryUnipartiteGraphStore()
 	EqualGraphs(t, g, g2)

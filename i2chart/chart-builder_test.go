@@ -3,8 +3,10 @@ package i2chart
 import (
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -125,9 +127,12 @@ func TestDocumentsLinkingEntities(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+
 		// Get the entities from the bipartite store
 		entity1 := bipartite.GetEntity(testCase.entityId1)
+		assert.NotNil(t, entity1)
 		entity2 := bipartite.GetEntity(testCase.entityId2)
+		assert.NotNil(t, entity2)
 
 		actualDocs, err := documentsLinkingEntities(entity1, entity2, bipartite)
 		if testCase.expectedError {
@@ -375,8 +380,11 @@ func TestRowLinkingEntities(t *testing.T) {
 	// Inject the chart builder's dependency on the bipartite store
 	chartBuilder.SetBipartite(graphBuilder.Bipartite)
 
-	keywordToValue := map[string]string{
+	keywordToValue1 := map[string]string{
 		"ENTITY-SET-NAMES": "Set-A",
+	}
+	keywordToValue2 := map[string]string{
+		"ENTITY-SET-NAMES": "",
 	}
 
 	testCases := []struct {
@@ -391,7 +399,7 @@ func TestRowLinkingEntities(t *testing.T) {
 			expectedError: false,
 			expectedRow: []string{
 				"Person", "e-1", "Smith, Bob [Set-A]", "Set-A", "Bob Smith can be found at http://network-display/e-1",
-				"Person", "e-2", "Jones, Sally [Set-A]", "Set-A", "Sally Jones can be found at http://network-display/e-2",
+				"Person", "e-2", "Jones, Sally []", "", "Sally Jones can be found at http://network-display/e-2",
 				"2 docs (Doc-A, Doc-B; 06/08/2022 - 07/08/2022)"},
 		},
 		{
@@ -400,7 +408,7 @@ func TestRowLinkingEntities(t *testing.T) {
 			expectedError: false,
 			expectedRow: []string{
 				"Person", "e-1", "Smith, Bob [Set-A]", "Set-A", "Bob Smith can be found at http://network-display/e-1",
-				"Location", "e-3", "31 Field Drive, EH36 5PB [Set-A]", "Set-A", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
+				"Location", "e-3", "31 Field Drive, EH36 5PB []", "", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
 				"1 docs (Doc-A; 09/08/2022)"},
 		},
 		{
@@ -409,7 +417,7 @@ func TestRowLinkingEntities(t *testing.T) {
 			expectedError: false,
 			expectedRow: []string{
 				"Location", "e-3", "31 Field Drive, EH36 5PB [Set-A]", "Set-A", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
-				"Person", "e-4", "Taylor, Samuel [Set-A]", "Set-A", "Samuel Taylor can be found at http://network-display/e-4",
+				"Person", "e-4", "Taylor, Samuel []", "", "Samuel Taylor can be found at http://network-display/e-4",
 				"1 docs (Doc-A; 10/08/2022)"},
 		},
 		{
@@ -422,7 +430,7 @@ func TestRowLinkingEntities(t *testing.T) {
 
 	for _, testCase := range testCases {
 		row, err := chartBuilder.rowLinkingEntities(testCase.entityId1,
-			testCase.entityId2, keywordToValue)
+			testCase.entityId2, keywordToValue1, keywordToValue2)
 
 		if testCase.expectedError {
 			assert.Error(t, err)
@@ -431,5 +439,181 @@ func TestRowLinkingEntities(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedRow, row)
+	}
+}
+
+func TestBuildDatasetKeywords(t *testing.T) {
+
+	conns := bfs.NetworkConnections{
+		EntityIdToSetNames: map[string]*set.Set[string]{
+			"e-1": set.NewPopulatedSet("Set-A"),
+			"e-2": set.NewPopulatedSet("Set-A", "Set-B"),
+		},
+	}
+
+	testCases := []struct {
+		entityId string
+		expected map[string]string
+	}{
+		{
+			entityId: "e-1",
+			expected: map[string]string{
+				entitySetNamesKeyword: "Set-A",
+			},
+		},
+		{
+			entityId: "e-2",
+			expected: map[string]string{
+				entitySetNamesKeyword: "Set-A, Set-B",
+			},
+		},
+		{
+			entityId: "e-3",
+			expected: map[string]string{
+				entitySetNamesKeyword: "",
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := buildDatasetKeywords(testCase.entityId, &conns)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expected, actual)
+	}
+}
+
+func TestBuild(t *testing.T) {
+
+	// Make the bipartite graph store
+	dataFilepath := "../test-data-sets/set-1/data-config.json"
+	graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
+	assert.NoError(t, err)
+
+	// Make the i2 chart builder
+	filepath := "../test-data-sets/set-1/i2-config.json"
+	chartBuilder, err := NewI2ChartBuilder(filepath)
+	assert.NoError(t, err)
+
+	// Inject the chart builder's dependency on the bipartite store
+	chartBuilder.SetBipartite(graphBuilder.Bipartite)
+
+	testCases := []struct {
+		conns         *bfs.NetworkConnections
+		expectedError bool
+		expectedRows  [][]string
+	}{
+		{
+			// Nil conns should fail the precondition
+			conns:         nil,
+			expectedError: true,
+			expectedRows:  nil,
+		},
+		{
+			// No connections, therefore just the header should be returned
+			conns: &bfs.NetworkConnections{
+				EntityIdToSetNames: map[string]*set.Set[string]{},
+				Connections:        map[string]map[string][]bfs.Path{},
+			},
+			expectedError: false,
+			expectedRows: [][]string{
+				{"Entity-icon-1", "Entity-id-1", "Entity-label-1", "Entity-entitySets-1", "Entity-description-1",
+					"Entity-icon-2", "Entity-id-2", "Entity-label-2", "Entity-entitySets-2", "Entity-description-2",
+					"Link"}},
+		},
+		{
+			// A single connection
+			conns: &bfs.NetworkConnections{
+				EntityIdToSetNames: map[string]*set.Set[string]{
+					"e-1": set.NewPopulatedSet("Dataset-A"),
+				},
+				Connections: map[string]map[string][]bfs.Path{
+					"e-1": {"e-2": {{
+						Route: []string{"e-1", "e-2"},
+					}}},
+				},
+			},
+			expectedError: false,
+			expectedRows: [][]string{
+				{"Entity-icon-1", "Entity-id-1", "Entity-label-1", "Entity-entitySets-1", "Entity-description-1",
+					"Entity-icon-2", "Entity-id-2", "Entity-label-2", "Entity-entitySets-2", "Entity-description-2",
+					"Link"},
+				{"Person", "e-1", "Smith, Bob [Dataset-A]", "Dataset-A", "Bob Smith can be found at http://network-display/e-1",
+					"Person", "e-2", "Jones, Sally []", "", "Sally Jones can be found at http://network-display/e-2",
+					"2 docs (Doc-A, Doc-B; 06/08/2022 - 07/08/2022)"}},
+		},
+		{
+			// Two connections (but essentially a duplicate, so there should only be one row)
+			conns: &bfs.NetworkConnections{
+				EntityIdToSetNames: map[string]*set.Set[string]{
+					"e-1": set.NewPopulatedSet("Dataset-A"),
+				},
+				Connections: map[string]map[string][]bfs.Path{
+					"e-1": {"e-2": {{
+						Route: []string{"e-1", "e-2"},
+					}}},
+					"e-2": {"e-1": {{
+						Route: []string{"e-2", "e-1"},
+					}}},
+				},
+			},
+			expectedError: false,
+			expectedRows: [][]string{
+				{"Entity-icon-1", "Entity-id-1", "Entity-label-1", "Entity-entitySets-1", "Entity-description-1",
+					"Entity-icon-2", "Entity-id-2", "Entity-label-2", "Entity-entitySets-2", "Entity-description-2",
+					"Link"},
+				{"Person", "e-1", "Smith, Bob [Dataset-A]", "Dataset-A", "Bob Smith can be found at http://network-display/e-1",
+					"Person", "e-2", "Jones, Sally []", "", "Sally Jones can be found at http://network-display/e-2",
+					"2 docs (Doc-A, Doc-B; 06/08/2022 - 07/08/2022)"}},
+		},
+		{
+			// Path covering three entities
+			conns: &bfs.NetworkConnections{
+				EntityIdToSetNames: map[string]*set.Set[string]{
+					"e-1": set.NewPopulatedSet("Dataset-A"),
+					"e-4": set.NewPopulatedSet("Dataset-B"),
+				},
+				Connections: map[string]map[string][]bfs.Path{
+					"e-1": {"e-3": {{
+						Route: []string{"e-1", "e-3", "e-4"},
+					}}},
+				},
+			},
+			expectedError: false,
+			expectedRows: [][]string{
+				{"Entity-icon-1", "Entity-id-1", "Entity-label-1", "Entity-entitySets-1", "Entity-description-1",
+					"Entity-icon-2", "Entity-id-2", "Entity-label-2", "Entity-entitySets-2", "Entity-description-2",
+					"Link"},
+				{"Person", "e-1", "Smith, Bob [Dataset-A]", "Dataset-A", "Bob Smith can be found at http://network-display/e-1",
+					"Location", "e-3", "31 Field Drive, EH36 5PB []", "", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
+					"1 docs (Doc-A; 09/08/2022)"},
+				{"Location", "e-3", "31 Field Drive, EH36 5PB []", "", "31 Field Drive, EH36 5PB can be found at http://network-display/e-3",
+					"Person", "e-4", "Taylor, Samuel [Dataset-B]", "Dataset-B", "Samuel Taylor can be found at http://network-display/e-4",
+					"1 docs (Doc-A; 10/08/2022)"}},
+		},
+		{
+			// Invalid path (e-1 and e-4 are not connected directly)
+			conns: &bfs.NetworkConnections{
+				EntityIdToSetNames: map[string]*set.Set[string]{},
+				Connections: map[string]map[string][]bfs.Path{
+					"e-1": {"e-4": {{
+						Route: []string{"e-1", "e-4"},
+					}}},
+				},
+			},
+			expectedError: true,
+			expectedRows:  nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := chartBuilder.Build(testCase.conns)
+
+		if testCase.expectedError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedRows, actual)
+		}
+
 	}
 }

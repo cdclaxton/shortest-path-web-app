@@ -61,6 +61,20 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 	return nil
 }
 
+// EdgeExists between entity 1 and entity 2?
+func (graph *InMemoryUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) bool {
+
+	if !graph.HasEntity(entity1) {
+		return false
+	}
+
+	if !graph.HasEntity(entity2) {
+		return false
+	}
+
+	return graph.vertices[entity1].Has(entity2)
+}
+
 // EntityIdsAdjacentTo a given vertex with a given entity ID.
 func (graph *InMemoryUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.Set[string], error) {
 

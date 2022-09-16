@@ -8,33 +8,33 @@ import (
 )
 
 type Path struct {
-	route []string // Route from the root to the goal vertex
+	Route []string // Route from the root to the goal vertex
 }
 
 func NewPath(route ...string) Path {
 	return Path{
-		route: route,
+		Route: route,
 	}
 }
 
 // Start entity ID on a path.
 func (p Path) Start() string {
-	return p.route[0]
+	return p.Route[0]
 }
 
 // End (last) entity ID on a path.
 func (p Path) End() string {
-	return p.route[len(p.route)-1]
+	return p.Route[len(p.Route)-1]
 }
 
 // Equal returns true if two paths have the same route.
 func (p Path) Equal(other Path) bool {
-	if len(p.route) != len(other.route) {
+	if len(p.Route) != len(other.Route) {
 		return false
 	}
 
-	for idx := range p.route {
-		if p.route[idx] != other.route[idx] {
+	for idx := range p.Route {
+		if p.Route[idx] != other.Route[idx] {
 			return false
 		}
 	}
