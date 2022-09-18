@@ -433,7 +433,8 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 					}
 					rows = append(rows, row)
 
-					// Record that the row contains linked entities
+					// Record that the row contains linked entities (so it doesn't get duplicated
+					// later)
 					i2Graph.AddUndirected(src, dst)
 				}
 			}
