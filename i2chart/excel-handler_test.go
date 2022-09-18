@@ -1,7 +1,6 @@
 package i2chart
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -169,8 +168,6 @@ func TestWriteToExcel(t *testing.T) {
 
 	dir, err := ioutil.TempDir("", "test-excel-writer")
 	assert.NoError(t, err)
-
-	fmt.Println(dir)
 
 	testCases := []struct {
 		filename string
