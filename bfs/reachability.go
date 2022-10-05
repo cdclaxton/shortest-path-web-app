@@ -13,7 +13,12 @@ func ReachableVertices(g graphstore.UnipartiteGraphStore, root string,
 	maxDepth int) (*set.Set[string], error) {
 
 	// Preconditions
-	if !g.HasEntity(root) {
+	found, err := g.HasEntity(root)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
 		return nil, fmt.Errorf("Root vertex not found: %v", root)
 	}
 

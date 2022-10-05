@@ -411,7 +411,11 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 
 					// An edge edge already exists between the two entities then a row doesn't
 					// need to be added to the i2 chart
-					if i2Graph.EdgeExists(src, dst) {
+					exists, err := i2Graph.EdgeExists(src, dst)
+					if err != nil {
+						return nil, err
+					}
+					if exists {
 						continue
 					}
 

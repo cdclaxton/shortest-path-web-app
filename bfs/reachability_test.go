@@ -89,7 +89,7 @@ func buildTestGraph(t *testing.T, graph graphstore.UnipartiteGraphStore) {
 	}
 
 	// Populate the graph
-	assert.NoError(t, graph.BuildFromEdgeList(edgeList))
+	assert.NoError(t, graphstore.BuildFromEdgeList(graph, edgeList))
 	graph.AddEntity("6")
 }
 

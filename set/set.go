@@ -6,14 +6,15 @@ import (
 )
 
 // Set of type T.
+// Values has to be exported to the serialised by the gob library.
 type Set[T comparable] struct {
-	values map[T]bool
+	Values map[T]bool
 }
 
 // NewSet of a given type T.
 func NewSet[T comparable]() *Set[T] {
 	return &Set[T]{
-		values: map[T]bool{},
+		Values: map[T]bool{},
 	}
 }
 
@@ -26,7 +27,7 @@ func NewPopulatedSet[T comparable](elements ...T) *Set[T] {
 
 // Add an element to the set.
 func (s *Set[T]) Add(element T) {
-	s.values[element] = true
+	s.Values[element] = true
 }
 
 // AddAll of the elements to the set.
@@ -38,15 +39,15 @@ func (s *Set[T]) AddAll(elements []T) {
 
 // Has the set got a specific element?
 func (s *Set[T]) Has(element T) bool {
-	return s.values[element]
+	return s.Values[element]
 }
 
 // Intersection of the set with another set.
 func (s *Set[T]) Intersection(s2 *Set[T]) *Set[T] {
 	common := NewSet[T]()
 
-	for key := range s.values {
-		_, found := s2.values[key]
+	for key := range s.Values {
+		_, found := s2.Values[key]
 		if found {
 			common.Add(key)
 		}
@@ -60,7 +61,7 @@ func (s *Set[T]) Difference(s2 *Set[T]) *Set[T] {
 
 	diff := NewSet[T]()
 
-	for key := range s.values {
+	for key := range s.Values {
 		if !s2.Has(key) {
 			diff.Add(key)
 		}
@@ -71,7 +72,7 @@ func (s *Set[T]) Difference(s2 *Set[T]) *Set[T] {
 
 // Length (cardinality) of the set.
 func (s *Set[T]) Len() int {
-	return len(s.values)
+	return len(s.Values)
 }
 
 // Does the set have the same elements as the other set?
@@ -80,7 +81,7 @@ func (s *Set[T]) Equal(other *Set[T]) bool {
 		return false
 	}
 
-	for key := range s.values {
+	for key := range s.Values {
 		if !other.Has(key) {
 			return false
 		}
@@ -92,7 +93,7 @@ func (s *Set[T]) Equal(other *Set[T]) bool {
 // String representation of the set.
 func (s *Set[T]) String() string {
 	values := []string{}
-	for key := range s.values {
+	for key := range s.Values {
 		values = append(values, fmt.Sprint(key))
 	}
 
@@ -105,7 +106,7 @@ func (s *Set[T]) String() string {
 func (s *Set[T]) ToSlice() []T {
 	ret := []T{}
 
-	for key := range s.values {
+	for key := range s.Values {
 		ret = append(ret, key)
 	}
 

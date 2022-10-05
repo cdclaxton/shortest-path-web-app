@@ -35,12 +35,23 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 
-	assert.True(t, g.HasEntity("A"))
-	assert.True(t, g.HasEntity("B"))
-	assert.False(t, g.HasEntity("C"))
+	hasA, err := g.HasEntity("A")
+	assert.NoError(t, err)
+	assert.True(t, hasA)
 
+	hasB, err := g.HasEntity("B")
+	assert.NoError(t, err)
+	assert.True(t, hasB)
+
+	hasC, err := g.HasEntity("C")
+	assert.NoError(t, err)
+	assert.False(t, hasC)
+
+	// Check the entity IDs
 	expectedEntityIds := set.NewPopulatedSet("A", "B")
-	assert.True(t, expectedEntityIds.Equal(g.EntityIds()))
+	actualEntityIds, err := g.EntityIds()
+	assert.NoError(t, err)
+	assert.True(t, expectedEntityIds.Equal(actualEntityIds))
 
 	expectedConnections := []connection{
 		{
@@ -56,7 +67,7 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	checkConnections(t, g, expectedConnections)
 
 	// Try to get a vertex that doesn't exist
-	_, err := g.EntityIdsAdjacentTo("C")
+	_, err = g.EntityIdsAdjacentTo("C")
 	assert.Error(t, err)
 }
 
@@ -80,7 +91,9 @@ func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	assert.NoError(t, g.AddUndirected("H", "G"))
 
 	expectedEntityIds := set.NewPopulatedSet("A", "B", "C", "D", "E", "F", "G", "H")
-	assert.True(t, expectedEntityIds.Equal(g.EntityIds()))
+	actualEntityIds, err := g.EntityIds()
+	assert.NoError(t, err)
+	assert.True(t, expectedEntityIds.Equal(actualEntityIds))
 
 	expectedConnections := []connection{
 		{
@@ -146,18 +159,24 @@ func EqualGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore)
 	// Graph 1
 	assert.NoError(t, g2.AddUndirected("A", "B"))
 	assert.NoError(t, g2.AddUndirected("B", "C"))
-	assert.True(t, g1.Equal(g2))
+	equal, err := UnipartiteGraphStoresEqual(g1, g2)
+	assert.NoError(t, err)
+	assert.True(t, equal)
 
 	// Mutate graph 1 into graph 3
 	assert.NoError(t, g2.AddUndirected("A", "C"))
-	assert.False(t, g1.Equal(g2))
+	equal, err = UnipartiteGraphStoresEqual(g1, g2)
+	assert.NoError(t, err)
+	assert.False(t, equal)
 
 	// Make graph 2
 	g2.Clear()
 	assert.NoError(t, g2.AddUndirected("A", "B"))
 	assert.NoError(t, g2.AddUndirected("B", "C"))
 	assert.NoError(t, g2.AddUndirected("C", "D"))
-	assert.False(t, g1.Equal(g2))
+	equal, err = UnipartiteGraphStoresEqual(g1, g2)
+	assert.NoError(t, err)
+	assert.False(t, equal)
 }
 
 // Connected checks that the vertices are connected as expected.
@@ -174,14 +193,48 @@ func Connected(t *testing.T, g UnipartiteGraphStore) {
 	assert.NoError(t, g.AddUndirected("C", "D"))
 	assert.NoError(t, g.AddUndirected("D", "E"))
 
-	assert.True(t, g.EdgeExists("A", "B"))
-	assert.True(t, g.EdgeExists("B", "A"))
+	testCases := []struct {
+		entity1      string
+		entity2      string
+		expectedEdge bool
+	}{
+		{
+			entity1:      "A",
+			entity2:      "B",
+			expectedEdge: true,
+		},
+		{
+			entity1:      "B",
+			entity2:      "A",
+			expectedEdge: true,
+		},
+		{
+			entity1:      "A",
+			entity2:      "E",
+			expectedEdge: true,
+		},
+		{
+			entity1:      "E",
+			entity2:      "A",
+			expectedEdge: true,
+		},
+		{
+			entity1:      "A",
+			entity2:      "D",
+			expectedEdge: false,
+		},
+		{
+			entity1:      "D",
+			entity2:      "A",
+			expectedEdge: false,
+		},
+	}
 
-	assert.True(t, g.EdgeExists("A", "E"))
-	assert.True(t, g.EdgeExists("E", "A"))
-
-	assert.False(t, g.EdgeExists("A", "D"))
-	assert.False(t, g.EdgeExists("D", "A"))
+	for _, testCase := range testCases {
+		actual, err := g.EdgeExists(testCase.entity1, testCase.entity2)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expectedEdge, actual)
+	}
 }
 
 func TestInMemory(t *testing.T) {

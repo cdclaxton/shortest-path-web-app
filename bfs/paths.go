@@ -97,11 +97,19 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 	maxDepth int) ([]Path, error) {
 
 	// Preconditions
-	if !graph.HasEntity(root) {
+	found, err := graph.HasEntity(root)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
 		return nil, fmt.Errorf("%v: %v", RootVertexNotFoundError, root)
 	}
 
-	if !graph.HasEntity(goal) {
+	found, err = graph.HasEntity(goal)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
 		return nil, fmt.Errorf("%v: %v", GoalVertexNotFoundError, goal)
 	}
 

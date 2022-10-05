@@ -309,5 +309,7 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 	expectedUnipartite.AddUndirected("e-1", "e-3")
 	expectedUnipartite.AddUndirected("e-3", "e-4")
 
-	assert.True(t, expectedUnipartite.Equal(graphBuilder.Unipartite))
+	equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
+	assert.NoError(t, err)
+	assert.True(t, equal)
 }

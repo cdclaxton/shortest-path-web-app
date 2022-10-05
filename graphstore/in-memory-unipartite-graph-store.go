@@ -17,11 +17,14 @@ func NewInMemoryUnipartiteGraphStore() *InMemoryUnipartiteGraphStore {
 }
 
 // AddEntity to the unipartite graph.
-func (graph *InMemoryUnipartiteGraphStore) AddEntity(entity string) {
+func (graph *InMemoryUnipartiteGraphStore) AddEntity(entity string) error {
+
 	// If the entity hasn't been seen before, add it to the graph
-	if _, present := graph.vertices[entity]; !present {
+	if found, _ := graph.HasEntity(entity); !found {
 		graph.vertices[entity] = set.NewSet[string]()
 	}
+
+	return nil
 }
 
 // AddDirected edge between two vertices.
@@ -62,17 +65,16 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 }
 
 // EdgeExists between entity 1 and entity 2?
-func (graph *InMemoryUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) bool {
+func (graph *InMemoryUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) (bool, error) {
 
-	if !graph.HasEntity(entity1) {
-		return false
+	found1, _ := graph.HasEntity(entity1)
+	found2, _ := graph.HasEntity(entity2)
+
+	if !found1 || !found2 {
+		return false, nil
 	}
 
-	if !graph.HasEntity(entity2) {
-		return false
-	}
-
-	return graph.vertices[entity1].Has(entity2)
+	return graph.vertices[entity1].Has(entity2), nil
 }
 
 // EntityIdsAdjacentTo a given vertex with a given entity ID.
@@ -88,7 +90,7 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) 
 }
 
 // EntityIds held within the graph.
-func (graph *InMemoryUnipartiteGraphStore) EntityIds() *set.Set[string] {
+func (graph *InMemoryUnipartiteGraphStore) EntityIds() (*set.Set[string], error) {
 
 	ids := set.NewSet[string]()
 
@@ -96,48 +98,11 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIds() *set.Set[string] {
 		ids.Add(id)
 	}
 
-	return ids
-}
-
-// Are two unipartite graph stores identical? This is for testing purposes.
-func (graph *InMemoryUnipartiteGraphStore) Equal(g2 UnipartiteGraphStore) bool {
-
-	// Get lists of entity IDs
-	entityIds1 := graph.EntityIds()
-	entityIds2 := g2.EntityIds()
-
-	// Check the entity IDs are identical
-	if !entityIds1.Equal(entityIds2) {
-		return false
-	}
-
-	// Check the connections
-	for _, entityId := range entityIds1.ToSlice() {
-		conns1, _ := graph.EntityIdsAdjacentTo(entityId)
-		conns2, _ := g2.EntityIdsAdjacentTo(entityId)
-
-		if !conns1.Equal(conns2) {
-			return false
-		}
-	}
-
-	return true
+	return ids, nil
 }
 
 // HasEntity returns whether the store contains the entity.
-func (graph *InMemoryUnipartiteGraphStore) HasEntity(id string) bool {
+func (graph *InMemoryUnipartiteGraphStore) HasEntity(id string) (bool, error) {
 	_, found := graph.vertices[id]
-	return found
-}
-
-// BuildFromEdgeList builds the graph from an undirected edge list.
-func (graph *InMemoryUnipartiteGraphStore) BuildFromEdgeList(edges []Edge) error {
-	for _, edge := range edges {
-		err := graph.AddUndirected(edge.V1, edge.V2)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return found, nil
 }

@@ -202,5 +202,5 @@ func TestWriteToExcel(t *testing.T) {
 		assert.Equal(t, testCase.rows, actualRead)
 	}
 
-	defer os.RemoveAll(dir)
+	assert.NoError(t, os.RemoveAll(dir))
 }
