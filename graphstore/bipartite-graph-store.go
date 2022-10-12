@@ -209,3 +209,24 @@ func AllDocuments(iter DocumentIdIterator) (*set.Set[string], error) {
 
 	return ids, nil
 }
+
+// AllEntities available in the iterator.
+func AllEntities(iter EntityIdIterator) (*set.Set[string], error) {
+
+	// Preconditions
+	if iter == nil {
+		return nil, fmt.Errorf("Entity iterator is nil")
+	}
+
+	ids := set.NewSet[string]()
+
+	for iter.hasNext() {
+		id, err := iter.nextEntityId()
+		if err != nil {
+			return nil, err
+		}
+		ids.Add(id)
+	}
+
+	return ids, nil
+}

@@ -428,7 +428,7 @@ func (p *PebbleBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator,
 }
 
 func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
-	nEntities := 0
+	nDocuments := 0
 
 	iter, err := p.NewDocumentIdIterator()
 	if err != nil {
@@ -437,6 +437,98 @@ func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
 
 	for iter.hasNext() {
 		_, err := iter.nextDocumentId()
+		if err != nil {
+			return 0, err
+		}
+		nDocuments += 1
+	}
+
+	return nDocuments, nil
+}
+
+type PebbleEntityIterator struct {
+	iter      *pebble.Iterator
+	currentId string
+	hasNextId bool
+}
+
+func (it *PebbleEntityIterator) nextEntityId() (string, error) {
+
+	// Is there another entry in the Pebble iterator?
+	isNext := it.iter.Next()
+
+	var err error
+	var nextEntityId string
+
+	// If there aren't any more entities, close the iterator
+	if !isNext {
+		err = it.close()
+		it.hasNextId = false
+	} else {
+		it.hasNextId = true
+		key := it.iter.Key() // Next Pebble key
+		nextEntityId, err = pebbleKeyToBipartiteEntityId(key)
+	}
+
+	toReturn := it.currentId
+	it.currentId = nextEntityId
+
+	return toReturn, err
+}
+
+func (it *PebbleEntityIterator) hasNext() bool {
+	return it.hasNextId
+}
+
+func (it *PebbleEntityIterator) close() error {
+	if it.iter != nil {
+		return it.iter.Close()
+	}
+	return nil
+}
+
+// NewDocumentIdIterator returns a document ID iterator.
+func (p *PebbleBipartiteGraphStore) NewEntityIdIterator() (EntityIdIterator, error) {
+
+	entityKey := []byte(entityKeyPrefix)
+	iter := p.db.NewIter(makePebblePrefixIterOptions(entityKey))
+	iter.First()
+
+	var entityId string
+	var err error
+
+	entityIdIterator := PebbleEntityIterator{
+		iter: iter,
+	}
+
+	if iter.Valid() {
+		pebbleKey := iter.Key()
+		entityId, err = pebbleKeyToBipartiteEntityId(pebbleKey)
+
+		entityIdIterator.currentId = entityId
+		entityIdIterator.hasNextId = true
+	} else {
+		entityIdIterator.hasNextId = false
+		err = entityIdIterator.close()
+	}
+
+	if err != nil {
+		entityIdIterator.close()
+	}
+
+	return &entityIdIterator, err
+}
+
+func (p *PebbleBipartiteGraphStore) NumberOfEntities() (int, error) {
+	nEntities := 0
+
+	iter, err := p.NewEntityIdIterator()
+	if err != nil {
+		return 0, err
+	}
+
+	for iter.hasNext() {
+		_, err := iter.nextEntityId()
 		if err != nil {
 			return 0, err
 		}
@@ -450,6 +542,4 @@ func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
 // type BipartiteGraphStore interface {
 // 	Clear() error                              // Clear the store
 // 	Equal(BipartiteGraphStore) bool            // Do two stores have the same contents?
-// 	NewEntityIdIterator() EntityIdIterator     // Get an entity ID iterator
-// 	NumberOfEntities() int                     // Number of entities in the store
 // 	}

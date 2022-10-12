@@ -244,3 +244,44 @@ func TestDocumentIterator(t *testing.T) {
 	assert.NoError(t, store.AddDocument(d2))
 	checkExpectedDocumentIds(t, store, set.NewPopulatedSet("d-1", "d-2"))
 }
+
+func checkExpectedEntityIds(t *testing.T, store *PebbleBipartiteGraphStore,
+	expectedEntityIds *set.Set[string]) {
+
+	// Get an entity ID iterator for the store
+	iter, err := store.NewEntityIdIterator()
+	assert.NoError(t, err)
+
+	// Get all of the entity IDs
+	entityIds, err := AllEntities(iter)
+	assert.NoError(t, err)
+
+	assert.True(t, expectedEntityIds.Equal(entityIds))
+
+	// Check the number of entities
+	nDocuments, err := store.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedEntityIds.Len(), nDocuments)
+}
+
+func TestEntityIterator(t *testing.T) {
+	store := newBipartitePebbleStore(t)
+	defer cleanUpBipartitePebbleStore(t, store)
+
+	// No entities in the store
+	checkExpectedEntityIds(t, store, set.NewSet[string]())
+
+	// Add one entity
+	e1, err := NewEntity("e-1", "Person", map[string]string{})
+	assert.NoError(t, err)
+	assert.NoError(t, store.AddEntity(e1))
+
+	checkExpectedEntityIds(t, store, set.NewPopulatedSet("e-1"))
+
+	// Add another entity
+	e2, err := NewEntity("e-2", "Person", map[string]string{})
+	assert.NoError(t, err)
+	assert.NoError(t, store.AddEntity(e2))
+
+	checkExpectedEntityIds(t, store, set.NewPopulatedSet("e-1", "e-2"))
+}
