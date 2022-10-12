@@ -114,6 +114,20 @@ func TestAddBipartiteEntity(t *testing.T) {
 	eRecovered, err = store.GetEntity("e-2")
 	assert.Nil(t, eRecovered)
 	assert.Equal(t, ErrEntityNotFound, err)
+
+	// Check if the entity is in the store
+	found, err := store.HasEntity(&e1)
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	e2, err := NewEntity("e-2", "Person", map[string]string{
+		"Name": "Sally Jones",
+		"Age":  "32",
+	})
+
+	found, err = store.HasEntity(&e2)
+	assert.NoError(t, err)
+	assert.False(t, found)
 }
 
 func TestAddBipartiteDocument(t *testing.T) {
@@ -139,4 +153,18 @@ func TestAddBipartiteDocument(t *testing.T) {
 	dRecovered, err = store.GetDocument("d-2")
 	assert.Nil(t, dRecovered)
 	assert.Equal(t, ErrDocumentNotFound, err)
+
+	// Check if the store contains the document
+	found, err := store.HasDocument(&d1)
+	assert.NoError(t, err)
+	assert.True(t, found)
+
+	d2, err := NewDocument("d-2", "Source A", map[string]string{
+		"Name": "Document 2",
+		"Date": "11/10/2022",
+	})
+
+	found, err = store.HasDocument(&d2)
+	assert.NoError(t, err)
+	assert.False(t, found)
 }

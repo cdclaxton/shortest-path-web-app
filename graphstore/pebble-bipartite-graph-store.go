@@ -205,6 +205,28 @@ func (p *PebbleBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) 
 	return pebbleValueToBipartiteEntity(value)
 }
 
+func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
+
+	// Preconditions
+	if entity == nil {
+		return false, fmt.Errorf("Entity is nil")
+	}
+
+	if len(entity.Id) == 0 {
+		return false, fmt.Errorf("Entity ID is empty")
+	}
+
+	ent, err := p.GetEntity(entity.Id)
+
+	if err == ErrEntityNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return ent.Equal(entity), nil
+}
+
 // AddDocument to the store.
 func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 
@@ -249,13 +271,34 @@ func (p *PebbleBipartiteGraphStore) GetDocument(documentId string) (*Document, e
 	return pebbleValueToBipartiteDocument(value)
 }
 
+// HasDocument returns true if the store contains the document.
+func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error) {
+
+	// Preconditions
+	if document == nil {
+		return false, fmt.Errorf("Document is nil")
+	}
+
+	if len(document.Id) == 0 {
+		return false, fmt.Errorf("Empty document ID")
+	}
+
+	doc, err := p.GetDocument(document.Id)
+
+	if err == ErrDocumentNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return document.Equal(doc), nil
+}
+
 // A BipartiteGraphStore holds entities and documents.
 // type BipartiteGraphStore interface {
 // 	AddLink(Link) error                        // Add a link from an entity to a document (by ID)
 // 	Clear() error                              // Clear the store
 // 	Equal(BipartiteGraphStore) bool            // Do two stores have the same contents?
-// 	GetDocument(string) *Document              // Get a document by document ID
-// 	HasDocument(*Document) bool                // Does the graph store contain the document?
 // 	HasEntity(*Entity) bool                    // Does the graph store contain the entity?
 // 	NewDocumentIdIterator() DocumentIdIterator // Get a document ID iterator
 // 	NewEntityIdIterator() EntityIdIterator     // Get an entity ID iterator
