@@ -33,13 +33,25 @@ func buildDocuments(t *testing.T) []Document {
 func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
-	assert.Equal(t, 0, store.NumberOfEntities())
-	assert.Equal(t, 0, store.NumberOfDocuments())
+	// No entities or documents
+	nEntities, err := store.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nEntities)
 
+	nDocuments, err := store.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nDocuments)
+
+	// Add an entity
 	assert.NoError(t, store.AddEntity(entities[0]))
 
-	assert.Equal(t, 1, store.NumberOfEntities())
-	assert.Equal(t, 0, store.NumberOfDocuments())
+	nEntities, err = store.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, nEntities)
+
+	nDocuments, err = store.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nDocuments)
 
 	// Try to get the entity from the store that should exist
 	retrieved := store.GetEntity(entities[0].Id)
@@ -52,13 +64,23 @@ func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
 func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
-	assert.Equal(t, 0, store.NumberOfEntities())
-	assert.Equal(t, 0, store.NumberOfDocuments())
+	nEntities, err := store.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nEntities)
+
+	nDocuments, err := store.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nDocuments)
 
 	assert.NoError(t, store.AddDocument(documents[0]))
 
-	assert.Equal(t, 0, store.NumberOfEntities())
-	assert.Equal(t, 1, store.NumberOfDocuments())
+	nEntities, err = store.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 0, nEntities)
+
+	nDocuments, err = store.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, nDocuments)
 
 	// Try to get the document from the store that should exist
 	retrieved := store.GetDocument(documents[0].Id)
@@ -118,7 +140,8 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, store.AddDocument(documents[1]))
 
 	// Get a document ID iterator
-	it := store.NewDocumentIdIterator()
+	it, err := store.NewDocumentIdIterator()
+	assert.NoError(t, err)
 
 	// Expected document IDs
 	expectedIds := set.NewPopulatedSet("doc-1", "doc-2")
@@ -126,7 +149,9 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	// Build a set of the document IDs returned by the iterator
 	actualIds := set.NewSet[string]()
 	for it.hasNext() {
-		actualIds.Add(it.nextDocumentId())
+		docId, err := it.nextDocumentId()
+		assert.NoError(t, err)
+		actualIds.Add(docId)
 	}
 
 	// Check the document IDs are expected

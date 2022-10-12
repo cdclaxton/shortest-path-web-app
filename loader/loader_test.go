@@ -251,7 +251,9 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the entities
-	assert.Equal(t, 4, g.NumberOfEntities())
+	nEntities, err := g.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 4, nEntities)
 
 	expectedEntities := []graphstore.Entity{
 		{
@@ -293,7 +295,9 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 	}
 
 	// Check the documents
-	assert.Equal(t, 4, g.NumberOfDocuments())
+	nDocuments, err := g.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 4, nDocuments)
 
 	expectedDocuments := []graphstore.Document{
 		{

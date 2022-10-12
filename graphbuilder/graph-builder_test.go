@@ -301,7 +301,9 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 		entities, documents, links))
 
 	// Check the bipartite graph store
-	assert.True(t, expectedBipartite.Equal(graphBuilder.Bipartite))
+	eq, err := expectedBipartite.Equal(graphBuilder.Bipartite)
+	assert.NoError(t, err)
+	assert.True(t, eq)
 
 	// Check the unipartite graph
 	expectedUnipartite := graphstore.NewInMemoryUnipartiteGraphStore()

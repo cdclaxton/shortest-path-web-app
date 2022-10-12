@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -167,4 +168,79 @@ func TestAddBipartiteDocument(t *testing.T) {
 	found, err = store.HasDocument(&d2)
 	assert.NoError(t, err)
 	assert.False(t, found)
+}
+
+func TestAddLink(t *testing.T) {
+	store := newBipartitePebbleStore(t)
+	defer cleanUpBipartitePebbleStore(t, store)
+
+	// Create the entity
+	e1, err := NewEntity("e-1", "Person", map[string]string{
+		"Name": "Bob Smith",
+	})
+	assert.NoError(t, err)
+
+	// Store the entity
+	assert.NoError(t, store.AddEntity(e1))
+
+	// Create the document
+	d1, err := NewDocument("d-1", "Source A", map[string]string{
+		"Date": "12/10/2022",
+	})
+	assert.NoError(t, err)
+
+	// Store the document
+	assert.NoError(t, store.AddDocument(d1))
+
+	// Create the link
+	assert.NoError(t, store.AddLink(NewLink("e-1", "d-1")))
+
+	// Get the entity and check the link is present
+	entity1, err := store.GetEntity("e-1")
+	assert.NoError(t, err)
+	assert.True(t, entity1.LinkedDocumentIds.Equal(set.NewPopulatedSet("d-1")))
+
+	// Get the document and check the link is present
+	document1, err := store.GetDocument("d-1")
+	assert.NoError(t, err)
+	assert.True(t, document1.LinkedEntityIds.Equal(set.NewPopulatedSet("e-1")))
+}
+
+func checkExpectedDocumentIds(t *testing.T, store *PebbleBipartiteGraphStore,
+	expectedDocIds *set.Set[string]) {
+
+	// Get a document ID iterator for the store
+	iter, err := store.NewDocumentIdIterator()
+	assert.NoError(t, err)
+
+	// Get all of the document IDs
+	docIds, err := AllDocuments(iter)
+	assert.NoError(t, err)
+
+	assert.True(t, expectedDocIds.Equal(docIds))
+
+	// Check the number of documents
+	nDocuments, err := store.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDocIds.Len(), nDocuments)
+}
+
+func TestDocumentIterator(t *testing.T) {
+	store := newBipartitePebbleStore(t)
+	defer cleanUpBipartitePebbleStore(t, store)
+
+	// No documents in the store
+	checkExpectedDocumentIds(t, store, set.NewSet[string]())
+
+	// Add one document
+	d1, err := NewDocument("d-1", "Source A", map[string]string{})
+	assert.NoError(t, err)
+	assert.NoError(t, store.AddDocument(d1))
+	checkExpectedDocumentIds(t, store, set.NewPopulatedSet("d-1"))
+
+	// Add another document
+	d2, err := NewDocument("d-2", "Source A", map[string]string{})
+	assert.NoError(t, err)
+	assert.NoError(t, store.AddDocument(d2))
+	checkExpectedDocumentIds(t, store, set.NewPopulatedSet("d-1", "d-2"))
 }

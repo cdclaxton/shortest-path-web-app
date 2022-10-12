@@ -41,7 +41,7 @@ func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
 }
 
 // Equal returns true if two stores have the same contents.
-func (store *InMemoryBipartiteGraphStore) Equal(other BipartiteGraphStore) bool {
+func (store *InMemoryBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool, error) {
 	return bipartiteGraphStoresEqual(store, other)
 }
 
@@ -90,13 +90,13 @@ func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 }
 
 // NumberOfEntities in the graph store.
-func (store *InMemoryBipartiteGraphStore) NumberOfEntities() int {
-	return len(store.entities)
+func (store *InMemoryBipartiteGraphStore) NumberOfEntities() (int, error) {
+	return len(store.entities), nil
 }
 
 // NumberOfDocuments in the graph store.
-func (store *InMemoryBipartiteGraphStore) NumberOfDocuments() int {
-	return len(store.documents)
+func (store *InMemoryBipartiteGraphStore) NumberOfDocuments() (int, error) {
+	return len(store.documents), nil
 }
 
 // Clear the store
@@ -142,17 +142,17 @@ type InMemoryDocumentIterator struct {
 	currentIndex int
 }
 
-func (it *InMemoryDocumentIterator) nextDocumentId() string {
+func (it *InMemoryDocumentIterator) nextDocumentId() (string, error) {
 	currentDocumentId := it.documentIds[it.currentIndex]
 	it.currentIndex += 1
-	return currentDocumentId
+	return currentDocumentId, nil
 }
 
 func (it *InMemoryDocumentIterator) hasNext() bool {
 	return it.currentIndex < len(it.documentIds)
 }
 
-func (store *InMemoryBipartiteGraphStore) NewDocumentIdIterator() DocumentIdIterator {
+func (store *InMemoryBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator, error) {
 
 	// Create a slice of document IDs
 	documentIds := []string{}
@@ -164,7 +164,7 @@ func (store *InMemoryBipartiteGraphStore) NewDocumentIdIterator() DocumentIdIter
 	return &InMemoryDocumentIterator{
 		documentIds:  documentIds,
 		currentIndex: 0,
-	}
+	}, nil
 }
 
 type InMemoryEntityIterator struct {
@@ -172,17 +172,17 @@ type InMemoryEntityIterator struct {
 	currentIndex int
 }
 
-func (it *InMemoryEntityIterator) nextEntityId() string {
+func (it *InMemoryEntityIterator) nextEntityId() (string, error) {
 	currentEntityId := it.entityIds[it.currentIndex]
 	it.currentIndex += 1
-	return currentEntityId
+	return currentEntityId, nil
 }
 
 func (it *InMemoryEntityIterator) hasNext() bool {
 	return it.currentIndex < len(it.entityIds)
 }
 
-func (store *InMemoryBipartiteGraphStore) NewEntityIdIterator() EntityIdIterator {
+func (store *InMemoryBipartiteGraphStore) NewEntityIdIterator() (EntityIdIterator, error) {
 
 	// Create a slice of entity IDs
 	entityIds := []string{}
@@ -194,5 +194,5 @@ func (store *InMemoryBipartiteGraphStore) NewEntityIdIterator() EntityIdIterator
 	return &InMemoryEntityIterator{
 		entityIds:    entityIds,
 		currentIndex: 0,
-	}
+	}, nil
 }

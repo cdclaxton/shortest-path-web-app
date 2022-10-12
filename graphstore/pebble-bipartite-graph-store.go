@@ -294,14 +294,162 @@ func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error
 	return document.Equal(doc), nil
 }
 
+// AddLink between an entity and a document (by ID).
+func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
+
+	// Preconditions
+	if len(link.EntityId) == 0 {
+		return fmt.Errorf("Entity ID is empty")
+	} else if len(link.DocumentId) == 0 {
+		return fmt.Errorf("Document ID is empty")
+	}
+
+	// Get the document from the store
+	document, err := p.GetDocument(link.DocumentId)
+	if err != nil {
+		return err
+	}
+
+	// Get the entity from the store
+	entity, err := p.GetEntity(link.EntityId)
+	if err != nil {
+		return err
+	}
+
+	// Add the link from the entity to the document
+	document.AddEntity(link.EntityId)
+
+	// Add the link from the document to the entity
+	entity.AddDocument(link.DocumentId)
+
+	// Store the modified entity
+	if err := p.AddEntity(*entity); err != nil {
+		return err
+	}
+
+	// Store the modified document
+	if err := p.AddDocument(*document); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func makePebbleKeyUpperBound(b []byte) []byte {
+	end := make([]byte, len(b))
+	copy(end, b)
+	for i := len(end) - 1; i >= 0; i-- {
+		end[i] = end[i] + 1
+		if end[i] != 0 {
+			return end[:i+1]
+		}
+	}
+	return nil // no upper-bound
+}
+
+func makePebblePrefixIterOptions(prefix []byte) *pebble.IterOptions {
+	return &pebble.IterOptions{
+		LowerBound: prefix,
+		UpperBound: makePebbleKeyUpperBound(prefix),
+	}
+}
+
+type PebbleDocumentIterator struct {
+	iter      *pebble.Iterator
+	currentId string
+	hasNextId bool
+}
+
+func (it *PebbleDocumentIterator) nextDocumentId() (string, error) {
+
+	// Is there another entry in the Pebble iterator?
+	isNext := it.iter.Next()
+
+	var err error
+	var nextDocumentId string
+
+	// If there aren't any more documents, close the iterator
+	if !isNext {
+		err = it.close()
+		it.hasNextId = false
+	} else {
+		it.hasNextId = true
+		key := it.iter.Key() // Next Pebble key
+		nextDocumentId, err = pebbleKeyToBipartiteDocumentId(key)
+	}
+
+	toReturn := it.currentId
+	it.currentId = nextDocumentId
+
+	return toReturn, err
+}
+
+func (it *PebbleDocumentIterator) hasNext() bool {
+	return it.hasNextId
+}
+
+func (it *PebbleDocumentIterator) close() error {
+	if it.iter != nil {
+		return it.iter.Close()
+	}
+	return nil
+}
+
+// NewDocumentIdIterator returns a document ID iterator.
+func (p *PebbleBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator, error) {
+
+	documentKey := []byte(documentKeyPrefix)
+	iter := p.db.NewIter(makePebblePrefixIterOptions(documentKey))
+	iter.First()
+
+	var docId string
+	var err error
+
+	documentIdIterator := PebbleDocumentIterator{
+		iter: iter,
+	}
+
+	if iter.Valid() {
+		pebbleKey := iter.Key()
+		docId, err = pebbleKeyToBipartiteDocumentId(pebbleKey)
+
+		documentIdIterator.currentId = docId
+		documentIdIterator.hasNextId = true
+	} else {
+		documentIdIterator.hasNextId = false
+		err = documentIdIterator.close()
+	}
+
+	if err != nil {
+		documentIdIterator.close()
+	}
+
+	return &documentIdIterator, err
+}
+
+func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
+	nEntities := 0
+
+	iter, err := p.NewDocumentIdIterator()
+	if err != nil {
+		return 0, err
+	}
+
+	for iter.hasNext() {
+		_, err := iter.nextDocumentId()
+		if err != nil {
+			return 0, err
+		}
+		nEntities += 1
+	}
+
+	return nEntities, nil
+}
+
 // A BipartiteGraphStore holds entities and documents.
 // type BipartiteGraphStore interface {
-// 	AddLink(Link) error                        // Add a link from an entity to a document (by ID)
 // 	Clear() error                              // Clear the store
 // 	Equal(BipartiteGraphStore) bool            // Do two stores have the same contents?
-// 	HasEntity(*Entity) bool                    // Does the graph store contain the entity?
-// 	NewDocumentIdIterator() DocumentIdIterator // Get a document ID iterator
 // 	NewEntityIdIterator() EntityIdIterator     // Get an entity ID iterator
 // 	NumberOfEntities() int                     // Number of entities in the store
-// 	NumberOfDocuments() int                    // Number of documents in the store
-// }
+// 	}

@@ -14,12 +14,18 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 	skipEntities *set.Set[string]) error {
 
 	// Iterator to retrieve documents from the bipartite graph store
-	it := bi.NewDocumentIdIterator()
+	it, err := bi.NewDocumentIdIterator()
+	if err != nil {
+		return err
+	}
 
 	for it.hasNext() {
 
 		// Get the next document ID
-		docId := it.nextDocumentId()
+		docId, err := it.nextDocumentId()
+		if err != nil {
+			return err
+		}
 
 		// Get the document given its ID
 		doc := bi.GetDocument(docId)
