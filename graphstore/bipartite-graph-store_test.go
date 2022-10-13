@@ -30,7 +30,7 @@ func buildDocuments(t *testing.T) []Document {
 	return []Document{d1, d2}
 }
 
-func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
+func addSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
 	// No entities or documents
@@ -64,7 +64,7 @@ func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.Nil(t, retrieved)
 }
 
-func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
+func addSingleDocument(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
 	nEntities, err := store.NumberOfEntities()
@@ -96,7 +96,7 @@ func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
 	assert.Nil(t, retrieved)
 }
 
-func AddLink(t *testing.T, store BipartiteGraphStore) {
+func addLink(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 	documents := buildDocuments(t)
 
@@ -119,7 +119,7 @@ func AddLink(t *testing.T, store BipartiteGraphStore) {
 	assert.True(t, d0.HasEntity(e0.Id))
 }
 
-func AddDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
+func addDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
 	assert.NoError(t, store.AddEntity(entities[0]))
@@ -130,7 +130,7 @@ func AddDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, store.AddEntity(entities[1]))
 }
 
-func AddDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
+func addDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
 	assert.NoError(t, store.AddDocument(documents[0]))
@@ -159,7 +159,7 @@ func checkAllDocumentIds(t *testing.T, store BipartiteGraphStore, expected *set.
 	assert.True(t, expected.Equal(&actual))
 }
 
-func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
+func documentIterator(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
 	// No documents in the store
@@ -196,7 +196,7 @@ func checkAllEntityIds(t *testing.T, store BipartiteGraphStore, expected *set.Se
 	assert.True(t, expected.Equal(&actual))
 }
 
-func EntityIterator(t *testing.T, store BipartiteGraphStore) {
+func entityIterator(t *testing.T, store BipartiteGraphStore) {
 	entities := buildEntities(t)
 
 	// No entities in the store
@@ -232,25 +232,25 @@ func TestInMemoryGraphStore(t *testing.T) {
 	for _, gs := range graphStores {
 
 		gs = NewInMemoryBipartiteGraphStore()
-		AddSingleEntity(t, gs)
+		addSingleEntity(t, gs)
 
 		gs.Clear()
-		AddSingleDocument(t, gs)
+		addSingleDocument(t, gs)
 
 		gs.Clear()
-		AddLink(t, gs)
+		addLink(t, gs)
 
 		gs.Clear()
-		AddDuplicateEntity(t, gs)
+		addDuplicateEntity(t, gs)
 
 		gs.Clear()
-		AddDuplicateDocument(t, gs)
+		addDuplicateDocument(t, gs)
 
 		gs.Clear()
-		DocumentIterator(t, gs)
+		documentIterator(t, gs)
 
 		gs.Clear()
-		EntityIterator(t, gs)
+		entityIterator(t, gs)
 	}
 
 }
