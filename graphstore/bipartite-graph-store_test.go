@@ -141,29 +141,78 @@ func AddDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, store.AddDocument(documents[1]))
 }
 
+func checkAllDocumentIds(t *testing.T, store BipartiteGraphStore, expected *set.Set[string]) {
+
+	iter, err := store.NewDocumentIdIterator()
+	assert.NoError(t, err)
+
+	// Set of all document IDs
+	actual := *set.NewSet[string]()
+
+	for iter.hasNext() {
+		id, err := iter.nextDocumentId()
+		assert.NoError(t, err)
+		actual.Add(id)
+	}
+
+	// Check the document IDs
+	assert.True(t, expected.Equal(&actual))
+}
+
 func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 	documents := buildDocuments(t)
 
-	assert.NoError(t, store.AddDocument(documents[0]))
-	assert.NoError(t, store.AddDocument(documents[1]))
+	// No documents in the store
+	checkAllDocumentIds(t, store, set.NewSet[string]())
 
-	// Get a document ID iterator
-	it, err := store.NewDocumentIdIterator()
+	// One document
+	assert.NoError(t, store.AddDocument(documents[0]))
+	checkAllDocumentIds(t, store, set.NewPopulatedSet("doc-1"))
+
+	// Two documents
+	assert.NoError(t, store.AddDocument(documents[1]))
+	checkAllDocumentIds(t, store, set.NewPopulatedSet("doc-1", "doc-2"))
+
+	// Add a duplicate document
+	assert.NoError(t, store.AddDocument(documents[1]))
+	checkAllDocumentIds(t, store, set.NewPopulatedSet("doc-1", "doc-2"))
+}
+
+func checkAllEntityIds(t *testing.T, store BipartiteGraphStore, expected *set.Set[string]) {
+
+	iter, err := store.NewEntityIdIterator()
 	assert.NoError(t, err)
 
-	// Expected document IDs
-	expectedIds := set.NewPopulatedSet("doc-1", "doc-2")
+	// Set of all entity IDs
+	actual := *set.NewSet[string]()
 
-	// Build a set of the document IDs returned by the iterator
-	actualIds := set.NewSet[string]()
-	for it.hasNext() {
-		docId, err := it.nextDocumentId()
+	for iter.hasNext() {
+		id, err := iter.nextEntityId()
 		assert.NoError(t, err)
-		actualIds.Add(docId)
+		actual.Add(id)
 	}
 
-	// Check the document IDs are expected
-	assert.True(t, expectedIds.Equal(actualIds))
+	// Check the entity IDs
+	assert.True(t, expected.Equal(&actual))
+}
+
+func EntityIterator(t *testing.T, store BipartiteGraphStore) {
+	entities := buildEntities(t)
+
+	// No entities in the store
+	checkAllEntityIds(t, store, set.NewSet[string]())
+
+	// Add one entity
+	assert.NoError(t, store.AddEntity(entities[0]))
+	checkAllEntityIds(t, store, set.NewPopulatedSet("e-1"))
+
+	// Add another entity
+	assert.NoError(t, store.AddEntity(entities[1]))
+	checkAllEntityIds(t, store, set.NewPopulatedSet("e-1", "e-2"))
+
+	// Add a duplicate entity
+	assert.NoError(t, store.AddEntity(entities[1]))
+	checkAllEntityIds(t, store, set.NewPopulatedSet("e-1", "e-2"))
 }
 
 func TestInMemoryGraphStore(t *testing.T) {
@@ -199,6 +248,9 @@ func TestInMemoryGraphStore(t *testing.T) {
 
 		gs.Clear()
 		DocumentIterator(t, gs)
+
+		gs.Clear()
+		EntityIterator(t, gs)
 	}
 
 }
