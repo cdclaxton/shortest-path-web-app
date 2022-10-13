@@ -28,7 +28,10 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 		}
 
 		// Get the document given its ID
-		doc := bi.GetDocument(docId)
+		doc, err := bi.GetDocument(docId)
+		if err != nil {
+			return err
+		}
 		if doc == nil {
 			return fmt.Errorf("Document doesn't exist with ID: %v", docId)
 		}

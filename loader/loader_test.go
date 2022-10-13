@@ -291,7 +291,9 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 	}
 
 	for _, expectedEntity := range expectedEntities {
-		assert.True(t, g.HasEntity(&expectedEntity))
+		present, err := g.HasEntity(&expectedEntity)
+		assert.NoError(t, err)
+		assert.True(t, present)
 	}
 
 	// Check the documents
@@ -339,6 +341,8 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 	}
 
 	for _, expectedDocument := range expectedDocuments {
-		assert.True(t, g.HasDocument(&expectedDocument))
+		found, err := g.HasDocument(&expectedDocument)
+		assert.NoError(t, err)
+		assert.True(t, found)
 	}
 }

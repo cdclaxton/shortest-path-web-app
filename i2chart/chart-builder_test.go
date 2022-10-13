@@ -129,9 +129,12 @@ func TestDocumentsLinkingEntities(t *testing.T) {
 	for _, testCase := range testCases {
 
 		// Get the entities from the bipartite store
-		entity1 := bipartite.GetEntity(testCase.entityId1)
+		entity1, err := bipartite.GetEntity(testCase.entityId1)
+		assert.NoError(t, err)
+
 		assert.NotNil(t, entity1)
-		entity2 := bipartite.GetEntity(testCase.entityId2)
+		entity2, err := bipartite.GetEntity(testCase.entityId2)
+		assert.NoError(t, err)
 		assert.NotNil(t, entity2)
 
 		actualDocs, err := documentsLinkingEntities(entity1, entity2, bipartite)
@@ -255,9 +258,12 @@ func TestMakeLinkLabel(t *testing.T) {
 	for _, testCase := range testCases {
 
 		// Get the entities
-		entity1 := bipartite.GetEntity(testCase.entityId1)
+		entity1, err := bipartite.GetEntity(testCase.entityId1)
+		assert.NoError(t, err)
 		assert.NotNil(t, entity1)
-		entity2 := bipartite.GetEntity(testCase.entityId2)
+
+		entity2, err := bipartite.GetEntity(testCase.entityId2)
+		assert.NoError(t, err)
 		assert.NotNil(t, entity2)
 
 		// Make the link label

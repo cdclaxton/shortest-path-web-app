@@ -21,20 +21,30 @@ type EntityIdIterator interface {
 
 // A BipartiteGraphStore holds entities and documents.
 type BipartiteGraphStore interface {
-	AddEntity(Entity) error                             // Add an entity to the store
-	AddDocument(Document) error                         // Add a document to the store
+	AddEntity(Entity) error                             // Add (or update) an entity to the store
+	AddDocument(Document) error                         // Add (or update) a document to the store
 	AddLink(Link) error                                 // Add a link from an entity to a document (by ID)
 	Clear() error                                       // Clear the store
 	Equal(BipartiteGraphStore) (bool, error)            // Do two stores have the same contents?
-	GetEntity(string) *Entity                           // Get an entity by entity ID
-	GetDocument(string) *Document                       // Get a document by document ID
-	HasDocument(*Document) bool                         // Does the graph store contain the document?
-	HasEntity(*Entity) bool                             // Does the graph store contain the entity?
+	GetEntity(string) (*Entity, error)                  // Get an entity given its entity ID
+	GetDocument(string) (*Document, error)              // Get a document given its document ID
+	HasDocument(*Document) (bool, error)                // Does the graph store contain the document?
+	HasEntity(*Entity) (bool, error)                    // Does the graph store contain the entity?
 	NewDocumentIdIterator() (DocumentIdIterator, error) // Get a document ID iterator
 	NewEntityIdIterator() (EntityIdIterator, error)     // Get an entity ID iterator
 	NumberOfEntities() (int, error)                     // Number of entities in the store
 	NumberOfDocuments() (int, error)                    // Number of documents in the store
 }
+
+// Error constants
+var (
+	ErrEntityNotFound    = fmt.Errorf("Entity not found in bipartite store")
+	ErrDocumentNotFound  = fmt.Errorf("Document not found in bipartite store")
+	ErrEntityIsNil       = fmt.Errorf("Entity is nil")               // Entity pointer is nil
+	ErrDocumentIsNil     = fmt.Errorf("Document is nil")             // Document pointer is nil
+	ErrEntityIdIsEmpty   = fmt.Errorf("Entity ID has length zero")   // Empty string
+	ErrDocumentIdIsEmpty = fmt.Errorf("Document ID has length zero") // Empty string
+)
 
 // BulkLoadBipartiteGraphStore given entities, documents and links.
 func BulkLoadBipartiteGraphStore(graph BipartiteGraphStore, entities []Entity,
@@ -80,10 +90,17 @@ func equalEntities(ref BipartiteGraphStore, test BipartiteGraphStore) (bool, err
 		log.Debug().Str("Component", "GraphStore").Msgf("Checking entity %v", entityId)
 
 		// Get the entity from the reference store
-		refEntity := ref.GetEntity(entityId)
+		refEntity, err := ref.GetEntity(entityId)
+		if err != nil {
+			return false, err
+		}
 
 		// Does the test store contain the entity with the required ID?
-		testEntity := test.GetEntity(entityId)
+		testEntity, err := test.GetEntity(entityId)
+		if err != nil {
+			return false, err
+		}
+
 		if testEntity == nil {
 			log.Debug().Str("Component", "GraphStore").Msgf("Failed to find entity %v", entityId)
 			return false, nil
@@ -119,10 +136,17 @@ func equalDocuments(ref BipartiteGraphStore, test BipartiteGraphStore) (bool, er
 		}
 
 		// Get the document from the reference store
-		refDocument := ref.GetDocument(documentId)
+		refDocument, err := ref.GetDocument(documentId)
+		if err != nil {
+			return false, err
+		}
 
 		// Does the test store contain the entity with the required ID?
-		testDocument := test.GetDocument(documentId)
+		testDocument, err := test.GetDocument(documentId)
+		if err != nil {
+			return false, err
+		}
+
 		if testDocument == nil {
 			return false, nil
 		}
@@ -189,7 +213,7 @@ func attributesEqual(m1 map[string]string, m2 map[string]string) bool {
 	return true
 }
 
-// AllDocuments available in the iterator.
+// AllDocuments returns all documents available in the iterator.
 func AllDocuments(iter DocumentIdIterator) (*set.Set[string], error) {
 
 	// Preconditions
@@ -210,7 +234,7 @@ func AllDocuments(iter DocumentIdIterator) (*set.Set[string], error) {
 	return ids, nil
 }
 
-// AllEntities available in the iterator.
+// AllEntities returns all entities available in the iterator.
 func AllEntities(iter EntityIdIterator) (*set.Set[string], error) {
 
 	// Preconditions

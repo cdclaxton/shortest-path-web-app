@@ -189,7 +189,11 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 	// Documents in common given their IDs
 	docs := []*graphstore.Document{}
 	for _, docId := range docsInCommon.ToSlice() {
-		doc := bipartite.GetDocument(docId)
+		doc, err := bipartite.GetDocument(docId)
+		if err != nil {
+			return nil, err
+		}
+
 		if doc == nil {
 			return nil, fmt.Errorf("Unable to get document with ID %v", docId)
 		}
@@ -299,12 +303,18 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 	}
 
 	// Get the entities from the store
-	entity1 := i.bipartite.GetEntity(entityId1)
+	entity1, err := i.bipartite.GetEntity(entityId1)
+	if err != nil {
+		return nil, err
+	}
 	if entity1 == nil {
 		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId1)
 	}
 
-	entity2 := i.bipartite.GetEntity(entityId2)
+	entity2, err := i.bipartite.GetEntity(entityId2)
+	if err != nil {
+		return nil, err
+	}
 	if entity2 == nil {
 		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId2)
 	}

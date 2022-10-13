@@ -1,7 +1,5 @@
 package graphstore
 
-import "fmt"
-
 type InMemoryBipartiteGraphStore struct {
 	entities  map[string]Entity   // Entity ID to Entity mapping
 	documents map[string]Document // Document ID to Document mapping
@@ -14,26 +12,16 @@ func NewInMemoryBipartiteGraphStore() *InMemoryBipartiteGraphStore {
 	}
 }
 
-// AddEntity to the in-memory graph store.
+// AddEntity to the in-memory graph store (replaces the existing entity if the ID already exists).
 func (store *InMemoryBipartiteGraphStore) AddEntity(entity Entity) error {
-
-	// Check whether the entity already exists in the store
-	if _, found := store.entities[entity.Id]; found {
-		return fmt.Errorf("Entity %v already exists", entity.Id)
-	}
 
 	// Store the entity against its entity ID
 	store.entities[entity.Id] = entity
 	return nil
 }
 
-// AddDocument to the in-memory graph store.
+// AddDocument to the in-memory graph store (replaces the existing document if the ID already exists).
 func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
-
-	// Check whether the document already exists in the store
-	if _, found := store.documents[document.Id]; found {
-		return fmt.Errorf("Document %v already exists", document.Id)
-	}
 
 	// Store the document against its ID
 	store.documents[document.Id] = document
@@ -46,40 +34,46 @@ func (store *InMemoryBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool
 }
 
 // GetEntity given its ID.
-func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) *Entity {
+func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) {
 
 	entity, found := store.entities[entityId]
 
 	if found {
-		return &entity
+		return &entity, nil
 	}
-	return nil
+	return nil, nil
 }
 
 // GetDocument given its ID.
-func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) *Document {
+func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) (*Document, error) {
 
 	document, found := store.documents[documentId]
 
 	if found {
-		return &document
+		return &document, nil
 	}
-	return nil
+	return nil, ErrDocumentNotFound
 }
 
 // AddLink from an entity to a document.
 func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 
 	// Get the entity from the store
-	entity := store.GetEntity(link.EntityId)
+	entity, err := store.GetEntity(link.EntityId)
+	if err != nil {
+		return err
+	}
 	if entity == nil {
-		return fmt.Errorf("Entity with ID %v could not be found", link.EntityId)
+		return ErrEntityNotFound
 	}
 
 	// Get the document from the store
-	document := store.GetDocument(link.DocumentId)
+	document, err := store.GetDocument(link.DocumentId)
+	if err != nil {
+		return err
+	}
 	if document == nil {
-		return fmt.Errorf("Document with ID %v could not be found", link.DocumentId)
+		return ErrDocumentNotFound
 	}
 
 	// Make the connections
@@ -99,7 +93,7 @@ func (store *InMemoryBipartiteGraphStore) NumberOfDocuments() (int, error) {
 	return len(store.documents), nil
 }
 
-// Clear the store
+// Clear the store.
 func (store *InMemoryBipartiteGraphStore) Clear() error {
 
 	store.entities = map[string]Entity{}
@@ -109,29 +103,35 @@ func (store *InMemoryBipartiteGraphStore) Clear() error {
 }
 
 // HasDocument returns true if the graph store contains the document.
-func (store *InMemoryBipartiteGraphStore) HasDocument(document *Document) bool {
+func (store *InMemoryBipartiteGraphStore) HasDocument(document *Document) (bool, error) {
 
 	// Try to retrieve the document from the graph store
-	retrieved := store.GetDocument(document.Id)
+	retrieved, err := store.GetDocument(document.Id)
+	if err != nil {
+		return false, err
+	}
 	if retrieved == nil {
-		return false
+		return false, nil
 	}
 
 	// Check the document matches
-	return document.Equal(retrieved)
+	return document.Equal(retrieved), nil
 }
 
 // Does the graph store contain the entity?
-func (store *InMemoryBipartiteGraphStore) HasEntity(entity *Entity) bool {
+func (store *InMemoryBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 
 	// Try to retrieve the entity from the graph store
-	retrieved := store.GetEntity(entity.Id)
+	retrieved, err := store.GetEntity(entity.Id)
+	if err != nil {
+		return false, err
+	}
 	if retrieved == nil {
-		return false
+		return false, nil
 	}
 
 	// Check the entity matches
-	return entity.Equal(retrieved)
+	return entity.Equal(retrieved), nil
 }
 
 // An InMemoryDocumentIterator walks through all of the IDs of the documents held

@@ -130,6 +130,7 @@ func pebbleKeyToBipartiteDocumentId(value []byte) (string, error) {
 	return keyString[1:], nil
 }
 
+// bipartiteDocumentToPebbleValue converts a document to a Pebble value.
 func bipartiteDocumentToPebbleValue(document *Document) ([]byte, error) {
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
@@ -160,7 +161,7 @@ func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 
 	// Preconditions
 	if len(entity.Id) == 0 {
-		return fmt.Errorf("Entity ID is empty")
+		return ErrEntityIdIsEmpty
 	}
 
 	// Pebble key for the entity
@@ -175,16 +176,11 @@ func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 	return p.db.Set(pebbleKey, pebbleValue, pebble.Sync)
 }
 
-var (
-	ErrEntityNotFound   = fmt.Errorf("Entity not found")
-	ErrDocumentNotFound = fmt.Errorf("Document not found")
-)
-
 func (p *PebbleBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) {
 
 	// Preconditions
 	if len(entityId) == 0 {
-		return nil, fmt.Errorf("Empty entity ID")
+		return nil, ErrEntityIdIsEmpty
 	}
 
 	value, closer, err := p.db.Get(bipartiteEntityIdToPebbleKey(entityId))
@@ -209,11 +205,11 @@ func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 
 	// Preconditions
 	if entity == nil {
-		return false, fmt.Errorf("Entity is nil")
+		return false, ErrEntityIsNil
 	}
 
 	if len(entity.Id) == 0 {
-		return false, fmt.Errorf("Entity ID is empty")
+		return false, ErrEntityIdIsEmpty
 	}
 
 	ent, err := p.GetEntity(entity.Id)
@@ -232,7 +228,7 @@ func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 
 	// Preconditions
 	if len(document.Id) == 0 {
-		return fmt.Errorf("Document has an empty ID")
+		return ErrEntityIdIsEmpty
 	}
 
 	pebbleKey := bipartiteDocumentIdToPebbleKey(document.Id)
@@ -250,7 +246,7 @@ func (p *PebbleBipartiteGraphStore) GetDocument(documentId string) (*Document, e
 
 	// Preconditions
 	if len(documentId) == 0 {
-		return nil, fmt.Errorf("Document ID is empty")
+		return nil, ErrDocumentIdIsEmpty
 	}
 
 	value, closer, err := p.db.Get(bipartiteDocumentIdToPebbleKey(documentId))
@@ -276,11 +272,11 @@ func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error
 
 	// Preconditions
 	if document == nil {
-		return false, fmt.Errorf("Document is nil")
+		return false, ErrDocumentIsNil
 	}
 
 	if len(document.Id) == 0 {
-		return false, fmt.Errorf("Empty document ID")
+		return false, ErrDocumentIdIsEmpty
 	}
 
 	doc, err := p.GetDocument(document.Id)
@@ -299,9 +295,9 @@ func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
 
 	// Preconditions
 	if len(link.EntityId) == 0 {
-		return fmt.Errorf("Entity ID is empty")
+		return ErrEntityIdIsEmpty
 	} else if len(link.DocumentId) == 0 {
-		return fmt.Errorf("Document ID is empty")
+		return ErrDocumentIdIsEmpty
 	}
 
 	// Get the document from the store
@@ -538,8 +534,27 @@ func (p *PebbleBipartiteGraphStore) NumberOfEntities() (int, error) {
 	return nEntities, nil
 }
 
-// A BipartiteGraphStore holds entities and documents.
-// type BipartiteGraphStore interface {
-// 	Clear() error                              // Clear the store
-// 	Equal(BipartiteGraphStore) bool            // Do two stores have the same contents?
-// 	}
+// Equal returns true if two stores have the same contents.
+func (p *PebbleBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool, error) {
+	return bipartiteGraphStoresEqual(p, other)
+}
+
+// Clear the store.
+func (p *PebbleBipartiteGraphStore) Clear() error {
+
+	var deleteError error
+
+	// As soon as there is an error when deleting a key, stop the iteration
+	// close the iterator (to prevent a memory leak) and return
+	iter := p.db.NewIter(nil)
+	for iter.First(); iter.Valid() && deleteError == nil; iter.Next() {
+		key := iter.Key()
+		deleteError = p.db.Delete(key, pebble.Sync)
+	}
+
+	if err := iter.Close(); err != nil {
+		return err
+	}
+
+	return deleteError
+}

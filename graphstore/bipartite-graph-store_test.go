@@ -54,11 +54,14 @@ func AddSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.Equal(t, 0, nDocuments)
 
 	// Try to get the entity from the store that should exist
-	retrieved := store.GetEntity(entities[0].Id)
+	retrieved, err := store.GetEntity(entities[0].Id)
+	assert.NoError(t, err)
 	assert.True(t, entities[0].Equal(retrieved))
 
 	// Try to get an entity that shouldn't exist
-	assert.Nil(t, store.GetEntity("unknown"))
+	retrieved, err = store.GetEntity("unknown")
+	assert.NoError(t, err)
+	assert.Nil(t, retrieved)
 }
 
 func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
@@ -83,11 +86,14 @@ func AddSingleDocument(t *testing.T, store BipartiteGraphStore) {
 	assert.Equal(t, 1, nDocuments)
 
 	// Try to get the document from the store that should exist
-	retrieved := store.GetDocument(documents[0].Id)
+	retrieved, err := store.GetDocument(documents[0].Id)
+	assert.NoError(t, err)
 	assert.True(t, documents[0].Equal(retrieved))
 
 	// Try to get a document that shouldn't exist
-	assert.Nil(t, store.GetDocument("unknown"))
+	retrieved, err = store.GetDocument("unknown")
+	assert.Equal(t, ErrDocumentNotFound, err)
+	assert.Nil(t, retrieved)
 }
 
 func AddLink(t *testing.T, store BipartiteGraphStore) {
@@ -101,10 +107,12 @@ func AddLink(t *testing.T, store BipartiteGraphStore) {
 
 	assert.NoError(t, store.AddLink(l))
 
-	e0 := store.GetEntity(entities[0].Id)
+	e0, err := store.GetEntity(entities[0].Id)
+	assert.NoError(t, err)
 	assert.NotNil(t, e0)
 
-	d0 := store.GetDocument(documents[0].Id)
+	d0, err := store.GetDocument(documents[0].Id)
+	assert.NoError(t, err)
 	assert.NotNil(t, d0)
 
 	assert.True(t, e0.HasDocument(d0.Id))
@@ -117,9 +125,9 @@ func AddDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, store.AddEntity(entities[0]))
 	assert.NoError(t, store.AddEntity(entities[1]))
 
-	// Try to add the entities again
-	assert.Error(t, store.AddEntity(entities[0]))
-	assert.Error(t, store.AddEntity(entities[1]))
+	// Try to add the entities again (they will be overwritten)
+	assert.NoError(t, store.AddEntity(entities[0]))
+	assert.NoError(t, store.AddEntity(entities[1]))
 }
 
 func AddDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
@@ -128,9 +136,9 @@ func AddDuplicateDocument(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, store.AddDocument(documents[0]))
 	assert.NoError(t, store.AddDocument(documents[1]))
 
-	// Try to add the documents again
-	assert.Error(t, store.AddDocument(documents[0]))
-	assert.Error(t, store.AddDocument(documents[1]))
+	// Try to add the documents again (they will be overwritten)
+	assert.NoError(t, store.AddDocument(documents[0]))
+	assert.NoError(t, store.AddDocument(documents[1]))
 }
 
 func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
@@ -160,21 +168,37 @@ func DocumentIterator(t *testing.T, store BipartiteGraphStore) {
 
 func TestInMemoryGraphStore(t *testing.T) {
 
-	gs := NewInMemoryBipartiteGraphStore()
-	AddSingleEntity(t, gs)
+	// Make the in-memory graph store
+	inMemoryGraphStore := NewInMemoryBipartiteGraphStore()
 
-	gs.Clear()
-	AddSingleDocument(t, gs)
+	// Make the Pebble graph store
+	pebbleGraphStore := newBipartitePebbleStore(t)
+	defer cleanUpBipartitePebbleStore(t, pebbleGraphStore)
 
-	gs.Clear()
-	AddLink(t, gs)
+	graphStores := []BipartiteGraphStore{
+		inMemoryGraphStore,
+		pebbleGraphStore,
+	}
 
-	gs.Clear()
-	AddDuplicateEntity(t, gs)
+	for _, gs := range graphStores {
 
-	gs.Clear()
-	AddDuplicateDocument(t, gs)
+		gs = NewInMemoryBipartiteGraphStore()
+		AddSingleEntity(t, gs)
 
-	gs.Clear()
-	DocumentIterator(t, gs)
+		gs.Clear()
+		AddSingleDocument(t, gs)
+
+		gs.Clear()
+		AddLink(t, gs)
+
+		gs.Clear()
+		AddDuplicateEntity(t, gs)
+
+		gs.Clear()
+		AddDuplicateDocument(t, gs)
+
+		gs.Clear()
+		DocumentIterator(t, gs)
+	}
+
 }
