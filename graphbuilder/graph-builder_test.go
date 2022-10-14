@@ -340,7 +340,7 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 		assert.True(t, equal)
 
 		// Destroy the graph databases
-		graphBuilder.Destory()
+		graphBuilder.Destroy()
 	}
 
 }

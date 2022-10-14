@@ -235,7 +235,7 @@ func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 }
 
 // Destroy the unipartite and bipartite graphs.
-func (gb *GraphBuilder) Destory() error {
+func (gb *GraphBuilder) Destroy() error {
 	err := gb.Unipartite.Destroy()
 	if err != nil {
 		return err
