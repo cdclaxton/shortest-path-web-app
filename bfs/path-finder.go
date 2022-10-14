@@ -183,7 +183,7 @@ func (n *NetworkConnections) AddPaths(entity1 string, entity1Set string,
 	n.Connections[entity1][entity2] = paths
 }
 
-// findAllPathsWithResilience to missing root and goal vertices.
+// findAllPathsWithResilience to (potentially missing) root and goal vertices.
 func (p *PathFinder) findAllPathsWithResilience(root string, goal string,
 	maxHops int) ([]Path, error) {
 

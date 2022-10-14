@@ -87,8 +87,10 @@ func treeNodesToPaths(nodes []*TreeNode) []Path {
 	return paths
 }
 
-const RootVertexNotFoundError = "Root vertex not found"
-const GoalVertexNotFoundError = "Goal vertex not found"
+const (
+	RootVertexNotFoundError = "Root vertex not found"
+	GoalVertexNotFoundError = "Goal vertex not found"
+)
 
 // AllPaths from a root vertex to a goal vertex up to a maximum depth.
 //
