@@ -402,9 +402,28 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 	// Add the header row
 	rows = append(rows, header(i.config.Columns))
 
-	// Walk though each set of connected entities
-	for _, destinationsPaths := range conns.Connections {
-		for _, paths := range destinationsPaths {
+	// To ensure the output is always in the same order, the connections need sorting, otherwise
+	// tests can fail occasionally
+	sourceVertices := maps.Keys(conns.Connections)
+	sort.Strings(sourceVertices)
+
+	for _, sourceVertex := range sourceVertices {
+
+		// Sort the destination vertices
+		destinationVertices := maps.Keys(conns.Connections[sourceVertex])
+		sort.Strings(destinationVertices)
+
+		for _, destinationVertex := range destinationVertices {
+
+			// Sort the paths
+			paths := conns.Connections[sourceVertex][destinationVertex]
+
+			sort.Slice(paths, func(i, j int) bool {
+				pi := paths[i].Start() + "->" + paths[i].End()
+				pj := paths[j].Start() + "->" + paths[j].End()
+				return pi < pj
+			})
+
 			for _, path := range paths {
 
 				// Check the path is valid
@@ -452,6 +471,7 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 					i2Graph.AddUndirected(src, dst)
 				}
 			}
+
 		}
 	}
 
