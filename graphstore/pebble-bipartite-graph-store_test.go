@@ -1,7 +1,6 @@
 package graphstore
 
 import (
-	"os"
 	"testing"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -88,8 +87,7 @@ func newBipartitePebbleStore(t *testing.T) *PebbleBipartiteGraphStore {
 }
 
 func cleanUpBipartitePebbleStore(t *testing.T, store *PebbleBipartiteGraphStore) {
-	assert.NoError(t, store.Close())
-	assert.NoError(t, os.RemoveAll(store.folder))
+	assert.NoError(t, store.Destroy())
 }
 
 func TestAddBipartiteEntity(t *testing.T) {

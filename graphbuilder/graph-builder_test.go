@@ -170,19 +170,8 @@ func TestMakePathsRelativeToConfig(t *testing.T) {
 		graphConfig.Data.SkipEntitiesFile)
 }
 
-func TestGraphBuilderValidConfig(t *testing.T) {
-
-	// Read the JSON config file
-	filepath := "../test-data-sets/set-0/config.json"
-	graphConfig, err := readGraphConfig(filepath)
-	assert.NoError(t, err)
-
-	// Modify the data file paths to be based on the location of the config.json file
-	makePathsRelativeToConfig(filepath, graphConfig)
-
-	// Instantiate the graph builder
-	graphBuilder, err := NewGraphBuilder(*graphConfig)
-	assert.NoError(t, err)
+// buildExpectedBipartiteStore for sets 0 and 2
+func buildExpectedBipartiteStore(t *testing.T) graphstore.BipartiteGraphStore {
 
 	// Check the bipartite graph
 	expectedBipartite := graphstore.NewInMemoryBipartiteGraphStore()
@@ -300,18 +289,58 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 	assert.NoError(t, graphstore.BulkLoadBipartiteGraphStore(expectedBipartite,
 		entities, documents, links))
 
-	// Check the bipartite graph store
-	eq, err := expectedBipartite.Equal(graphBuilder.Bipartite)
-	assert.NoError(t, err)
-	assert.True(t, eq)
+	return expectedBipartite
+}
 
-	// Check the unipartite graph
+func buildExpectedUnipartiteStore(t *testing.T) graphstore.UnipartiteGraphStore {
 	expectedUnipartite := graphstore.NewInMemoryUnipartiteGraphStore()
 	expectedUnipartite.AddUndirected("e-1", "e-2")
 	expectedUnipartite.AddUndirected("e-1", "e-3")
 	expectedUnipartite.AddUndirected("e-3", "e-4")
 
-	equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
-	assert.NoError(t, err)
-	assert.True(t, equal)
+	return expectedUnipartite
+}
+
+// Test the graph builder with valid config. Each config points to the
+func TestGraphBuilderValidConfig(t *testing.T) {
+
+	testCases := []struct {
+		configFilepath string
+	}{
+		{
+			// In-memory
+			configFilepath: "../test-data-sets/set-0/config-inmemory.json",
+		},
+		{
+			// Pebble
+			configFilepath: "../test-data-sets/set-2/config-pebble.json",
+		},
+	}
+
+	for _, testCase := range testCases {
+
+		// Instantiate the graph builder
+		graphBuilder, err := NewGraphBuilderFromJson(testCase.configFilepath)
+		assert.NoError(t, err)
+
+		// Get the expected bipartite graph store
+		expectedBipartite := buildExpectedBipartiteStore(t)
+
+		// Check the bipartite graph store
+		eq, err := expectedBipartite.Equal(graphBuilder.Bipartite)
+		assert.NoError(t, err)
+		assert.True(t, eq)
+
+		// Get the expected unipartite graph
+		expectedUnipartite := buildExpectedUnipartiteStore(t)
+
+		// Check the unipartite graph
+		equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
+		assert.NoError(t, err)
+		assert.True(t, equal)
+
+		// Destroy the graph databases
+		graphBuilder.Destory()
+	}
+
 }

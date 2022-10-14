@@ -42,12 +42,14 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 
 // BipartiteGraphConfig to instantiate a bipartite graph store.
 type BipartiteGraphConfig struct {
-	Type string `json:"type"`
+	Type   string `json:"type"`   // Backend type (in-memory or Pebble)
+	Folder string `json:"folder"` // Folder for the Pebble store
 }
 
 // UnipartiteGraphConfig to instantiate a unipartite graph store.
 type UnipartiteGraphConfig struct {
-	Type string `json:"type"`
+	Type   string `json:"type"`   // Backend type (in-memory or Pebble)
+	Folder string `json:"folder"` // Folder for the Pebble store
 }
 
 // GraphConfig for the input data, bipartite and unipartite graphs.
@@ -187,4 +189,14 @@ func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 
 	// Instantiate the graph builder
 	return NewGraphBuilder(*graphConfig)
+}
+
+// Destroy the unipartite and bipartite graphs.
+func (gb *GraphBuilder) Destory() error {
+	err := gb.Unipartite.Destroy()
+	if err != nil {
+		return err
+	}
+
+	return gb.Bipartite.Destroy()
 }

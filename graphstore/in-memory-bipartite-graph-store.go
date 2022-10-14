@@ -102,6 +102,11 @@ func (store *InMemoryBipartiteGraphStore) Clear() error {
 	return nil
 }
 
+// Destroy the bipartite graph store.
+func (store *InMemoryBipartiteGraphStore) Destroy() error {
+	return store.Clear()
+}
+
 // HasDocument returns true if the graph store contains the document.
 func (store *InMemoryBipartiteGraphStore) HasDocument(document *Document) (bool, error) {
 

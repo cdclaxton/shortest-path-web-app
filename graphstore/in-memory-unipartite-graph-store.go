@@ -64,6 +64,11 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 	return nil
 }
 
+// Destroy the unipartite graph.
+func (graph *InMemoryUnipartiteGraphStore) Destroy() error {
+	return graph.Clear()
+}
+
 // EdgeExists between entity 1 and entity 2?
 func (graph *InMemoryUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) (bool, error) {
 

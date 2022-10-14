@@ -1,0 +1,69 @@
+{
+    "graphData": {
+        "entitiesFiles": [
+            {
+                "path": "entities_0.csv",
+                "entityType": "Person",
+                "delimiter": ",",
+                "entityIdField": "entity ID",
+                "fieldToAttribute": {
+                    "Name": "Full Name"
+                }
+            },
+            {
+                "path": "entities_1.csv",
+                "entityType": "Person",
+                "delimiter": ",",
+                "entityIdField": "ENTITY ID",
+                "fieldToAttribute": {
+                    "NAME": "Full Name"
+                }
+            }
+        ],
+        "documentsFiles": [
+            {
+                "path": "documents_0.csv",
+                "documentType": "Doc-type-A",
+                "delimiter": ",",
+                "documentIdField": "document ID",
+                "fieldToAttribute": {
+                    "title": "Title",
+                    "date": "Date"
+                }
+            },
+            {
+                "path": "documents_1.csv",
+                "documentType": "Doc-type-B",
+                "delimiter": ",",
+                "documentIdField": "DOCUMENT ID",
+                "fieldToAttribute": {
+                    "title": "Title",
+                    "date": "Date"
+                }
+            }
+        ],
+        "linksFiles": [
+            {
+                "path": "links_0.csv",
+                "entityIdField": "entity ID",
+                "documentIdField": "document ID",
+                "delimiter": ","
+            },
+            {
+                "path": "links_1.csv",
+                "entityIdField": "ENTITY ID",
+                "documentIdField": "DOCUMENT ID",
+                "delimiter": ","
+            }
+        ],
+        "skipEntitiesFile": "skip_entities.txt"
+    },
+    "bipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "<TEMP>"
+    },
+    "unipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "<TEMP>"
+    }
+}

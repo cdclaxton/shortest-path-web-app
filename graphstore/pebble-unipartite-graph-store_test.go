@@ -54,8 +54,7 @@ func newUnipartitePebbleStore(t *testing.T) *PebbleUnipartiteGraphStore {
 }
 
 func cleanUpUnipartitePebbleStore(t *testing.T, store *PebbleUnipartiteGraphStore) {
-	assert.NoError(t, store.Close())
-	assert.NoError(t, os.RemoveAll(store.folder))
+	assert.NoError(t, store.Destroy())
 }
 
 func TestSetAndGetFromStore(t *testing.T) {

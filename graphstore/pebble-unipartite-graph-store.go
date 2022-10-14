@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"os"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
@@ -190,6 +191,17 @@ func (p *PebbleUnipartiteGraphStore) Clear() error {
 	}
 
 	return deleteError
+}
+
+// Destroy the unipartite Pebble store after closing the database.
+func (p *PebbleUnipartiteGraphStore) Destroy() error {
+
+	err := p.Close()
+	if err != nil {
+		return err
+	}
+
+	return os.RemoveAll(p.folder)
 }
 
 // EntityIds of the source vertices in the graph.

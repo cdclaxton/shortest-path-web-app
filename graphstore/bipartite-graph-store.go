@@ -25,6 +25,7 @@ type BipartiteGraphStore interface {
 	AddDocument(Document) error                         // Add (or update) a document to the store
 	AddLink(Link) error                                 // Add a link from an entity to a document (by ID)
 	Clear() error                                       // Clear the store
+	Destroy() error                                     // Destroy the graph (and any backing files)
 	Equal(BipartiteGraphStore) (bool, error)            // Do two stores have the same contents?
 	GetEntity(string) (*Entity, error)                  // Get an entity given its entity ID
 	GetDocument(string) (*Document, error)              // Get a document given its document ID

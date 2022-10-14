@@ -15,6 +15,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"os"
 
 	"github.com/cockroachdb/pebble"
 )
@@ -557,4 +558,17 @@ func (p *PebbleBipartiteGraphStore) Clear() error {
 	}
 
 	return deleteError
+}
+
+// Destroy the bipartite Pebble store after closing the database.
+func (p *PebbleBipartiteGraphStore) Destroy() error {
+
+	// Close down the Pebble database
+	err := p.Close()
+	if err != nil {
+		return err
+	}
+
+	// Delete the folder
+	return os.RemoveAll(p.folder)
 }
