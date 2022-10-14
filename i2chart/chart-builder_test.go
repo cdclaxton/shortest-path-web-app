@@ -90,7 +90,7 @@ func TestHeader(t *testing.T) {
 // makeBipartiteStore to use in the tests.
 func makeBipartiteStore(t *testing.T) graphstore.BipartiteGraphStore {
 
-	filepath := "../test-data-sets/set-0/config.json"
+	filepath := "../test-data-sets/set-0/config-inmemory.json"
 	builder, err := graphbuilder.NewGraphBuilderFromJson(filepath)
 	assert.NoError(t, err)
 	return builder.Bipartite

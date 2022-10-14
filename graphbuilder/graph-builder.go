@@ -12,7 +12,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const DataDirectory = "data"
+const (
+	DataDirectory            = "data"              // Location for the input entities and document files
+	StorageTypeInMemory      = "memory"            // In-memory storage
+	StorageTypePebble        = "pebble"            // Pebble storage
+	UseTempFolder            = "<TEMP>"            // Denotes that a temporary folder should be made for Pebble files
+	TempBipartiteFolderName  = "pebble-bipartite"  // Temporary folder name (prefix) for the bipartite store
+	TempUnipartiteFolderName = "pebble-unipartite" // Temporary folder name (prefix) for the unipartite store
+)
 
 // GraphData specifies the location of the input data to read.
 type GraphData struct {
@@ -22,10 +29,33 @@ type GraphData struct {
 	SkipEntitiesFile string                    `json:"skipEntitiesFile"` // File path to the entities to skip
 }
 
+// createTempBipartitePebbleFolder in the default temp directory for the operating system.
+func createTempBipartitePebbleFolder() (string, error) {
+	return ioutil.TempDir("", TempBipartiteFolderName)
+}
+
+// createTempUnipartitePebbleFolder in the default temp directory for the operating system.
+func createTempUnipartitePebbleFolder() (string, error) {
+	return ioutil.TempDir("", TempUnipartiteFolderName)
+}
+
 // makeBipartiteGraph given the bipartite graph storage config.
 func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphStore, error) {
-	if config.Type == "memory" {
+	if config.Type == StorageTypeInMemory {
 		return graphstore.NewInMemoryBipartiteGraphStore(), nil
+
+	} else if config.Type == StorageTypePebble {
+
+		// If the config specifies that a temporary folder should be used, then make the folder
+		if config.Folder == UseTempFolder {
+			tempFolder, err := createTempBipartitePebbleFolder()
+			if err != nil {
+				return nil, err
+			}
+			config.Folder = tempFolder
+		}
+
+		return graphstore.NewPebbleBipartiteGraphStore(config.Folder)
 	}
 
 	return nil, fmt.Errorf("Unknown bipartite graph storage type: %v", config.Type)
@@ -33,8 +63,21 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 
 // makeUnipartiteGraph given the unipartite graph storage config.
 func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGraphStore, error) {
-	if config.Type == "memory" {
+	if config.Type == StorageTypeInMemory {
 		return graphstore.NewInMemoryUnipartiteGraphStore(), nil
+
+	} else if config.Type == StorageTypePebble {
+
+		// If the config specifies that a temporary folder should be used, then make the folder
+		if config.Folder == UseTempFolder {
+			tempFolder, err := createTempUnipartitePebbleFolder()
+			if err != nil {
+				return nil, err
+			}
+			config.Folder = tempFolder
+		}
+
+		return graphstore.NewPebbleUnipartiteGraphStore(config.Folder)
 	}
 
 	return nil, fmt.Errorf("Unknown unipartite graph storage type: %v", config.Type)

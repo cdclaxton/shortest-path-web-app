@@ -21,7 +21,7 @@ func TestReadGraphConfigWhenFileDoesNotExist(t *testing.T) {
 func TestReadGraphConfigValidFile(t *testing.T) {
 
 	// Read the file
-	filepath := "../test-data-sets/set-0/config.json"
+	filepath := "../test-data-sets/set-0/config-inmemory.json"
 	graphConfig, err := readGraphConfig(filepath)
 	assert.NoError(t, err)
 
@@ -313,7 +313,7 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 		},
 		{
 			// Pebble
-			configFilepath: "../test-data-sets/set-2/config-pebble.json",
+			configFilepath: "../test-data-sets/set-0/config-pebble.json",
 		},
 	}
 
