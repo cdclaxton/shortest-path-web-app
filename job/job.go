@@ -10,8 +10,8 @@ type EntitySet struct {
 
 // JobConfiguration specifies all of the necessary details of the job.
 type JobConfiguration struct {
-	EntitySets    []EntitySet // Sets of entities from which to find paths
 	MaxNumberHops int         // Number of steps from a root to a goal to search
+	EntitySets    []EntitySet // Sets of entities from which to find paths
 }
 
 // A JobStatus represents the current state of the job.

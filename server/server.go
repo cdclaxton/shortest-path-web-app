@@ -67,8 +67,8 @@ var (
 	DatasetErrorNoEntities = fmt.Errorf("Dataset has no entity IDs")
 )
 
-// parseDataset from the HTTP POST form data.
-func parseDataset(req *http.Request, index int) (*job.EntitySet, error) {
+// parseEntitySet from the HTTP POST form data.
+func parseEntitySet(req *http.Request, index int) (*job.EntitySet, error) {
 
 	// Preconditions
 	if req == nil {
@@ -105,7 +105,7 @@ func parseDataset(req *http.Request, index int) (*job.EntitySet, error) {
 }
 
 // extractJobConfigurationFromForm extracts, parses and validates the configuration for a job.
-func extractJobConfigurationFromForm(req *http.Request) (*job.JobConfiguration, error) {
+func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*job.JobConfiguration, error) {
 
 	// Preconditions
 	if req == nil {
@@ -129,8 +129,8 @@ func extractJobConfigurationFromForm(req *http.Request) (*job.JobConfiguration, 
 	}
 
 	// Parse the datasets
-	for idx := 1; idx <= MaxDatasetIndex; idx++ {
-		entitySet, err := parseDataset(req, idx)
+	for idx := 1; idx <= maxDatasetIndex; idx++ {
+		entitySet, err := parseEntitySet(req, idx)
 
 		if err != nil {
 			return nil, fmt.Errorf("Dataset parse error: %v", err)
@@ -151,7 +151,7 @@ func extractJobConfigurationFromForm(req *http.Request) (*job.JobConfiguration, 
 func upload(w http.ResponseWriter, req *http.Request) {
 
 	// Extract the data from the form
-	jobConf, err := extractJobConfigurationFromForm(req)
+	jobConf, err := extractJobConfigurationFromForm(req, MaxDatasetIndex)
 
 	// If there was an input configuration error, then show the error on a dedicated page
 	if err != nil {

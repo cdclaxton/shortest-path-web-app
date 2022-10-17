@@ -126,9 +126,60 @@ func TestParseDataset(t *testing.T) {
 		errorExpected bool
 	}{
 		{
-			datasetIndex:  -1,
+			datasetIndex:  -1, // Invalid dataset index
 			name1:         "Dataset 1",
 			entityIds1:    "1234",
+			name2:         "",
+			entityIds2:    "",
+			expected:      nil,
+			errorExpected: true,
+		},
+		{
+			datasetIndex: 1,
+			name1:        "Dataset 1",
+			entityIds1:   "1234",
+			name2:        "",
+			entityIds2:   "",
+			expected: &job.EntitySet{
+				Name:      "Dataset 1",
+				EntityIds: []string{"1234"},
+			},
+			errorExpected: false,
+		},
+		{
+			datasetIndex:  2,
+			name1:         "Dataset 1",
+			entityIds1:    "1234",
+			name2:         "",
+			entityIds2:    "",
+			expected:      nil,
+			errorExpected: false,
+		},
+		{
+			datasetIndex: 2,
+			name1:        "Dataset 1",
+			entityIds1:   "1234",
+			name2:        "Dataset 2",
+			entityIds2:   "2345;3456",
+			expected: &job.EntitySet{
+				Name:      "Dataset 2",
+				EntityIds: []string{"2345", "3456"},
+			},
+			errorExpected: false,
+		},
+		{
+			datasetIndex:  1,
+			name1:         "Dataset 1", // Name, but no entity IDs
+			entityIds1:    "",
+			name2:         "",
+			entityIds2:    "",
+			expected:      nil,
+			errorExpected: true,
+		},
+		{
+			datasetIndex:  1,
+			name1:         "",
+			entityIds1:    "1234", // Entity IDs but no name
 			name2:         "",
 			entityIds2:    "",
 			expected:      nil,
@@ -149,7 +200,109 @@ func TestParseDataset(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
 		req.Form = form
 
-		actual, err := parseDataset(req, testCase.datasetIndex)
+		// Try to parse an entity set from the form data
+		actual, err := parseEntitySet(req, testCase.datasetIndex)
+
+		if testCase.errorExpected {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+
+		assert.Equal(t, testCase.expected, actual)
+	}
+}
+
+func TestExtractJobConfigurationFromForm(t *testing.T) {
+
+	testCases := []struct {
+		maxHops         string
+		name1           string
+		entityIds1      string
+		name2           string
+		entityIds2      string
+		maxDatasetIndex int
+		expected        *job.JobConfiguration
+		errorExpected   bool
+	}{
+		{
+			maxHops:         "0", // Invalid number of hops
+			name1:           "Dataset 1",
+			entityIds1:      "1234",
+			name2:           "Dataset 2",
+			entityIds2:      "2345",
+			maxDatasetIndex: 2,
+			expected:        nil,
+			errorExpected:   true,
+		},
+		{
+			maxHops:         "1", // No entity sets
+			name1:           "",
+			entityIds1:      "",
+			name2:           "",
+			entityIds2:      "",
+			maxDatasetIndex: 2,
+			expected:        nil,
+			errorExpected:   true,
+		},
+		{
+			maxHops:         "1",
+			name1:           "Dataset 1",
+			entityIds1:      "1234",
+			name2:           "Dataset 2",
+			entityIds2:      "2345",
+			maxDatasetIndex: 1,
+			expected: &job.JobConfiguration{
+				MaxNumberHops: 1,
+				EntitySets: []job.EntitySet{
+					{
+						Name:      "Dataset 1",
+						EntityIds: []string{"1234"},
+					},
+				},
+			},
+			errorExpected: false,
+		},
+		{
+			maxHops:         "1",
+			name1:           "Dataset 1",
+			entityIds1:      "1234",
+			name2:           "Dataset 2",
+			entityIds2:      "2345",
+			maxDatasetIndex: 2,
+			expected: &job.JobConfiguration{
+				MaxNumberHops: 1,
+				EntitySets: []job.EntitySet{
+					{
+						Name:      "Dataset 1",
+						EntityIds: []string{"1234"},
+					},
+					{
+						Name:      "Dataset 2",
+						EntityIds: []string{"2345"},
+					},
+				},
+			},
+			errorExpected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+
+		// Create the form
+		form := url.Values{}
+		form.Add(NumberHopsInputName, testCase.maxHops)
+		form.Add(fmt.Sprintf("%v%v", DatasetNameInputName, 1), testCase.name1)
+		form.Add(fmt.Sprintf("%v%v", DatasetEntitiesInputName, 1), testCase.entityIds1)
+		form.Add(fmt.Sprintf("%v%v", DatasetNameInputName, 2), testCase.name2)
+		form.Add(fmt.Sprintf("%v%v", DatasetEntitiesInputName, 2), testCase.entityIds2)
+
+		// Make the HTTP request
+		req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+		req.Form = form
+
+		// Try to parse an entity set from the form data
+		actual, err := extractJobConfigurationFromForm(req, testCase.maxDatasetIndex)
 
 		if testCase.errorExpected {
 			assert.Error(t, err)
