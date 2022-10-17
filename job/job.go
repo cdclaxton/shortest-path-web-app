@@ -4,31 +4,14 @@ import "time"
 
 // An EntitySet represents a named group of entity IDs.
 type EntitySet struct {
-	EntityIds []string // Entity IDs linked to the Name
 	Name      string   // Name, e.g. data source name, tasking name
+	EntityIds []string // Entity IDs linked to the Name
 }
-
-// A Tasking is the reason for the user to use the web-app.
-type Tasking struct {
-	Identifier string // Unique tasking reference
-	User       string // User of the web-app
-}
-
-// An OutputType represents the type of output to return.
-type OutputType string
-
-const (
-	JsonOutput OutputType = "JSON"
-	I2Output   OutputType = "i2"
-	CsvOutput  OutputType = "CSV"
-)
 
 // JobConfiguration specifies all of the necessary details of the job.
 type JobConfiguration struct {
-	EntitySets         []EntitySet // Sets of entities from which to find paths
-	MaxNumberHops      int         // Number of steps from a root to a goal to search
-	TaskingInformation Tasking     // Tasking information
-	RequiredOutput     OutputType  // Type of output to return
+	EntitySets    []EntitySet // Sets of entities from which to find paths
+	MaxNumberHops int         // Number of steps from a root to a goal to search
 }
 
 // A JobStatus represents the current state of the job.

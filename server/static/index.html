@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html class="govuk-template no-js">
+    <head>
+        <meta charset="utf-8">
+        <title>Shortest Path Tool</title>
+        <link rel="stylesheet" href="govuk-frontend-4.3.1.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#0b0c0c">
+    </head>
+
+    <body class="govuk-template__body">
+
+        <header class="govuk-header app-header" role="banner" data-module="govuk-header">
+            <div class="govuk-header__container govuk-header__container--full-width">
+              <div class="govuk-header__logo">
+                <a href="/" class="govuk-header__link govuk-header__link--homepage">
+                    <span class="govuk-header__logotype-text">
+                        Shortest Path Tool
+                    </span>
+                  </span>
+                </a>
+                  <strong class="govuk-tag">Alpha</strong>
+              </div>
+            </div>
+        </header>
+
+        <div class="govuk-width-container ">
+            <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
+                <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-two-thirds">
+                        <h1 class="govuk-heading-xl">Configuration</h1>
+          
+                        <!-- Helpful note for user -->
+                        <div class="govuk-body">
+                            <p>This tool finds all the shortest paths between entities in one or more datasets.
+                               It returns an Excel file that is ready to be imported into i2 Analyst Notebook.</p>
+                            <p>The entity IDs can be separated by newlines, spaces, commas, semicolons or tabs.</p>
+                        </div>
+
+                        <!-- File upload form -->
+                        <div class="govuk-form-group">
+                            <form action="/upload" method="post">
+
+                                <label for="numberHops" class="govuk-label">Maximum number of hops from one entity to another:</label>
+                                <select name="numberHops" class="govuk-select" id="numberHops">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+
+                                <!-- Dataset 1 -->
+                                <label for="datasetName1" class="govuk-label" >Dataset 1:</label>
+                                <input type="textarea" class="govuk-textarea" id="datasetName1" name="datasetName1" placeholder="Name"/>
+                                <textarea id="dataset1" class="govuk-textarea" name="datasetEntities1" rows="4" placeholder="Entity IDs" ></textarea>
+                                
+                                <!-- Dataset 2 -->
+                                <label for="datasetName2" class="govuk-label" >Dataset 2:</label>
+                                <input type="textarea" class="govuk-textarea" id="datasetName2" name="datasetName2" placeholder="Name"/>
+                                <textarea id="dataset2" class="govuk-textarea" name="datasetEntities2" rows="4" placeholder="Entity IDs" ></textarea>
+
+                                <!-- Dataset 3 -->
+                                <label for="datasetName3" class="govuk-label" >Dataset 3:</label>
+                                <input type="textarea" class="govuk-textarea" id="datasetName3" name="datasetName3" placeholder="Name"/>
+                                <textarea id="dataset3" class="govuk-textarea" name="datasetEntities3" rows="4" placeholder="Entity IDs" ></textarea>
+
+                                <input type="submit" class="govuk-button" data-module="govuk-button"/>
+                            </form>
+                        </div>  
+
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </body>
+</html>

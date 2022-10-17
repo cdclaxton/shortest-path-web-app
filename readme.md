@@ -1,5 +1,11 @@
 # Shortest path web-app
 
+## Building
+
+```
+go build -v -o ./app ./server
+```
+
 ## Location of the data files
 
 The CSV and TXT files containing data from which to build the graph must be placed
