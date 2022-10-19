@@ -39,6 +39,30 @@ func createTempUnipartitePebbleFolder() (string, error) {
 	return ioutil.TempDir("", TempUnipartiteFolderName)
 }
 
+// prepareFolderForStorage by ensuring it is empty.
+func prepareFolderForStorage(folder string, graphStoreType string, deleteFilesInFolder bool) error {
+
+	// Check if the folder is empty
+	folderEmpty, err := isFolderEmpty(folder)
+	if err != nil {
+		return err
+	}
+
+	// If the folder isn't empty, then clear it if config allows
+	if !folderEmpty {
+		if !deleteFilesInFolder {
+			return fmt.Errorf("Folder for %v graph store (%v) isn't empty", graphStoreType, folder)
+		} else {
+			err := clearFolder(folder)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // makeBipartiteGraph given the bipartite graph storage config.
 func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphStore, error) {
 	if config.Type == StorageTypeInMemory {
@@ -53,6 +77,12 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 				return nil, err
 			}
 			config.Folder = tempFolder
+		}
+
+		// Prepare the folder
+		err := prepareFolderForStorage(config.Folder, "bipartite", config.DeleteFilesInFolder)
+		if err != nil {
+			return nil, err
 		}
 
 		return graphstore.NewPebbleBipartiteGraphStore(config.Folder)
@@ -77,6 +107,12 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 			config.Folder = tempFolder
 		}
 
+		// Prepare the folder
+		err := prepareFolderForStorage(config.Folder, "unipartite", config.DeleteFilesInFolder)
+		if err != nil {
+			return nil, err
+		}
+
 		return graphstore.NewPebbleUnipartiteGraphStore(config.Folder)
 	}
 
@@ -85,14 +121,16 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 
 // BipartiteGraphConfig to instantiate a bipartite graph store.
 type BipartiteGraphConfig struct {
-	Type   string `json:"type"`   // Backend type (in-memory or Pebble)
-	Folder string `json:"folder"` // Folder for the Pebble store
+	Type                string `json:"type"`                // Backend type (in-memory or Pebble)
+	Folder              string `json:"folder"`              // Folder for the Pebble store
+	DeleteFilesInFolder bool   `json:"deleteFilesInFolder"` // Clear down the folder if it isn't empty
 }
 
 // UnipartiteGraphConfig to instantiate a unipartite graph store.
 type UnipartiteGraphConfig struct {
-	Type   string `json:"type"`   // Backend type (in-memory or Pebble)
-	Folder string `json:"folder"` // Folder for the Pebble store
+	Type                string `json:"type"`                // Backend type (in-memory or Pebble)
+	Folder              string `json:"folder"`              // Folder for the Pebble store
+	DeleteFilesInFolder bool   `json:"deleteFilesInFolder"` // Clear down the folder if it isn't empty
 }
 
 // GraphConfig for the input data, bipartite and unipartite graphs.

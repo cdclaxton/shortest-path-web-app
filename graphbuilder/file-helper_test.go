@@ -1,7 +1,6 @@
 package graphbuilder
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,7 +14,6 @@ func TestClearFolder(t *testing.T) {
 	// Make a temporary folder
 	tempFolder, err := ioutil.TempDir("", "folder-test")
 	assert.NoError(t, err)
-	fmt.Println(tempFolder)
 
 	// Create a file within the folder
 	file, err := os.Create(filepath.Join(tempFolder, "test.txt"))
@@ -26,7 +24,7 @@ func TestClearFolder(t *testing.T) {
 	os.Mkdir(filepath.Join(tempFolder, "f1"), 0700)
 
 	// Create a file within the sub-folder
-	file, err = os.Create(tempFolder + "/f1/test2.txt")
+	file, err = os.Create(filepath.Join(tempFolder, "f1", "test2.txt"))
 	assert.NoError(t, err)
 	file.Close()
 

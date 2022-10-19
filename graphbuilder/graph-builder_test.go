@@ -1,6 +1,8 @@
 package graphbuilder
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -343,4 +345,29 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 		graphBuilder.Destroy()
 	}
 
+}
+
+func TestPrepareFolderForStorage(t *testing.T) {
+
+	// Create a temporary folder
+	tempFolder, err := ioutil.TempDir("", "folder-test")
+	assert.NoError(t, err)
+
+	// Prepare an empty folder
+	assert.NoError(t, prepareFolderForStorage(tempFolder, "test", false))
+
+	// Create a file within the folder
+	file, err := os.Create(filepath.Join(tempFolder, "test.txt"))
+	assert.NoError(t, err)
+	file.Close()
+
+	// Try to prepare the folder. It should fail because the folder isn't empty and permission is
+	// not given to clear down the folder.
+	assert.Error(t, prepareFolderForStorage(tempFolder, "test", false))
+
+	// Try preparing the folder with permission to clear it down
+	assert.NoError(t, prepareFolderForStorage(tempFolder, "test", true))
+
+	// Delete the temp folder
+	assert.NoError(t, os.RemoveAll(tempFolder))
 }
