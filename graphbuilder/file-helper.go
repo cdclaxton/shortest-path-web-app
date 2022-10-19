@@ -1,7 +1,6 @@
 package graphbuilder
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,15 +15,15 @@ func clearFolder(folder string) error {
 	}
 
 	for _, f := range files {
-
-		fmt.Println(filepath.Join(folder, f.Name()))
 		os.RemoveAll(filepath.Join(folder, f.Name()))
 	}
 
 	return nil
 }
 
+// isFolderEmpty returns true if the folder is empty of files and folders.
 func isFolderEmpty(folder string) (bool, error) {
+
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		return false, err
