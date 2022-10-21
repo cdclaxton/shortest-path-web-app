@@ -10,9 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNilGraph(t *testing.T) {
+	pathFinder, err := NewPathFinder(nil)
+	assert.Error(t, err)
+	assert.Nil(t, pathFinder)
+}
+
 func TestNetworkConnections(t *testing.T) {
 
-	n := NewNetworkConnections(2)
+	n, err := NewNetworkConnections(2)
+	assert.NoError(t, err)
 	n.AddPaths("A", "set-A", "B", "set-B", []Path{NewPath("A", "B", "C")})
 	n.AddPaths("A", "set-A2", "C", "set-C", []Path{NewPath("A", "D", "C")})
 	n.AddPaths("E", "set-E", "B", "set-B", []Path{NewPath("E", "B"), NewPath("E", "A", "B")})
@@ -59,7 +66,8 @@ func TestFindAllPathsWithResilience(t *testing.T) {
 	buildTestGraph(t, graph)
 
 	// Construct a new path finder component
-	pathFinder := NewPathFinder(graph)
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
 
 	testCases := []struct {
 		root          string
@@ -121,7 +129,8 @@ func TestPathsBetweenEntitySets(t *testing.T) {
 	buildTestGraph(t, graph)
 
 	// Construct a new path finder component
-	pathFinder := NewPathFinder(graph)
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
 
 	entitySet1 := job.EntitySet{
 		EntityIds: []string{"1", "3", "9", "10"},
@@ -134,8 +143,10 @@ func TestPathsBetweenEntitySets(t *testing.T) {
 	}
 
 	// Find the paths
-	actualConnections := NewNetworkConnections(3)
-	err := pathFinder.pathsBetweenEntitySets(entitySet1, entitySet2, actualConnections)
+	actualConnections, err := NewNetworkConnections(3)
+	assert.NoError(t, err)
+
+	err = pathFinder.pathsBetweenEntitySets(entitySet1, entitySet2, actualConnections)
 	assert.NoError(t, err)
 
 	// Check the connections
@@ -193,7 +204,8 @@ func TestPathsBetweenAllEntitySets(t *testing.T) {
 	buildTestGraph(t, graph)
 
 	// Construct a new path finder component
-	pathFinder := NewPathFinder(graph)
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
 
 	entitySets := []job.EntitySet{
 		{
@@ -211,8 +223,10 @@ func TestPathsBetweenAllEntitySets(t *testing.T) {
 	}
 
 	// Find the paths
-	actualConnections := NewNetworkConnections(3)
-	err := pathFinder.pathsBetweenAllEntitySets(entitySets, actualConnections)
+	actualConnections, err := NewNetworkConnections(3)
+	assert.NoError(t, err)
+
+	err = pathFinder.pathsBetweenAllEntitySets(entitySets, actualConnections)
 	assert.NoError(t, err)
 
 	// Check the connections
@@ -268,7 +282,8 @@ func TestFindPathsOneEntitySet(t *testing.T) {
 	buildTestGraph(t, graph)
 
 	// Construct a new path finder component
-	pathFinder := NewPathFinder(graph)
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
 
 	entitySets := []job.EntitySet{
 		{
@@ -277,7 +292,16 @@ func TestFindPathsOneEntitySet(t *testing.T) {
 		},
 	}
 
-	actualConnections, err := pathFinder.FindPaths(entitySets, 3)
+	// Check cases for an invalid number of hops
+	actualConnections, err := pathFinder.FindPaths(entitySets, 0)
+	assert.Error(t, err)
+	assert.Nil(t, actualConnections)
+
+	actualConnections, err = pathFinder.FindPaths(entitySets, -1)
+	assert.Error(t, err)
+	assert.Nil(t, actualConnections)
+
+	actualConnections, err = pathFinder.FindPaths(entitySets, 3)
 	assert.NoError(t, err)
 
 	// Check the connections
@@ -322,7 +346,8 @@ func TestFindPathsTwoEntitySets(t *testing.T) {
 	buildTestGraph(t, graph)
 
 	// Construct a new path finder component
-	pathFinder := NewPathFinder(graph)
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
 
 	entitySets := []job.EntitySet{
 		{
