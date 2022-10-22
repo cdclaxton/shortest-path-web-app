@@ -7,6 +7,8 @@ import (
 	"github.com/golang-collections/collections/queue"
 )
 
+// A Path represents all of the routes from a root vertex to a goal vertex. The elements of the
+// path are entity IDs.
 type Path struct {
 	Route []string // Route from the root to the goal vertex
 }

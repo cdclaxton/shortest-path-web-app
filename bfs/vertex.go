@@ -1,10 +1,10 @@
 package bfs
 
-// A vertex within the graph used for shortest path analysis.
+// A Vertex within the graph used for shortest path analysis.
 type Vertex struct {
-	Identifier string
-	Depth      int
-	Parent     *Vertex
+	Identifier string  // Unique identifier for the vertex
+	Depth      int     // Distance of the vertex from the root vertex
+	Parent     *Vertex // Parent vertex
 }
 
 // NewVertex within the graph.

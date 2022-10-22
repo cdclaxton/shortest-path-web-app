@@ -7,6 +7,7 @@ import (
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/cdclaxton/shortest-path-web-app/job"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
@@ -21,6 +22,8 @@ var (
 	ErrNetworkConnectionsIsNil = fmt.Errorf("Network connections is nil")
 	ErrEntitySetsIsNil         = fmt.Errorf("Entity sets is nil")
 	ErrEntitySetsIsEmpty       = fmt.Errorf("Entity sets is empty")
+	ErrNoEntitiesInEntitySet   = fmt.Errorf("No entity IDS in entity set")
+	ErrNoNameForEntitySet      = fmt.Errorf("No name for entity set")
 )
 
 // PathFinder uses an unidirected unipartite graph to find paths from one entity to another.
@@ -305,6 +308,16 @@ func (p *PathFinder) findAllPathsWithResilience(root string, goal string,
 func (p *PathFinder) pathsBetweenEntitySets(entitySet1 job.EntitySet, entitySet2 job.EntitySet,
 	connections *NetworkConnections) error {
 
+	// Preconditions
+	if connections == nil {
+		return ErrNetworkConnectionsIsNil
+	}
+
+	logging.Logger.Info().Str("Component", "Path finder").
+		Str("Entity set 1", entitySet1.Name).
+		Str("Entity set 2", entitySet2.Name).
+		Msg("Finding paths between entity sets")
+
 	// Walk through all pairs of entities
 	for _, entityId1 := range entitySet1.EntityIds {
 
@@ -398,7 +411,7 @@ func (p *PathFinder) pathsBetweenAllEntitySets(entitySets []job.EntitySet,
 func (p *PathFinder) FindPaths(entitySets []job.EntitySet, maxHops int) (
 	*NetworkConnections, error) {
 
-	// Precondition
+	// Preconditions
 	if entitySets == nil {
 		return nil, ErrEntitySetsIsNil
 	}
@@ -408,14 +421,30 @@ func (p *PathFinder) FindPaths(entitySets []job.EntitySet, maxHops int) (
 	}
 
 	for _, entitySet := range entitySets {
+		if len(entitySet.Name) == 0 {
+			return nil, ErrNoNameForEntitySet
+		}
+
 		if len(entitySet.EntityIds) == 0 {
-			return nil, ErrEntitySetsIsEmpty
+			return nil, ErrNoEntitiesInEntitySet
 		}
 	}
 
 	if maxHops < 0 {
 		return nil, ErrInvalidHops
 	}
+
+	// Log the datasets
+	datasets := []string{}
+	for _, entitySet := range entitySets {
+		datasets = append(datasets, entitySet.Name)
+	}
+
+	logging.Logger.Info().Str("Component", "Path finder").
+		Str("Number hops", strconv.Itoa(maxHops)).
+		Str("Number of datasets", strconv.Itoa(len(entitySets))).
+		Strs("Datasets", datasets).
+		Msg("Finding paths")
 
 	// New struct to hold the network connections between entities
 	connections, err := NewNetworkConnections(maxHops)

@@ -9,6 +9,9 @@ import (
 )
 
 // ReachableVertices from a root vertex up to a maximum depth.
+//
+// The function returns a set of vertices (entity IDs) that are reachable from one to
+// maxDepth hops from the root vertex. The reachable vertices doesn't include the root vertex.
 func ReachableVertices(g graphstore.UnipartiteGraphStore, root string,
 	maxDepth int) (*set.Set[string], error) {
 

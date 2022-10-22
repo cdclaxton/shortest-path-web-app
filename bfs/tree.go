@@ -13,7 +13,7 @@ import (
 //         |
 //         ----> d
 //
-// Node 'b' has the parent 'a' and children 'c' and 'd'.
+// where node 'b' has the parent 'a' and children 'c' and 'd'.
 type TreeNode struct {
 	name     string      // Name of the node from the graph
 	parent   *TreeNode   // Parent of the node
