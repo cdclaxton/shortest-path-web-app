@@ -9,7 +9,7 @@ import (
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/cdclaxton/shortest-path-web-app/loader"
-	"github.com/rs/zerolog/log"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
 const (
@@ -41,6 +41,11 @@ func createTempUnipartitePebbleFolder() (string, error) {
 
 // prepareFolderForStorage by ensuring it is empty.
 func prepareFolderForStorage(folder string, graphStoreType string, deleteFilesInFolder bool) error {
+
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Str("Folder", folder).
+		Str("Graph store type", graphStoreType).
+		Msg("Preparing folder for Pebble storage")
 
 	// Check if the folder is empty
 	folderEmpty, err := isFolderEmpty(folder)
@@ -77,6 +82,10 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 				return nil, err
 			}
 			config.Folder = tempFolder
+
+			logging.Logger.Info().Str("Component", "Graph builder").
+				Str("Temp folder", tempFolder).
+				Msg("Made temp folder for the bipartite Pebble-backed graph")
 		}
 
 		// Prepare the folder
@@ -105,6 +114,10 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 				return nil, err
 			}
 			config.Folder = tempFolder
+
+			logging.Logger.Info().Str("Component", "Graph builder").
+				Str("Temp folder", tempFolder).
+				Msg("Made temp folder for the unipartite Pebble-backed graph")
 		}
 
 		// Prepare the folder
@@ -214,7 +227,9 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	builder := GraphBuilder{}
 
 	// Make the bipartite graph store
-	log.Info().Str("Component", "GraphBuilder").Msg("Making the bipartite graph store from config")
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Msg("Making the bipartite graph store from config")
+
 	var err error
 	builder.Bipartite, err = makeBipartiteGraph(config.BipartiteConfig)
 	if err != nil {
@@ -222,7 +237,7 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Load the bipartite graph based on the files
-	log.Info().Str("Component", "GraphBuilder").
+	logging.Logger.Info().Str("Component", "Graph builder").
 		Msg("Loading the bipartite graph store from CSV files")
 
 	bipartiteLoader := loader.NewGraphStoreLoaderFromCsv(builder.Bipartite,
@@ -236,28 +251,38 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Read the entities to skip
-	log.Info().Str("Component", "GraphBuilder").Msg("Reading the entities to skip")
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Msg("Reading the entities to skip")
+
 	skipEntities, err := loader.ReadSkipEntities(config.Data.SkipEntitiesFile)
 	if err != nil {
 		return nil, err
 	}
 
 	// Make the unipartite graph store
-	log.Info().Str("Component", "GraphBuilder").Msg("Making the unipartite graph store")
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Msg("Making the unipartite graph store")
+
 	builder.Unipartite, err = makeUnipartiteGraph(config.UnipartiteConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	// Convert the bipartite graph to a unipartite graph
-	log.Info().Str("Component", "GraphBuilder").
+	logging.Logger.Info().Str("Component", "Graph builder").
 		Msg("Converting the bipartite graph to a unipartite graph")
+
 	graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities)
 
 	return &builder, nil
 }
 
+// NewGraphBuilderFromJson returns a constructed GraphBuilder based on the config from a JSON file.
 func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
+
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Str("Filepath", filepath).
+		Msg("Building graph from JSON config file")
 
 	// Read the config from file
 	graphConfig, err := readGraphConfig(filepath)
@@ -274,6 +299,10 @@ func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 
 // Destroy the unipartite and bipartite graphs.
 func (gb *GraphBuilder) Destroy() error {
+
+	logging.Logger.Info().Str("Component", "Graph builder").
+		Msg("Destroying the unipartite and bipartite graphs")
+
 	err := gb.Unipartite.Destroy()
 	if err != nil {
 		return err
