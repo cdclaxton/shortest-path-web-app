@@ -4,11 +4,16 @@ import (
 	"bufio"
 	"os"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
 // ReadSkipEntities from a simple text file.
 func ReadSkipEntities(filepath string) (*set.Set[string], error) {
+
+	logging.Logger.Info().
+		Str("Filepath", filepath).
+		Msg("Reading skip entities CSV file")
 
 	// Open the file
 	file, err := os.Open(filepath)

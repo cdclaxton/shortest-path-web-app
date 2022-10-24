@@ -2,11 +2,14 @@ package loader
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
+// A GraphStoreLoaderFromCsv loads a bipartite graph store from entity, document and link CSV files.
 type GraphStoreLoaderFromCsv struct {
 	graphStore    graphstore.BipartiteGraphStore
 	entityFiles   []EntitiesCsvFile
@@ -14,10 +17,17 @@ type GraphStoreLoaderFromCsv struct {
 	linkFiles     []LinksCsvFile
 }
 
+// NewGraphStoreLoaderFromCsv constructs a graph store loader.
 func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 	entityFiles []EntitiesCsvFile,
 	documentFiles []DocumentsCsvFile,
 	linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
+
+	logging.Logger.Info().
+		Str("Number of entity files", strconv.Itoa(len(entityFiles))).
+		Str("Number of document files", strconv.Itoa(len(documentFiles))).
+		Str("Number of links files", strconv.Itoa(len(linkFiles))).
+		Msg("Creating a bipartite graph store loader")
 
 	return &GraphStoreLoaderFromCsv{
 		graphStore:    graphStore,
@@ -29,6 +39,11 @@ func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 
 // loadEntitiesFromFile into the graph store from a CSV file.
 func (loader *GraphStoreLoaderFromCsv) loadEntitiesFromFile(file EntitiesCsvFile) error {
+
+	logging.Logger.Info().
+		Str("Component", "Bipartite graph store loader").
+		Str("Filepath", file.Path).
+		Msg("Reading entities CSV file")
 
 	// Create an entities CSV file reader
 	reader := NewEntitiesCsvFileReader(file)
@@ -71,6 +86,11 @@ func (loader *GraphStoreLoaderFromCsv) loadEntities() error {
 // loadEntitiesFromFile into the graph store from a CSV file.
 func (loader *GraphStoreLoaderFromCsv) loadDocumentsFromFile(file DocumentsCsvFile) error {
 
+	logging.Logger.Info().
+		Str("Component", "Bipartite graph store loader").
+		Str("Filepath", file.Path).
+		Msg("Reading documents CSV file")
+
 	// Create a documents CSV file reader
 	reader := NewDocumentsCsvFileReader(file)
 
@@ -111,6 +131,11 @@ func (loader *GraphStoreLoaderFromCsv) loadDocuments() error {
 
 // loadLinksFromFile into the graph store from a CSV file.
 func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) error {
+
+	logging.Logger.Info().
+		Str("Component", "Bipartite graph store loader").
+		Str("Filepath", file.Path).
+		Msg("Reading links CSV file")
 
 	// Create a links CSV file reader
 	reader := NewLinksCsvFileReader(file)
