@@ -6,11 +6,13 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// An Edge represents a link between two entities.
 type Edge struct {
 	V1 string
 	V2 string
 }
 
+// A UnipartiteGraphStore represents the store of a graph composed of a single type of vertex.
 type UnipartiteGraphStore interface {
 	AddEntity(string) error                               // Add an entity
 	AddDirected(string, string) error                     // Add a directed edge between two entities
