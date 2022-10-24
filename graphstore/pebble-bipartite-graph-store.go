@@ -1,5 +1,5 @@
-// This implementation of the bipartite graph store uses Pebble DB as the
-// backend. The bipartite graph is composed of entities and documents.
+// This implementation of the bipartite graph store uses Pebble DB as the backend. The bipartite
+// graph is composed of entities and documents.
 //
 // Entities are stored as:
 //
@@ -17,15 +17,28 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cockroachdb/pebble"
 )
 
+// A PebbleBipartiteGraphStore is a bipartite graph store backed by the Pebble key-value database.
 type PebbleBipartiteGraphStore struct {
 	folder string
 	db     *pebble.DB
 }
 
+// NewPebbleBipartiteGraphStore given the dedicated folder where the Pebble files are to be held.
 func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, error) {
+
+	// Preconditions
+	if len(folder) == 0 {
+		return nil, fmt.Errorf("Folder name is empty")
+	}
+
+	logging.Logger.Info().
+		Str("Folder", folder).
+		Msg("Creating a new bipartite Pebble store")
+
 	db, err := pebble.Open(folder, &pebble.Options{})
 	if err != nil {
 		return nil, err
@@ -39,7 +52,9 @@ func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, er
 	return &store, nil
 }
 
+// Close the Pebble store.
 func (p *PebbleBipartiteGraphStore) Close() error {
+	logging.Logger.Info().Msg("Closing the Pebble bipartite graph store")
 	return p.db.Close()
 }
 
@@ -79,6 +94,12 @@ func pebbleKeyToBipartiteEntityId(value []byte) (string, error) {
 
 // bipartiteEntityToPebbleValue converts an entity to a Pebble value.
 func bipartiteEntityToPebbleValue(entity *Entity) ([]byte, error) {
+
+	// Preconditions
+	if entity == nil {
+		return nil, fmt.Errorf("Entity is ni")
+	}
+
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
 
@@ -91,6 +112,12 @@ func bipartiteEntityToPebbleValue(entity *Entity) ([]byte, error) {
 
 // pebbleValueToBipartiteEntity converts a Pebble value to an entity.
 func pebbleValueToBipartiteEntity(value []byte) (*Entity, error) {
+
+	// Preconditions
+	if value == nil {
+		return nil, fmt.Errorf("Pebble value is nil")
+	}
+
 	var buffer bytes.Buffer
 	buffer.Write(value)
 	decoder := gob.NewDecoder(&buffer)
@@ -113,13 +140,13 @@ func pebbleKeyToBipartiteDocumentId(value []byte) (string, error) {
 
 	// Preconditions
 	if value == nil {
-		return "", fmt.Errorf("Entity key is nil")
+		return "", fmt.Errorf("Document key is nil")
 	}
 
 	keyString := string(value)
 
 	if len(keyString) == 0 {
-		return "", fmt.Errorf("Entity key has zero length")
+		return "", fmt.Errorf("Document key has zero length")
 	}
 
 	// Check the prefix
@@ -133,6 +160,12 @@ func pebbleKeyToBipartiteDocumentId(value []byte) (string, error) {
 
 // bipartiteDocumentToPebbleValue converts a document to a Pebble value.
 func bipartiteDocumentToPebbleValue(document *Document) ([]byte, error) {
+
+	// Preconditions
+	if document == nil {
+		return nil, fmt.Errorf("Document is nil")
+	}
+
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
 
@@ -145,6 +178,12 @@ func bipartiteDocumentToPebbleValue(document *Document) ([]byte, error) {
 
 // pebbleValueToBipartiteDocument converts a Pebble value to a document.
 func pebbleValueToBipartiteDocument(value []byte) (*Document, error) {
+
+	// Preconditions
+	if value == nil {
+		return nil, fmt.Errorf("Pebble value is nil")
+	}
+
 	var buffer bytes.Buffer
 	buffer.Write(value)
 	decoder := gob.NewDecoder(&buffer)
@@ -161,7 +200,8 @@ func pebbleValueToBipartiteDocument(value []byte) (*Document, error) {
 func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 
 	// Preconditions
-	if len(entity.Id) == 0 {
+	err := ValidateEntityId(entity.Id)
+	if err != nil {
 		return ErrEntityIdIsEmpty
 	}
 
@@ -177,10 +217,12 @@ func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 	return p.db.Set(pebbleKey, pebbleValue, pebble.Sync)
 }
 
+// GetEntity given its ID from the Pebble store.
 func (p *PebbleBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) {
 
 	// Preconditions
-	if len(entityId) == 0 {
+	err := ValidateEntityId(entityId)
+	if err != nil {
 		return nil, ErrEntityIdIsEmpty
 	}
 
@@ -202,6 +244,7 @@ func (p *PebbleBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) 
 	return pebbleValueToBipartiteEntity(value)
 }
 
+// HasEntity returns true if the entity exists in the Pebble store.
 func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 
 	// Preconditions
@@ -209,7 +252,8 @@ func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 		return false, ErrEntityIsNil
 	}
 
-	if len(entity.Id) == 0 {
+	err := ValidateEntityId(entity.Id)
+	if err != nil {
 		return false, ErrEntityIdIsEmpty
 	}
 
@@ -224,12 +268,13 @@ func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 	return ent.Equal(entity), nil
 }
 
-// AddDocument to the store.
+// AddDocument to the Pebble store.
 func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 
 	// Preconditions
-	if len(document.Id) == 0 {
-		return ErrEntityIdIsEmpty
+	err := ValidateDocumentId(document.Id)
+	if err != nil {
+		return ErrDocumentIdIsEmpty
 	}
 
 	pebbleKey := bipartiteDocumentIdToPebbleKey(document.Id)
@@ -246,7 +291,8 @@ func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 func (p *PebbleBipartiteGraphStore) GetDocument(documentId string) (*Document, error) {
 
 	// Preconditions
-	if len(documentId) == 0 {
+	err := ValidateDocumentId(documentId)
+	if err != nil {
 		return nil, ErrDocumentIdIsEmpty
 	}
 
@@ -276,7 +322,8 @@ func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error
 		return false, ErrDocumentIsNil
 	}
 
-	if len(document.Id) == 0 {
+	err := ValidateDocumentId(document.Id)
+	if err != nil {
 		return false, ErrDocumentIdIsEmpty
 	}
 
@@ -295,9 +342,13 @@ func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error
 func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
 
 	// Preconditions
-	if len(link.EntityId) == 0 {
+	err := ValidateEntityId(link.EntityId)
+	if err != nil {
 		return ErrEntityIdIsEmpty
-	} else if len(link.DocumentId) == 0 {
+	}
+
+	err = ValidateDocumentId(link.DocumentId)
+	if err != nil {
 		return ErrDocumentIdIsEmpty
 	}
 
@@ -332,6 +383,7 @@ func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
 	return nil
 }
 
+// makePebbleKeyUpperBound constructs the upper bound of the key for scanning.
 func makePebbleKeyUpperBound(b []byte) []byte {
 	end := make([]byte, len(b))
 	copy(end, b)
@@ -344,6 +396,8 @@ func makePebbleKeyUpperBound(b []byte) []byte {
 	return nil // no upper-bound
 }
 
+// makePebblePrefixIterOptions constructs an IterOptions for scanning all entries with a given
+// prefix.
 func makePebblePrefixIterOptions(prefix []byte) *pebble.IterOptions {
 	return &pebble.IterOptions{
 		LowerBound: prefix,
@@ -351,12 +405,14 @@ func makePebblePrefixIterOptions(prefix []byte) *pebble.IterOptions {
 	}
 }
 
+// PebbleDocumentIterator is an iterator for walking through all Documents in the Pebble store.
 type PebbleDocumentIterator struct {
-	iter      *pebble.Iterator
-	currentId string
-	hasNextId bool
+	iter      *pebble.Iterator // Pebble iterator
+	currentId string           // Current Document ID
+	hasNextId bool             // Is there another Document ID?
 }
 
+// nextDocumentId gets the next Document ID from the iterator.
 func (it *PebbleDocumentIterator) nextDocumentId() (string, error) {
 
 	// Is there another entry in the Pebble iterator?
@@ -381,10 +437,12 @@ func (it *PebbleDocumentIterator) nextDocumentId() (string, error) {
 	return toReturn, err
 }
 
+// hasNext returns true if there is another Document ID available.
 func (it *PebbleDocumentIterator) hasNext() bool {
 	return it.hasNextId
 }
 
+// close the iterator.
 func (it *PebbleDocumentIterator) close() error {
 	if it.iter != nil {
 		return it.iter.Close()
@@ -424,6 +482,7 @@ func (p *PebbleBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator,
 	return &documentIdIterator, err
 }
 
+// NumberOfDocuments in the Pebble bipartite store.
 func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
 	nDocuments := 0
 
@@ -443,12 +502,14 @@ func (p *PebbleBipartiteGraphStore) NumberOfDocuments() (int, error) {
 	return nDocuments, nil
 }
 
+// A PebbleEntityIterator is for walking through all Entities in the Pebble store.
 type PebbleEntityIterator struct {
-	iter      *pebble.Iterator
-	currentId string
-	hasNextId bool
+	iter      *pebble.Iterator // Pebble iterator
+	currentId string           // Current Entity ID
+	hasNextId bool             // Is there another Entity ID?
 }
 
+// nextEntityId from the iterator.
 func (it *PebbleEntityIterator) nextEntityId() (string, error) {
 
 	// Is there another entry in the Pebble iterator?
@@ -473,10 +534,12 @@ func (it *PebbleEntityIterator) nextEntityId() (string, error) {
 	return toReturn, err
 }
 
+// hasNext returns true if the iterator is not exhausted.
 func (it *PebbleEntityIterator) hasNext() bool {
 	return it.hasNextId
 }
 
+// close the iterator.
 func (it *PebbleEntityIterator) close() error {
 	if it.iter != nil {
 		return it.iter.Close()
@@ -516,6 +579,7 @@ func (p *PebbleBipartiteGraphStore) NewEntityIdIterator() (EntityIdIterator, err
 	return &entityIdIterator, err
 }
 
+// NumberOfEntities in the bipartite Pebble store.
 func (p *PebbleBipartiteGraphStore) NumberOfEntities() (int, error) {
 	nEntities := 0
 
@@ -543,6 +607,8 @@ func (p *PebbleBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool, erro
 // Clear the store.
 func (p *PebbleBipartiteGraphStore) Clear() error {
 
+	logging.Logger.Info().Msg("Clearing the Pebble bipartite graph store")
+
 	var deleteError error
 
 	// As soon as there is an error when deleting a key, stop the iteration
@@ -562,6 +628,8 @@ func (p *PebbleBipartiteGraphStore) Clear() error {
 
 // Destroy the bipartite Pebble store after closing the database.
 func (p *PebbleBipartiteGraphStore) Destroy() error {
+
+	logging.Logger.Info().Msg("Destroying the Pebble bipartite graph store")
 
 	// Close down the Pebble database
 	err := p.Close()
