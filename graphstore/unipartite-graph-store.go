@@ -49,6 +49,15 @@ func BuildFromEdgeList(graph UnipartiteGraphStore, edges []Edge) error {
 // UnipartiteGraphStoresEqual returns true if two unipartite graph stores are identical.
 func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) (bool, error) {
 
+	// Preconditions
+	if g1 == nil {
+		return false, fmt.Errorf("Graph store g1 is nil")
+	}
+
+	if g2 == nil {
+		return false, fmt.Errorf("Graph store g2 is nil")
+	}
+
 	// Get lists of entity IDs
 	entityIds1, err := g1.EntityIds()
 	if err != nil {
