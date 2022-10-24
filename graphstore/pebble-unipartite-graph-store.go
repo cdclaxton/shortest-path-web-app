@@ -14,17 +14,23 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
 )
 
+// A PebbleUnipartiteGraphStore is a Pebble-backed unipartite graph store.
 type PebbleUnipartiteGraphStore struct {
-	folder string
-	db     *pebble.DB
+	folder string     // Folder for the Pebble files
+	db     *pebble.DB // Pebble database
 }
 
 // NewPebbleUnipartiteGraphStore given the folder in which to store the Pebble files.
 func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, error) {
+
+	logging.Logger.Info().
+		Str("Folder", folder).
+		Msg("Creating a new unipartite Pebble store")
 
 	db, err := pebble.Open(folder, &pebble.Options{})
 	if err != nil {
@@ -39,18 +45,22 @@ func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, 
 	return &store, nil
 }
 
+// Close the Pebble store.
 func (p *PebbleUnipartiteGraphStore) Close() error {
 	return p.db.Close()
 }
 
+// entityIdToPebbleKey converts the entity ID to a Pebble key.
 func entityIdToPebbleKey(id string) []byte {
 	return []byte(id)
 }
 
+// pebbleKeyToEntityId converts a Pebble key to an entity ID.
 func pebbleKeyToEntityId(value []byte) string {
 	return string(value)
 }
 
+// entityIdsToPebbleValue converts a set of entity IDs to a Pebble value.
 func entityIdsToPebbleValue(s *set.Set[string]) ([]byte, error) {
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
@@ -62,6 +72,7 @@ func entityIdsToPebbleValue(s *set.Set[string]) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// pebbleValueToEntityIds converts a Pebble value to a set of entity IDs.
 func pebbleValueToEntityIds(value []byte) (*set.Set[string], error) {
 	var buffer bytes.Buffer
 	buffer.Write(value)
@@ -120,6 +131,12 @@ func (p *PebbleUnipartiteGraphStore) HasEntity(id string) (bool, error) {
 // AddEntity to the unipartite graph store.
 func (p *PebbleUnipartiteGraphStore) AddEntity(id string) error {
 
+	// Preconditions
+	err := ValidateEntityId(id)
+	if err != nil {
+		return ErrEntityIdIsBlank
+	}
+
 	found, err := p.HasEntity(id)
 	if err != nil {
 		return err
@@ -133,9 +150,20 @@ func (p *PebbleUnipartiteGraphStore) AddEntity(id string) error {
 	return nil
 }
 
+// AddDirected edge between the source (src) and destination (dst) vertices.
 func (p *PebbleUnipartiteGraphStore) AddDirected(src string, dst string) error {
 
 	// Preconditions
+	err := ValidateEntityId(src)
+	if err != nil {
+		return ErrEntityIdIsBlank
+	}
+
+	err = ValidateEntityId(dst)
+	if err != nil {
+		return ErrEntityIdIsBlank
+	}
+
 	if src == dst {
 		return fmt.Errorf("Source and destination IDs are identical (%v)", src)
 	}
@@ -155,16 +183,26 @@ func (p *PebbleUnipartiteGraphStore) AddDirected(src string, dst string) error {
 	return p.setSrcToDsts(src, existingSet)
 }
 
-// Add an undirected edge between two entities.
+// AddUndirected edge between two entities.
 func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error {
 
 	// Preconditions
+	err := ValidateEntityId(src)
+	if err != nil {
+		return ErrEntityIdIsBlank
+	}
+
+	err = ValidateEntityId(dst)
+	if err != nil {
+		return ErrEntityIdIsBlank
+	}
+
 	if src == dst {
 		return fmt.Errorf("Source and destination IDs are identical (%v)", src)
 	}
 
 	// Add the src --> dst connection
-	err := p.AddDirected(src, dst)
+	err = p.AddDirected(src, dst)
 	if err != nil {
 		return err
 	}
@@ -175,6 +213,8 @@ func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error
 
 // Clear down the graph.
 func (p *PebbleUnipartiteGraphStore) Clear() error {
+
+	logging.Logger.Info().Msg("Clearing the Pebble unipartite store")
 
 	var deleteError error
 
@@ -195,6 +235,8 @@ func (p *PebbleUnipartiteGraphStore) Clear() error {
 
 // Destroy the unipartite Pebble store after closing the database.
 func (p *PebbleUnipartiteGraphStore) Destroy() error {
+
+	logging.Logger.Info().Msg("Destroying the Pebble unipartite store")
 
 	err := p.Close()
 	if err != nil {
@@ -225,6 +267,17 @@ func (p *PebbleUnipartiteGraphStore) EntityIds() (*set.Set[string], error) {
 // EdgeExists returns true if the two entities are connected.
 func (p *PebbleUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) (bool, error) {
 
+	// Preconditions
+	err := ValidateEntityId(entity1)
+	if err != nil {
+		return false, ErrEntityIdIsBlank
+	}
+
+	err = ValidateEntityId(entity2)
+	if err != nil {
+		return false, ErrEntityIdIsBlank
+	}
+
 	dsts, found, err := p.dstEntityIds(entity1)
 	if err != nil {
 		return false, err
@@ -239,6 +292,12 @@ func (p *PebbleUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) 
 
 // EntityIdsAdjacentTo a given entity.
 func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.Set[string], error) {
+
+	// Preconditions
+	err := ValidateEntityId(entityId)
+	if err != nil {
+		return nil, ErrEntityIdIsBlank
+	}
 
 	dsts, found, err := p.dstEntityIds(entityId)
 	if err != nil {
