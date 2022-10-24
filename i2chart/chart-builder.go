@@ -10,20 +10,22 @@ import (
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"golang.org/x/exp/maps"
 )
 
-// Keywords
+// Keywords used in the configuration of an i2 chart.
 const (
 	entityIdKeyword       = "ID"
 	entitySetNamesKeyword = "ENTITY-SET-NAMES"
 )
 
+// LinksSpec represents the specification of a link between two entities in i2.
 type LinksSpec struct {
-	Label         string `json:"label"` // Specification of the label connecting entities
-	DateAttribute string `json:"dateAttribute"`
-	DateFormat    string `json:"dateFormat"`
+	Label         string `json:"label"`         // Specification of the label connecting entities
+	DateAttribute string `json:"dateAttribute"` // Attribute holding the document date
+	DateFormat    string `json:"dateFormat"`    // Format of the document date
 }
 
 // An entity is the specification of the fields for a given entity type. By making this field
@@ -37,6 +39,8 @@ type I2ChartConfig struct {
 
 // readI2Config in a JSON file.
 func readI2Config(filepath string) (*I2ChartConfig, error) {
+
+	logging.Logger.Info().Str("Filepath", filepath).Msg("Reading i2 chart config from JSON file")
 
 	// Open the file
 	file, err := os.Open(filepath)
@@ -66,6 +70,8 @@ func readI2Config(filepath string) (*I2ChartConfig, error) {
 
 // validateI2Config and returns whether it passes and a list of issues.
 func validateI2Config(config I2ChartConfig) (bool, []string) {
+
+	logging.Logger.Info().Msg("Validating i2 chart config")
 
 	// Are entities defined?
 	if len(config.Entities) == 0 {
@@ -120,6 +126,7 @@ func validateI2Config(config I2ChartConfig) (bool, []string) {
 	return true, nil
 }
 
+// An I2ChartBuilder builds an i2 chart given a bipartite graph store and config.
 type I2ChartBuilder struct {
 	config    I2ChartConfig                  // Configuration for the output
 	bipartite graphstore.BipartiteGraphStore // Bipartite store
@@ -146,7 +153,9 @@ func NewI2ChartBuilder(filepath string) (*I2ChartBuilder, error) {
 	}, nil
 }
 
+// SetBipartite graph store used by the i2 chart builder.
 func (i *I2ChartBuilder) SetBipartite(bipartite graphstore.BipartiteGraphStore) {
+	logging.Logger.Info().Msg("Setting bipartite graph store in the i2 chart builder")
 	i.bipartite = bipartite
 }
 
@@ -208,6 +217,7 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 	return docs, nil
 }
 
+// substituteForLink creates the link text.
 func substituteForLink(docs []*graphstore.Document, spec LinksSpec,
 	missingAttribute string) (string, error) {
 
@@ -217,6 +227,7 @@ func substituteForLink(docs []*graphstore.Document, spec LinksSpec,
 	return Substitute(spec.Label, keywordToValue, missingAttribute)
 }
 
+// makeLinkLabel between two entities.
 func makeLinkLabel(entity1 *graphstore.Entity, entity2 *graphstore.Entity,
 	bipartite graphstore.BipartiteGraphStore, spec LinksSpec,
 	missingAttribute string) (string, error) {
@@ -231,6 +242,7 @@ func makeLinkLabel(entity1 *graphstore.Entity, entity2 *graphstore.Entity,
 	return substituteForLink(docs, spec, missingAttribute)
 }
 
+// mergeKeywords creates a map of keywords from m1 and m2.
 func mergeKeywords(m1 map[string]string, m2 map[string]string) map[string]string {
 	merged := map[string]string{}
 
@@ -245,6 +257,7 @@ func mergeKeywords(m1 map[string]string, m2 map[string]string) map[string]string
 	return merged
 }
 
+// makeI2Entity constructs the fields for an entity to be displayed in i2.
 func makeI2Entity(entity *graphstore.Entity, columns []string,
 	entitySpec map[string]map[string]string, missingAttribute string,
 	keywordToValue map[string]string) ([]string, error) {
