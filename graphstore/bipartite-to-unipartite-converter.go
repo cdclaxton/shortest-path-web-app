@@ -3,6 +3,7 @@ package graphstore
 import (
 	"fmt"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
@@ -13,6 +14,21 @@ import (
 func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 	skipEntities *set.Set[string]) error {
 
+	// Preconditions
+	if bi == nil {
+		return fmt.Errorf("Bipartite store is nil")
+	}
+
+	if uni == nil {
+		return fmt.Errorf("Unipartite store is nil")
+	}
+
+	if skipEntities == nil {
+		return fmt.Errorf("Entities to skip is nil")
+	}
+
+	logging.Logger.Info().Msg("Starting bipartite to unipartite conversion")
+
 	// Iterator to retrieve documents from the bipartite graph store
 	it, err := bi.NewDocumentIdIterator()
 	if err != nil {
@@ -21,7 +37,7 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 
 	for it.hasNext() {
 
-		// Get the next document ID
+		// Get the next document ID from the iterator
 		docId, err := it.nextDocumentId()
 		if err != nil {
 			return err
@@ -70,6 +86,8 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 		}
 
 	}
+
+	logging.Logger.Info().Msg("Finished bipartite to unipartite conversion")
 
 	return nil
 }
