@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
-	"github.com/rs/zerolog/log"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
 // LinksCsvFile represents the configuration of a single CSV file of entity-document links.
@@ -50,19 +51,28 @@ type LinksCsvFileReader struct {
 	entityIdFieldIndex   int
 	documentIdFieldIndex int
 
-	nextLinks graphstore.Link
-	hasNext   bool
+	nextLinks     graphstore.Link // Next link
+	hasNext       bool            // Is there another link?
+	numberOfLinks int             // Number of links parsed
+	numberOfRows  int             // Number of lines (>= number of links + 1)
 }
 
 // NewLinksCsvFileReader from the definition of the links CSV file.
 func NewLinksCsvFileReader(csv LinksCsvFile) *LinksCsvFileReader {
 	return &LinksCsvFileReader{
-		linksCsvFile: csv,
+		linksCsvFile:  csv,
+		numberOfLinks: 0,
+		numberOfRows:  0,
 	}
 }
 
 // Initialise the links CSV file reader.
 func (reader *LinksCsvFileReader) Initialise() error {
+
+	logging.Logger.Info().
+		Str("Component", "LinksCsvFileReader").
+		Str("Filepath", reader.linksCsvFile.Path).
+		Msg("Opening CSV file of links")
 
 	// Open the file
 	var err error
@@ -71,11 +81,31 @@ func (reader *LinksCsvFileReader) Initialise() error {
 		return err
 	}
 
+	logging.Logger.Info().
+		Str("Component", "LinksCsvFileReader").
+		Str("Filepath", reader.linksCsvFile.Path).
+		Msg("Creating the CSV file reader")
+
 	// Create the CSV reader
 	reader.csvReader = csv.NewReader(reader.file)
 
+	logging.Logger.Info().
+		Str("Component", "LinksCsvFileReader").
+		Str("Filepath", reader.linksCsvFile.Path).
+		Msg("Reading CSV file header")
+
 	// Read the header from the file
 	header, err := reader.csvReader.Read()
+	if err != nil {
+		return err
+	}
+
+	reader.numberOfRows += 1
+
+	logging.Logger.Info().
+		Str("Component", "LinksCsvFileReader").
+		Str("Filepath", reader.linksCsvFile.Path).
+		Msg("Finding indices of the Document ID and the Entity ID")
 
 	// Find the entity ID and document ID field indices
 	fieldToIndex, err := findIndicesOfFields(header,
@@ -109,14 +139,18 @@ func (reader *LinksCsvFileReader) readRecord() (graphstore.Link, bool) {
 			return graphstore.Link{}, false
 		}
 
+		reader.numberOfRows += 1
+
 		if err != nil {
-			log.Warn().Str("Component", "LinksCsvFileReader").
+			logging.Logger.Warn().
+				Str("Component", "LinksCsvFileReader").
 				Str("Parse error", err.Error()).
 				Msg("Line failed to parse")
 			continue
 		}
 
 		recordFound = true
+		reader.numberOfLinks += 1
 	}
 
 	return graphstore.NewLink(record[reader.entityIdFieldIndex], record[reader.documentIdFieldIndex]),
@@ -137,11 +171,28 @@ func (reader *LinksCsvFileReader) Next() (graphstore.Link, error) {
 	// Try to read the next record
 	reader.nextLinks, reader.hasNext = reader.readRecord()
 
+	if reader.hasNext && reader.numberOfRows%100000 == 0 {
+		logging.Logger.Info().
+			Str("Component", "LinksCsvFileReader").
+			Str("Filepath", reader.linksCsvFile.Path).
+			Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
+			Str("Number of links read", strconv.Itoa(reader.numberOfLinks)).
+			Msg("Reading links from CSV file")
+	}
+
 	return current, nil
 }
 
 // Close the links CSV file.
 func (reader *LinksCsvFileReader) Close() error {
+
+	logging.Logger.Info().
+		Str("Component", "LinksCsvFileReader").
+		Str("Filepath", reader.linksCsvFile.Path).
+		Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
+		Str("Number of links read", strconv.Itoa(reader.numberOfLinks)).
+		Msg("Closing CSV file")
+
 	return reader.file.Close()
 }
 

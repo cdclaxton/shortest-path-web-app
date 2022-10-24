@@ -20,14 +20,18 @@ func TestLinksHeaderOnly(t *testing.T) {
 	assert.False(t, reader.hasNext)
 
 	assert.NoError(t, reader.Close())
+	assert.Equal(t, 1, reader.numberOfRows)
+	assert.Equal(t, 0, reader.numberOfLinks)
 }
 
 func TestReadLinksFile(t *testing.T) {
 
 	testCases := []struct {
-		csv           LinksCsvFile
-		expected      []graphstore.Link
-		expectedError bool
+		csv                 LinksCsvFile
+		expected            []graphstore.Link
+		expectedError       bool
+		expectedNumberRows  int
+		expectedNumberLinks int
 	}{
 		{
 			csv: LinksCsvFile{
@@ -42,7 +46,9 @@ func TestReadLinksFile(t *testing.T) {
 					DocumentId: "d-3",
 				},
 			},
-			expectedError: false,
+			expectedError:       false,
+			expectedNumberRows:  2,
+			expectedNumberLinks: 1,
 		},
 		{
 			csv: LinksCsvFile{
@@ -61,7 +67,9 @@ func TestReadLinksFile(t *testing.T) {
 					DocumentId: "d-4",
 				},
 			},
-			expectedError: false,
+			expectedError:       false,
+			expectedNumberRows:  3,
+			expectedNumberLinks: 2,
 		},
 		{
 			csv: LinksCsvFile{
@@ -84,7 +92,9 @@ func TestReadLinksFile(t *testing.T) {
 					DocumentId: "d-10",
 				},
 			},
-			expectedError: false,
+			expectedError:       false,
+			expectedNumberRows:  5, // contains a broken row
+			expectedNumberLinks: 3,
 		},
 		{
 			// CSV file is missing the entity ID field
@@ -94,8 +104,10 @@ func TestReadLinksFile(t *testing.T) {
 				DocumentIdField: "document_id",
 				Delimiter:       ",",
 			},
-			expected:      nil,
-			expectedError: true,
+			expected:            nil,
+			expectedError:       true,
+			expectedNumberRows:  0,
+			expectedNumberLinks: 0,
 		},
 	}
 
@@ -111,6 +123,8 @@ func TestReadLinksFile(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expected, links)
+		assert.Equal(t, testCase.expectedNumberRows, reader.numberOfRows)
+		assert.Equal(t, testCase.expectedNumberLinks, reader.numberOfLinks)
 	}
 
 }
