@@ -2,13 +2,16 @@ package i2chart
 
 import (
 	"fmt"
+	"strconv"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/xuri/excelize/v2"
 )
 
 // Column letters used by Excel
 const columnLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+// columnIndexToLetter converts a column index (integer) to a letter (as used by Excel).
 func columnIndexToLetter(idx int) (string, error) {
 
 	// Precondition
@@ -19,6 +22,7 @@ func columnIndexToLetter(idx int) (string, error) {
 	return string(columnLetters[idx]), nil
 }
 
+// excelCellIndex (as a string) given the column index and row index.
 func excelCellIndex(columnIndex int, rowIndex int) (string, error) {
 
 	// Precondition
@@ -35,6 +39,7 @@ func excelCellIndex(columnIndex int, rowIndex int) (string, error) {
 	return fmt.Sprintf("%v%v", columnLetter, rowIndex+1), nil
 }
 
+// WriteToExcel writes the rows to the Excel file at filepath.
 func WriteToExcel(filepath string, rows [][]string) error {
 
 	// Preconditions
@@ -45,6 +50,11 @@ func WriteToExcel(filepath string, rows [][]string) error {
 	if rows == nil {
 		return fmt.Errorf("Rows to write is nil")
 	}
+
+	logging.Logger.Info().
+		Str("Filepath", filepath).
+		Str("Number of rows", strconv.Itoa(len(rows))).
+		Msg("Writing Excel file")
 
 	// Create a new in-memory Excel file
 	f := excelize.NewFile()
@@ -70,7 +80,13 @@ func WriteToExcel(filepath string, rows [][]string) error {
 	return f.SaveAs(filepath)
 }
 
+// ReadFromExcel reads sheet sheetName from file at filepath.
 func ReadFromExcel(filepath string, sheetName string) ([][]string, error) {
+
+	logging.Logger.Info().
+		Str("Filepath", filepath).
+		Str("Sheet name", sheetName).
+		Msg("Reading Excel file")
 
 	// Open the Excel file
 	file, err := excelize.OpenFile(filepath)
