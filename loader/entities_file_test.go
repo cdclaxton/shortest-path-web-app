@@ -28,15 +28,18 @@ func TestEntitiesHeaderOnly(t *testing.T) {
 	}, reader.attributeFieldIndex)
 
 	assert.False(t, reader.hasNext)
-
 	assert.NoError(t, reader.Close())
+	assert.Equal(t, 1, reader.numberOfRows)
+	assert.Equal(t, 0, reader.numberOfEntities)
 }
 
 func TestReadEntitiesFile(t *testing.T) {
 	testCases := []struct {
-		csv              EntitiesCsvFile
-		expectedEntities []graphstore.Entity
-		expectedError    bool
+		csv                    EntitiesCsvFile
+		expectedEntities       []graphstore.Entity
+		expectedError          bool
+		expectedNumberRows     int
+		expectedNumberEntities int
 	}{
 		{
 			csv: EntitiesCsvFile{
@@ -49,8 +52,10 @@ func TestReadEntitiesFile(t *testing.T) {
 					"last name":  "Surname",
 				},
 			},
-			expectedEntities: []graphstore.Entity{},
-			expectedError:    false,
+			expectedEntities:       []graphstore.Entity{},
+			expectedError:          false,
+			expectedNumberRows:     1,
+			expectedNumberEntities: 0,
 		},
 		{
 			csv: EntitiesCsvFile{
@@ -74,7 +79,9 @@ func TestReadEntitiesFile(t *testing.T) {
 					LinkedDocumentIds: set.NewSet[string](),
 				},
 			},
-			expectedError: false,
+			expectedError:          false,
+			expectedNumberRows:     2,
+			expectedNumberEntities: 1,
 		},
 		{
 			csv: EntitiesCsvFile{
@@ -107,7 +114,9 @@ func TestReadEntitiesFile(t *testing.T) {
 					LinkedDocumentIds: set.NewSet[string](),
 				},
 			},
-			expectedError: false,
+			expectedError:          false,
+			expectedNumberRows:     3,
+			expectedNumberEntities: 2,
 		},
 		{
 			// The file is missing the 'age' field
@@ -122,8 +131,10 @@ func TestReadEntitiesFile(t *testing.T) {
 					"age":        "Age",
 				},
 			},
-			expectedEntities: nil,
-			expectedError:    true,
+			expectedEntities:       nil,
+			expectedError:          true,
+			expectedNumberRows:     1,
+			expectedNumberEntities: 0,
 		},
 	}
 
@@ -139,5 +150,7 @@ func TestReadEntitiesFile(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedEntities, entities)
+		assert.Equal(t, testCase.expectedNumberRows, reader.numberOfRows)
+		assert.Equal(t, testCase.expectedNumberEntities, reader.numberOfEntities)
 	}
 }

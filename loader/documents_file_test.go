@@ -28,15 +28,19 @@ func TestDocumentsHeaderOnly(t *testing.T) {
 	}, reader.attributeFieldIndex)
 
 	assert.False(t, reader.hasNext)
-
 	assert.NoError(t, reader.Close())
+
+	assert.Equal(t, 1, reader.numberOfRows)
+	assert.Equal(t, 0, reader.numberOfDocuments)
 }
 
 func TestReadDocumentsFile(t *testing.T) {
 	testCases := []struct {
-		csv               DocumentsCsvFile
-		expectedDocuments []graphstore.Document
-		expectedError     bool
+		csv                     DocumentsCsvFile
+		expectedDocuments       []graphstore.Document
+		expectedError           bool
+		expectedNumberRows      int
+		expectedNumberDocuments int
 	}{
 		{
 			csv: DocumentsCsvFile{
@@ -49,8 +53,10 @@ func TestReadDocumentsFile(t *testing.T) {
 					"date":  "Date",
 				},
 			},
-			expectedDocuments: []graphstore.Document{},
-			expectedError:     false,
+			expectedDocuments:       []graphstore.Document{},
+			expectedError:           false,
+			expectedNumberRows:      1,
+			expectedNumberDocuments: 0,
 		},
 		{
 			csv: DocumentsCsvFile{
@@ -74,7 +80,9 @@ func TestReadDocumentsFile(t *testing.T) {
 					LinkedEntityIds: set.NewSet[string](),
 				},
 			},
-			expectedError: false,
+			expectedError:           false,
+			expectedNumberRows:      2,
+			expectedNumberDocuments: 1,
 		},
 		{
 			csv: DocumentsCsvFile{
@@ -107,7 +115,9 @@ func TestReadDocumentsFile(t *testing.T) {
 					LinkedEntityIds: set.NewSet[string](),
 				},
 			},
-			expectedError: false,
+			expectedError:           false,
+			expectedNumberRows:      3,
+			expectedNumberDocuments: 2,
 		},
 		{
 			csv: DocumentsCsvFile{
@@ -121,8 +131,10 @@ func TestReadDocumentsFile(t *testing.T) {
 					"serial": "Serial",
 				},
 			},
-			expectedDocuments: nil,
-			expectedError:     true,
+			expectedDocuments:       nil,
+			expectedError:           true,
+			expectedNumberRows:      1,
+			expectedNumberDocuments: 0,
 		},
 	}
 
@@ -138,5 +150,7 @@ func TestReadDocumentsFile(t *testing.T) {
 		}
 
 		assert.Equal(t, testCase.expectedDocuments, documents)
+		assert.Equal(t, testCase.expectedNumberRows, reader.numberOfRows)
+		assert.Equal(t, testCase.expectedNumberDocuments, reader.numberOfDocuments)
 	}
 }

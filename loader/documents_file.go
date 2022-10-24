@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
-	"github.com/rs/zerolog/log"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
 // A DocumentsCsvFile specifies the location and format of a CSV file containing documents.
@@ -19,6 +20,7 @@ type DocumentsCsvFile struct {
 	FieldToAttribute map[string]string `json:"fieldToAttribute"` // Mapping of field name to attribute
 }
 
+// NewDocumentsCsvFile creates a new DocumentsCsvFile struct.
 func NewDocumentsCsvFile(path string, documentType string, delimiter string,
 	documentIdField string, fieldToAttribute map[string]string) DocumentsCsvFile {
 
@@ -31,6 +33,7 @@ func NewDocumentsCsvFile(path string, documentType string, delimiter string,
 	}
 }
 
+// DocumentsCsvFileReader reads Documents from a CSV file.
 type DocumentsCsvFileReader struct {
 	documentsCsvFile     DocumentsCsvFile
 	csvReader            *csv.Reader
@@ -38,17 +41,28 @@ type DocumentsCsvFileReader struct {
 	documentIdFieldIndex int
 	attributeFieldIndex  map[string]int
 
-	nextDocument graphstore.Document
-	hasNext      bool
+	nextDocument      graphstore.Document // Next document
+	hasNext           bool                // Is there another document to read?
+	numberOfDocuments int                 // Number of documents parsed
+	numberOfRows      int                 // Number of lines (>= number of documents + 1)
 }
 
+// A NewDocumentsCsvFileReader constructs a reader of Documents from a CSV file.
 func NewDocumentsCsvFileReader(csv DocumentsCsvFile) *DocumentsCsvFileReader {
 	return &DocumentsCsvFileReader{
-		documentsCsvFile: csv,
+		documentsCsvFile:  csv,
+		numberOfDocuments: 0,
+		numberOfRows:      0,
 	}
 }
 
+// Initialise the Document reader.
 func (reader *DocumentsCsvFileReader) Initialise() error {
+
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Opening CSV file of documents")
 
 	// Open the file
 	var err error
@@ -57,11 +71,32 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 		return err
 	}
 
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Creating the CSV reader")
+
 	// Create the CSV reader
 	reader.csvReader = csv.NewReader(reader.file)
 
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Reading CSV file header")
+
 	// Read the header from the file
 	header, err := reader.csvReader.Read()
+	if err != nil {
+		return err
+	}
+
+	reader.numberOfRows += 1
+
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Str("Document ID field", reader.documentsCsvFile.DocumentIdField).
+		Msg("Finding index of the Document ID field")
 
 	// Find the document ID field index
 	fieldToIndex, err := findIndicesOfFields(header, []string{reader.documentsCsvFile.DocumentIdField})
@@ -72,6 +107,11 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 
 	reader.documentIdFieldIndex = fieldToIndex[reader.documentsCsvFile.DocumentIdField]
 
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Creating a mapping from an attribute to a field index")
+
 	// Create a mapping from the attribute to the field index in the CSV file
 	reader.attributeFieldIndex, err = attributeToFieldIndex(header, reader.documentsCsvFile.FieldToAttribute)
 
@@ -79,12 +119,18 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 		return err
 	}
 
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Reading the first Document")
+
 	// Read the first record
 	reader.nextDocument, reader.hasNext = reader.readRecord()
 
 	return nil
 }
 
+// readRecord from the CSV file containing Documents.
 func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 
 	recordFound := false
@@ -100,8 +146,11 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 			return graphstore.Document{}, false
 		}
 
+		reader.numberOfRows += 1
+
 		if err != nil {
-			log.Warn().Str("Component", "DocumentsCsvFileReader").
+			logging.Logger.Warn().
+				Str("Component", "DocumentsCsvFileReader").
 				Str("Parse error", err.Error()).
 				Msg("Line failed to parse")
 			continue
@@ -114,7 +163,8 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 		attributes, err := extractAttributes(record, reader.attributeFieldIndex)
 
 		if err != nil {
-			log.Warn().Str("Component", "DocumentsCsvFileReader").
+			logging.Logger.Warn().
+				Str("Component", "DocumentsCsvFileReader").
 				Str("Error", err.Error()).
 				Msg("Failed to extract attributes from record")
 			continue
@@ -125,11 +175,15 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 			attributes)
 
 		if err != nil {
-			log.Warn().Str("Component", "DocumentsCsvFileReader").
+			logging.Logger.Warn().
+				Str("Component", "DocumentsCsvFileReader").
 				Str("Error", err.Error()).
 				Msg("Failed to build a document from record")
 			continue
 		}
+
+		// Increment the number of documents parsed from the CSV file
+		reader.numberOfDocuments += 1
 
 		recordFound = true
 	}
@@ -150,11 +204,28 @@ func (reader *DocumentsCsvFileReader) Next() (graphstore.Document, error) {
 	// Try to read the next record
 	reader.nextDocument, reader.hasNext = reader.readRecord()
 
+	if reader.hasNext && reader.numberOfRows%100000 == 0 {
+		logging.Logger.Info().
+			Str("Component", "DocumentsCsvFileReader").
+			Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
+			Str("Number of documents read", strconv.Itoa(reader.numberOfDocuments)).
+			Str("Filepath", reader.documentsCsvFile.Path).
+			Msg("Reading documents from CSV file")
+	}
+
 	return current, nil
 }
 
 // Close the documents CSV file
 func (reader *DocumentsCsvFileReader) Close() error {
+
+	logging.Logger.Info().
+		Str("Component", "DocumentsCsvFileReader").
+		Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
+		Str("Number of documents read", strconv.Itoa(reader.numberOfDocuments)).
+		Str("Filepath", reader.documentsCsvFile.Path).
+		Msg("Closing CSV file")
+
 	return reader.file.Close()
 }
 
