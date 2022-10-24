@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
@@ -406,6 +407,11 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 	if conns == nil {
 		return nil, fmt.Errorf("Nil connections passed to Build")
 	}
+
+	logging.Logger.Info().
+		Str("Number of entity IDs from datasets", strconv.Itoa(len(conns.Connections))).
+		Str("Number of hops", strconv.Itoa(conns.MaxHops)).
+		Msg("Building i2 chart")
 
 	// Unipartite graph to store the entities that are connected in the i2 chart
 	i2Graph := graphstore.NewInMemoryUnipartiteGraphStore()
