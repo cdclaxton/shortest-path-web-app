@@ -11,6 +11,9 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// Component name to use in logging
+const componentName = "bfs"
+
 // Errors
 var (
 	ErrInvalidHops             = fmt.Errorf("Invalid number of hops")
@@ -33,6 +36,10 @@ type PathFinder struct {
 
 // NewPathFinder given a unipartite graph.
 func NewPathFinder(graph graphstore.UnipartiteGraphStore) (*PathFinder, error) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Creating a new path finder")
 
 	// Precondition
 	if graph == nil {
@@ -313,9 +320,10 @@ func (p *PathFinder) pathsBetweenEntitySets(entitySet1 job.EntitySet, entitySet2
 		return ErrNetworkConnectionsIsNil
 	}
 
-	logging.Logger.Info().Str("Component", "Path finder").
-		Str("Entity set 1", entitySet1.Name).
-		Str("Entity set 2", entitySet2.Name).
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("entitySet1", entitySet1.Name).
+		Str("entitySet2", entitySet2.Name).
 		Msg("Finding paths between entity sets")
 
 	// Walk through all pairs of entities
@@ -440,10 +448,11 @@ func (p *PathFinder) FindPaths(entitySets []job.EntitySet, maxHops int) (
 		datasets = append(datasets, entitySet.Name)
 	}
 
-	logging.Logger.Info().Str("Component", "Path finder").
-		Str("Number hops", strconv.Itoa(maxHops)).
-		Str("Number of datasets", strconv.Itoa(len(entitySets))).
-		Strs("Datasets", datasets).
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("numberOfHops", strconv.Itoa(maxHops)).
+		Str("numberOfDatasets", strconv.Itoa(len(entitySets))).
+		Strs("datasets", datasets).
 		Msg("Finding paths")
 
 	// New struct to hold the network connections between entities
