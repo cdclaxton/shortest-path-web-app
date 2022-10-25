@@ -1,4 +1,4 @@
-package loader
+package graphloader
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
-const componentName = "loader"
+const componentName = "graphLoader"
 
 // A GraphStoreLoaderFromCsv loads a bipartite graph store from entity, document and link CSV files.
 type GraphStoreLoaderFromCsv struct {

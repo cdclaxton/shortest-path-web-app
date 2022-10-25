@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/graphloader"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
-	"github.com/cdclaxton/shortest-path-web-app/loader"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +28,7 @@ func TestReadGraphConfigValidFile(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the entity files
-	expectedEntityFiles := []loader.EntitiesCsvFile{
+	expectedEntityFiles := []graphloader.EntitiesCsvFile{
 		{
 			Path:          "entities_0.csv",
 			EntityType:    "Person",
@@ -51,7 +51,7 @@ func TestReadGraphConfigValidFile(t *testing.T) {
 	assert.Equal(t, expectedEntityFiles, graphConfig.Data.EntitiesFiles)
 
 	// Check the document files
-	expectedDocumentsFiles := []loader.DocumentsCsvFile{
+	expectedDocumentsFiles := []graphloader.DocumentsCsvFile{
 		{
 			Path:            "documents_0.csv",
 			DocumentType:    "Doc-type-A",
@@ -76,7 +76,7 @@ func TestReadGraphConfigValidFile(t *testing.T) {
 	assert.Equal(t, expectedDocumentsFiles, graphConfig.Data.DocumentsFiles)
 
 	// Check the link files
-	expectedLinksFiles := []loader.LinksCsvFile{
+	expectedLinksFiles := []graphloader.LinksCsvFile{
 		{
 			Path:            "links_0.csv",
 			EntityIdField:   "entity ID",
@@ -134,17 +134,17 @@ func TestMakePathsRelativeToConfig(t *testing.T) {
 
 	graphConfig := GraphConfig{
 		Data: GraphData{
-			EntitiesFiles: []loader.EntitiesCsvFile{
+			EntitiesFiles: []graphloader.EntitiesCsvFile{
 				{
 					Path: "entities_1.csv",
 				},
 			},
-			DocumentsFiles: []loader.DocumentsCsvFile{
+			DocumentsFiles: []graphloader.DocumentsCsvFile{
 				{
 					Path: "documents_1.csv",
 				},
 			},
-			LinksFiles: []loader.LinksCsvFile{
+			LinksFiles: []graphloader.LinksCsvFile{
 				{
 					Path: "links_1.csv",
 				},

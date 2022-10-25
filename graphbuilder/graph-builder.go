@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cdclaxton/shortest-path-web-app/graphloader"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
-	"github.com/cdclaxton/shortest-path-web-app/loader"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
@@ -25,10 +25,10 @@ const (
 
 // GraphData specifies the location of the input data to read.
 type GraphData struct {
-	EntitiesFiles    []loader.EntitiesCsvFile  `json:"entitiesFiles"`
-	DocumentsFiles   []loader.DocumentsCsvFile `json:"documentsFiles"`
-	LinksFiles       []loader.LinksCsvFile     `json:"linksFiles"`
-	SkipEntitiesFile string                    `json:"skipEntitiesFile"` // File path to the entities to skip
+	EntitiesFiles    []graphloader.EntitiesCsvFile  `json:"entitiesFiles"`
+	DocumentsFiles   []graphloader.DocumentsCsvFile `json:"documentsFiles"`
+	LinksFiles       []graphloader.LinksCsvFile     `json:"linksFiles"`
+	SkipEntitiesFile string                         `json:"skipEntitiesFile"` // File path to the entities to skip
 }
 
 // createTempBipartitePebbleFolder in the default temp directory for the operating system.
@@ -264,7 +264,7 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		Str(logging.ComponentField, componentName).
 		Msg("Loading the bipartite graph store from CSV files")
 
-	bipartiteLoader := loader.NewGraphStoreLoaderFromCsv(builder.Bipartite,
+	bipartiteLoader := graphloader.NewGraphStoreLoaderFromCsv(builder.Bipartite,
 		config.Data.EntitiesFiles,
 		config.Data.DocumentsFiles,
 		config.Data.LinksFiles)
@@ -279,7 +279,7 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		Str(logging.ComponentField, componentName).
 		Msg("Reading the entities to skip")
 
-	skipEntities, err := loader.ReadSkipEntities(config.Data.SkipEntitiesFile)
+	skipEntities, err := graphloader.ReadSkipEntities(config.Data.SkipEntitiesFile)
 	if err != nil {
 		return nil, err
 	}

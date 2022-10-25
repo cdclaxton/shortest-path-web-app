@@ -11,7 +11,7 @@
 // If a line in the file contains an inconsistent number of fields, the line
 // is skipped.
 
-package loader
+package graphloader
 
 import (
 	"encoding/csv"
