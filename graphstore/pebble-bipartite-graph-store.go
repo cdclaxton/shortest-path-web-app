@@ -36,7 +36,8 @@ func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, er
 	}
 
 	logging.Logger.Info().
-		Str("Folder", folder).
+		Str(logging.ComponentField, componentName).
+		Str("folder", folder).
 		Msg("Creating a new bipartite Pebble store")
 
 	db, err := pebble.Open(folder, &pebble.Options{})
@@ -54,7 +55,10 @@ func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, er
 
 // Close the Pebble store.
 func (p *PebbleBipartiteGraphStore) Close() error {
-	logging.Logger.Info().Msg("Closing the Pebble bipartite graph store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Closing the Pebble bipartite graph store")
+
 	return p.db.Close()
 }
 
@@ -607,7 +611,9 @@ func (p *PebbleBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool, erro
 // Clear the store.
 func (p *PebbleBipartiteGraphStore) Clear() error {
 
-	logging.Logger.Info().Msg("Clearing the Pebble bipartite graph store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Clearing the Pebble bipartite graph store")
 
 	var deleteError error
 
@@ -629,7 +635,9 @@ func (p *PebbleBipartiteGraphStore) Clear() error {
 // Destroy the bipartite Pebble store after closing the database.
 func (p *PebbleBipartiteGraphStore) Destroy() error {
 
-	logging.Logger.Info().Msg("Destroying the Pebble bipartite graph store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Destroying the Pebble bipartite graph store")
 
 	// Close down the Pebble database
 	err := p.Close()

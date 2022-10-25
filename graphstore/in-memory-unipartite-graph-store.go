@@ -82,7 +82,9 @@ func (graph *InMemoryUnipartiteGraphStore) AddUndirected(v1 string, v2 string) e
 // Clear the in-memory unipartite graph store.
 func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 
-	logging.Logger.Info().Msg("Clearing the in-memory unipartite graph store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Clearing the in-memory unipartite graph store")
 
 	graph.vertices = map[string]*set.Set[string]{}
 	return nil
@@ -91,7 +93,9 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 // Destroy the in-memory unipartite graph.
 func (graph *InMemoryUnipartiteGraphStore) Destroy() error {
 
-	logging.Logger.Info().Msg("Destroying the in-memory unipartite graph store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Destroying the in-memory unipartite graph store")
 
 	return graph.Clear()
 }

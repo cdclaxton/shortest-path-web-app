@@ -59,8 +59,8 @@ func NewEntitiesCsvFileReader(csv EntitiesCsvFile) *EntitiesCsvFileReader {
 func (reader *EntitiesCsvFileReader) Initialise() error {
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Opening CSV file of entities")
 
 	// Open the file
@@ -71,16 +71,16 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	}
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Creating the CSV reader")
 
 	// Create the CSV reader
 	reader.csvReader = csv.NewReader(reader.file)
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Reading CSV file header")
 
 	// Read the header from the file
@@ -92,8 +92,8 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	reader.numberOfRows += 1
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Finding index of the Entity ID field")
 
 	// Find the entity ID field index
@@ -106,8 +106,8 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	reader.entityIdFieldIndex = fieldToIndex[reader.entitiesCsvFile.EntityIdField]
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Creating a mapping from an attribute to a field index")
 
 	// Create the mapping from the attribute to the field index in the CSV file
@@ -118,8 +118,8 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	}
 
 	logging.Logger.Info().
-		Str("Component", "DocumentsCsvFileReader").
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Reading the first Entity")
 
 	// Read the first record
@@ -147,9 +147,10 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		reader.numberOfRows += 1
 
 		if err != nil {
-			log.Warn().Str("Component", "EntitiesCsvFileReader").
-				Str("File path", reader.entitiesCsvFile.Path).
-				Str("Parse error", err.Error()).
+			log.Warn().
+				Str(logging.ComponentField, componentName).
+				Str("filepath", reader.entitiesCsvFile.Path).
+				Err(err).
 				Msg("Line failed to parse")
 			continue
 		}
@@ -161,9 +162,10 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		attributes, err := extractAttributes(record, reader.attributeFieldIndex)
 
 		if err != nil {
-			log.Warn().Str("Component", "EntitiesCsvFileReader").
-				Str("File path", reader.entitiesCsvFile.Path).
-				Str("Error", err.Error()).
+			log.Warn().
+				Str(logging.ComponentField, componentName).
+				Str("filepath", reader.entitiesCsvFile.Path).
+				Err(err).
 				Msg("Failed to extract attributes from record")
 			continue
 		}
@@ -172,9 +174,10 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		entity, err = graphstore.NewEntity(entityId, reader.entitiesCsvFile.EntityType, attributes)
 
 		if err != nil {
-			log.Warn().Str("Component", "EntitiesCsvFileReader").
-				Str("File path", reader.entitiesCsvFile.Path).
-				Str("Error", err.Error()).
+			log.Warn().
+				Str(logging.ComponentField, componentName).
+				Str("filepath", reader.entitiesCsvFile.Path).
+				Err(err).
 				Msg("Failed to build an entity from record")
 			continue
 		}
@@ -203,10 +206,10 @@ func (reader *EntitiesCsvFileReader) Next() (graphstore.Entity, error) {
 
 	if reader.hasNext && reader.numberOfRows%100000 == 0 {
 		logging.Logger.Info().
-			Str("Component", "EntitiesCsvFileReader").
-			Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
-			Str("Number of entities read", strconv.Itoa(reader.numberOfEntities)).
-			Str("Filepath", reader.entitiesCsvFile.Path).
+			Str(logging.ComponentField, componentName).
+			Str("numberOfRowsRead", strconv.Itoa(reader.numberOfRows)).
+			Str("numberOfEntitiesRead", strconv.Itoa(reader.numberOfEntities)).
+			Str("filepath", reader.entitiesCsvFile.Path).
 			Msg("Reading documents from CSV file")
 	}
 
@@ -217,10 +220,10 @@ func (reader *EntitiesCsvFileReader) Next() (graphstore.Entity, error) {
 func (reader *EntitiesCsvFileReader) Close() error {
 
 	logging.Logger.Info().
-		Str("Component", "EntitiesCsvFileReader").
-		Str("Number of rows read", strconv.Itoa(reader.numberOfRows)).
-		Str("Number of entities read", strconv.Itoa(reader.numberOfEntities)).
-		Str("Filepath", reader.entitiesCsvFile.Path).
+		Str(logging.ComponentField, componentName).
+		Str("numberOfRowsRead", strconv.Itoa(reader.numberOfRows)).
+		Str("numberOfEntitiesRead", strconv.Itoa(reader.numberOfEntities)).
+		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Closing CSV file")
 
 	return reader.file.Close()

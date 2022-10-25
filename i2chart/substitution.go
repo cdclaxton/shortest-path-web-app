@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
 // findKeywords in a format string.
@@ -15,7 +15,9 @@ func findKeywords(format string) ([]string, error) {
 	// return the error message.
 	r, err := regexp.Compile("<.*?>")
 	if err != nil {
-		log.Error().Str("Component", "i2ChartBuilder").Msg("Regex failed to compile")
+		logging.Logger.Error().
+			Str(logging.ComponentField, componentName).
+			Msg("Regex failed to compile")
 		return nil, err
 	}
 

@@ -27,7 +27,9 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 		return fmt.Errorf("Entities to skip is nil")
 	}
 
-	logging.Logger.Info().Msg("Starting bipartite to unipartite conversion")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Starting bipartite to unipartite conversion")
 
 	// Iterator to retrieve documents from the bipartite graph store
 	it, err := bi.NewDocumentIdIterator()
@@ -87,7 +89,9 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 
 	}
 
-	logging.Logger.Info().Msg("Finished bipartite to unipartite conversion")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Finished bipartite to unipartite conversion")
 
 	return nil
 }

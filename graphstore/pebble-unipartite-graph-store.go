@@ -29,7 +29,8 @@ type PebbleUnipartiteGraphStore struct {
 func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, error) {
 
 	logging.Logger.Info().
-		Str("Folder", folder).
+		Str(logging.ComponentField, componentName).
+		Str("folder", folder).
 		Msg("Creating a new unipartite Pebble store")
 
 	db, err := pebble.Open(folder, &pebble.Options{})
@@ -214,7 +215,9 @@ func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error
 // Clear down the graph.
 func (p *PebbleUnipartiteGraphStore) Clear() error {
 
-	logging.Logger.Info().Msg("Clearing the Pebble unipartite store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Clearing the Pebble unipartite store")
 
 	var deleteError error
 
@@ -236,7 +239,9 @@ func (p *PebbleUnipartiteGraphStore) Clear() error {
 // Destroy the unipartite Pebble store after closing the database.
 func (p *PebbleUnipartiteGraphStore) Destroy() error {
 
-	logging.Logger.Info().Msg("Destroying the Pebble unipartite store")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Destroying the Pebble unipartite store")
 
 	err := p.Close()
 	if err != nil {

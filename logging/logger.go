@@ -16,3 +16,6 @@ func init() {
 		Timestamp().
 		Logger()
 }
+
+// Key for logging the component name
+const ComponentField = "component"

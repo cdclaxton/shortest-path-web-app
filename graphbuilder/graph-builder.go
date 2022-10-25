@@ -12,6 +12,8 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
+const componentName = "graphBuilder"
+
 const (
 	DataDirectory            = "data"              // Location for the input entities and document files
 	StorageTypeInMemory      = "memory"            // In-memory storage
@@ -42,9 +44,10 @@ func createTempUnipartitePebbleFolder() (string, error) {
 // prepareFolderForStorage by ensuring it is empty.
 func prepareFolderForStorage(folder string, graphStoreType string, deleteFilesInFolder bool) error {
 
-	logging.Logger.Info().Str("Component", "Graph builder").
-		Str("Folder", folder).
-		Str("Graph store type", graphStoreType).
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("folder", folder).
+		Str("graphStoreType", graphStoreType).
 		Msg("Preparing folder for Pebble storage")
 
 	// Check if the folder is empty
@@ -70,6 +73,12 @@ func prepareFolderForStorage(folder string, graphStoreType string, deleteFilesIn
 
 // makeBipartiteGraph given the bipartite graph storage config.
 func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphStore, error) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("graphStoreType", config.Type).
+		Msg("Making bipartite graph store")
+
 	if config.Type == StorageTypeInMemory {
 		return graphstore.NewInMemoryBipartiteGraphStore(), nil
 
@@ -83,8 +92,9 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 			}
 			config.Folder = tempFolder
 
-			logging.Logger.Info().Str("Component", "Graph builder").
-				Str("Temp folder", tempFolder).
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("tempFolder", tempFolder).
 				Msg("Made temp folder for the bipartite Pebble-backed graph")
 		}
 
@@ -102,6 +112,12 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 
 // makeUnipartiteGraph given the unipartite graph storage config.
 func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGraphStore, error) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("graphStoreType", config.Type).
+		Msg("Making unipartite graph store")
+
 	if config.Type == StorageTypeInMemory {
 		return graphstore.NewInMemoryUnipartiteGraphStore(), nil
 
@@ -115,8 +131,9 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 			}
 			config.Folder = tempFolder
 
-			logging.Logger.Info().Str("Component", "Graph builder").
-				Str("Temp folder", tempFolder).
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("tempFolder", tempFolder).
 				Msg("Made temp folder for the unipartite Pebble-backed graph")
 		}
 
@@ -155,6 +172,11 @@ type GraphConfig struct {
 
 // readGraphConfig from a JSON file.
 func readGraphConfig(filepath string) (*GraphConfig, error) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
+		Msg("Reading graph config from JSON file")
 
 	// Check the file exists
 	file, err := os.Open(filepath)
@@ -227,7 +249,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	builder := GraphBuilder{}
 
 	// Make the bipartite graph store
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Making the bipartite graph store from config")
 
 	var err error
@@ -237,7 +260,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Load the bipartite graph based on the files
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Loading the bipartite graph store from CSV files")
 
 	bipartiteLoader := loader.NewGraphStoreLoaderFromCsv(builder.Bipartite,
@@ -251,7 +275,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Read the entities to skip
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Reading the entities to skip")
 
 	skipEntities, err := loader.ReadSkipEntities(config.Data.SkipEntitiesFile)
@@ -260,7 +285,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Make the unipartite graph store
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Making the unipartite graph store")
 
 	builder.Unipartite, err = makeUnipartiteGraph(config.UnipartiteConfig)
@@ -269,7 +295,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	}
 
 	// Convert the bipartite graph to a unipartite graph
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Converting the bipartite graph to a unipartite graph")
 
 	graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities)
@@ -280,8 +307,9 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 // NewGraphBuilderFromJson returns a constructed GraphBuilder based on the config from a JSON file.
 func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 
-	logging.Logger.Info().Str("Component", "Graph builder").
-		Str("Filepath", filepath).
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
 		Msg("Building graph from JSON config file")
 
 	// Read the config from file
@@ -300,7 +328,8 @@ func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 // Destroy the unipartite and bipartite graphs.
 func (gb *GraphBuilder) Destroy() error {
 
-	logging.Logger.Info().Str("Component", "Graph builder").
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
 		Msg("Destroying the unipartite and bipartite graphs")
 
 	err := gb.Unipartite.Destroy()

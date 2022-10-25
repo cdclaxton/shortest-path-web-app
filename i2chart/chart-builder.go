@@ -16,6 +16,8 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const componentName = "i2chart"
+
 // Keywords used in the configuration of an i2 chart.
 const (
 	entityIdKeyword       = "ID"
@@ -41,7 +43,10 @@ type I2ChartConfig struct {
 // readI2Config in a JSON file.
 func readI2Config(filepath string) (*I2ChartConfig, error) {
 
-	logging.Logger.Info().Str("Filepath", filepath).Msg("Reading i2 chart config from JSON file")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
+		Msg("Reading i2 chart config from JSON file")
 
 	// Open the file
 	file, err := os.Open(filepath)
@@ -72,7 +77,9 @@ func readI2Config(filepath string) (*I2ChartConfig, error) {
 // validateI2Config and returns whether it passes and a list of issues.
 func validateI2Config(config I2ChartConfig) (bool, []string) {
 
-	logging.Logger.Info().Msg("Validating i2 chart config")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Validating i2 chart config")
 
 	// Are entities defined?
 	if len(config.Entities) == 0 {
@@ -156,7 +163,9 @@ func NewI2ChartBuilder(filepath string) (*I2ChartBuilder, error) {
 
 // SetBipartite graph store used by the i2 chart builder.
 func (i *I2ChartBuilder) SetBipartite(bipartite graphstore.BipartiteGraphStore) {
-	logging.Logger.Info().Msg("Setting bipartite graph store in the i2 chart builder")
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Setting bipartite graph store in the i2 chart builder")
 	i.bipartite = bipartite
 }
 
@@ -409,8 +418,9 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 	}
 
 	logging.Logger.Info().
-		Str("Number of entity IDs from datasets", strconv.Itoa(len(conns.Connections))).
-		Str("Number of hops", strconv.Itoa(conns.MaxHops)).
+		Str(logging.ComponentField, componentName).
+		Str("numberOfEntityIDsFromDatasets", strconv.Itoa(len(conns.Connections))).
+		Str("numberOfHops", strconv.Itoa(conns.MaxHops)).
 		Msg("Building i2 chart")
 
 	// Unipartite graph to store the entities that are connected in the i2 chart

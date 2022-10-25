@@ -3,6 +3,7 @@ package loader
 import (
 	"bufio"
 	"os"
+	"strconv"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -12,7 +13,8 @@ import (
 func ReadSkipEntities(filepath string) (*set.Set[string], error) {
 
 	logging.Logger.Info().
-		Str("Filepath", filepath).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
 		Msg("Reading skip entities CSV file")
 
 	// Open the file
@@ -37,6 +39,12 @@ func ReadSkipEntities(filepath string) (*set.Set[string], error) {
 			entities.Add(line)
 		}
 	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
+		Str("numberOfSkipEntities", strconv.Itoa(entities.Len())).
+		Msg("Finished reading skip entities CSV file")
 
 	return entities, nil
 }

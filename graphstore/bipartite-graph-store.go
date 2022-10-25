@@ -3,9 +3,11 @@ package graphstore
 import (
 	"fmt"
 
+	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
-	"github.com/rs/zerolog/log"
 )
+
+const componentName = "graphStore"
 
 // DocumentIdIterator iterates through all document IDs held in the store.
 type DocumentIdIterator interface {
@@ -88,7 +90,10 @@ func equalEntities(ref BipartiteGraphStore, test BipartiteGraphStore) (bool, err
 		if err != nil {
 			return false, err
 		}
-		log.Debug().Str("Component", "GraphStore").Msgf("Checking entity %v", entityId)
+
+		logging.Logger.Debug().
+			Str(logging.ComponentField, componentName).
+			Msgf("Checking entity %v", entityId)
 
 		// Get the entity from the reference store
 		refEntity, err := ref.GetEntity(entityId)
@@ -103,20 +108,26 @@ func equalEntities(ref BipartiteGraphStore, test BipartiteGraphStore) (bool, err
 		}
 
 		if testEntity == nil {
-			log.Debug().Str("Component", "GraphStore").Msgf("Failed to find entity %v", entityId)
+			logging.Logger.Debug().
+				Str(logging.ComponentField, componentName).
+				Msgf("Failed to find entity %v", entityId)
 			return false, nil
 		}
 
 		// Check whether the entities are equal
 		if !refEntity.Equal(testEntity) {
-			log.Debug().Str("Component", "GraphStore").Msgf("Entities with ID %v are not equal", entityId)
-			log.Debug().Str("Component", "GraphStore").Msgf("Reference entity: %v", refEntity.String())
-			log.Debug().Str("Component", "GraphStore").Msgf("Test entity: %v", testEntity.String())
+			logging.Logger.Debug().
+				Str(logging.ComponentField, componentName).
+				Str("referenceEntity", refEntity.String()).
+				Str("testEntity", testEntity.String()).
+				Msgf("Entities with ID %v are not equal", entityId)
 
 			return false, nil
 		}
 
-		log.Debug().Str("Component", "GraphStore").Msgf("Entities with ID %v are equal", entityId)
+		logging.Logger.Debug().
+			Str(logging.ComponentField, componentName).
+			Msgf("Entities with ID %v are equal", entityId)
 	}
 
 	return true, nil

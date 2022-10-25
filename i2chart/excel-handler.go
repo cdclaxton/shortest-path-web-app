@@ -52,8 +52,9 @@ func WriteToExcel(filepath string, rows [][]string) error {
 	}
 
 	logging.Logger.Info().
-		Str("Filepath", filepath).
-		Str("Number of rows", strconv.Itoa(len(rows))).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
+		Str("numberOfRows", strconv.Itoa(len(rows))).
 		Msg("Writing Excel file")
 
 	// Create a new in-memory Excel file
@@ -84,8 +85,9 @@ func WriteToExcel(filepath string, rows [][]string) error {
 func ReadFromExcel(filepath string, sheetName string) ([][]string, error) {
 
 	logging.Logger.Info().
-		Str("Filepath", filepath).
-		Str("Sheet name", sheetName).
+		Str(logging.ComponentField, componentName).
+		Str("filepath", filepath).
+		Str("sheetName", sheetName).
 		Msg("Reading Excel file")
 
 	// Open the Excel file
