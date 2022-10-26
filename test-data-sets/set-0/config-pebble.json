@@ -60,10 +60,12 @@
     },
     "bipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "<TEMP>"
+        "folder": "<TEMP>",
+        "deleteFilesInFolder": true
     },
     "unipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "<TEMP>"
+        "folder": "<TEMP>",
+        "deleteFilesInFolder": true
     }
 }
