@@ -33,6 +33,9 @@ var (
 	ErrFolderDoesNotExist = fmt.Errorf("Folder doesn't exist")
 )
 
+// GUID returned on failure
+const InvalidGUID = "invalid-guid"
+
 // NewJobRunner instantiates a new JobRunner struct.
 func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuilder,
 	folder string) (*JobRunner, error) {
@@ -63,13 +66,13 @@ func (j *JobRunner) Submit(jobConf *job.JobConfiguration) (string, error) {
 
 	// Preconditions
 	if jobConf == nil {
-		return "", ErrJobConfIsNil
+		return InvalidGUID, ErrJobConfIsNil
 	}
 
 	// Create the job
 	job, err := job.NewJob(jobConf)
 	if err != nil {
-		return "", err
+		return InvalidGUID, err
 	}
 
 	// Execute the job (in a go routine)
