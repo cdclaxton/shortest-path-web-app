@@ -77,10 +77,11 @@ func (j *JobConfiguration) Validate() error {
 type JobStatus string
 
 const (
-	NotStarted JobStatus = "Not started"
-	InProgress JobStatus = "In progress"
-	Failed     JobStatus = "Failed"
-	Complete   JobStatus = "Complete"
+	NotStarted        JobStatus = "Not started"
+	InProgress        JobStatus = "In progress"
+	Failed            JobStatus = "Failed"
+	CompleteResults   JobStatus = "CompleteResults"
+	CompleteNoResults JobStatus = "CompleteNoResults"
 )
 
 // JobProgress records salient information about the job's status and timing.
@@ -103,6 +104,7 @@ type Job struct {
 	Configuration *JobConfiguration // Configuration, i.e. what job to perform
 	Progress      JobProgress       // Progress of the job
 	ResultFile    string            // Location of the result file for download
+	Message       string            // Message to present to the user
 	Error         error             // Error (if one occurs during processing of the job)
 }
 
