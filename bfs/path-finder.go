@@ -98,6 +98,11 @@ func (n *NetworkConnections) hasDirectedConnection(entity1 string, entity2 strin
 	return found
 }
 
+// HasAnyConnections returns true if there are any connections.
+func (n *NetworkConnections) HasAnyConnections() bool {
+	return len(n.Connections) > 0
+}
+
 // HasConnection returns true if entity1 and entity2 are connected by a (calculated) path.
 func (n *NetworkConnections) HasConnection(entity1 string, entity2 string) (bool, error) {
 

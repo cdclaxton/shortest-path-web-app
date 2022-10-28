@@ -1,7 +1,6 @@
 package bfs
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
@@ -277,6 +276,7 @@ func TestPathsBetweenAllEntitySets(t *testing.T) {
 //                            |
 //                            14
 func TestFindPathsOneEntitySet(t *testing.T) {
+
 	// Construct the unipartite graph
 	graph := graphstore.NewInMemoryUnipartiteGraphStore()
 	buildTestGraph(t, graph)
@@ -325,6 +325,43 @@ func TestFindPathsOneEntitySet(t *testing.T) {
 	}
 
 	assert.True(t, expectedConnections.Equal(actualConnections))
+	assert.True(t, actualConnections.HasAnyConnections())
+}
+
+// Test FindPaths() using the graph:
+//
+//   1 --- 2 --- 3                   6 (isolated node)
+//         |     |
+//         4 --- 5
+//
+//               9 --- 10
+//               |   /             16
+//               8  /             /
+//               | /             /
+//        11 --- 7 --- 12 --- 13 --- 15
+//                            |
+//                            14
+func TestFindPathsNoPaths(t *testing.T) {
+
+	// Construct the unipartite graph
+	graph := graphstore.NewInMemoryUnipartiteGraphStore()
+	buildTestGraph(t, graph)
+
+	// Construct a new path finder component
+	pathFinder, err := NewPathFinder(graph)
+	assert.NoError(t, err)
+
+	entitySets := []job.EntitySet{
+		{
+			Name:      "Set-1",
+			EntityIds: []string{"1", "9", "6"},
+		},
+	}
+
+	conns, err := pathFinder.FindPaths(entitySets, 2)
+
+	assert.NoError(t, err)
+	assert.False(t, conns.HasAnyConnections())
 }
 
 // Test FindPaths() using the graph:
@@ -390,9 +427,6 @@ func TestFindPathsTwoEntitySets(t *testing.T) {
 		},
 		MaxHops: 3,
 	}
-
-	fmt.Println(actualConnections)
-	fmt.Println(&expectedConnections)
 
 	assert.True(t, expectedConnections.Equal(actualConnections))
 }
