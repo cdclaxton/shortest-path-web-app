@@ -52,6 +52,22 @@ type JobConfiguration struct {
 	EntitySets    []EntitySet // Sets of entities from which to find paths
 }
 
+// NewJobConfiguration given the entitySets to find paths between and the number of hops.
+func NewJobConfiguration(entitySets []EntitySet, numberHops int) (*JobConfiguration, error) {
+
+	j := JobConfiguration{
+		EntitySets:    entitySets,
+		MaxNumberHops: numberHops,
+	}
+
+	// Postconditions
+	if err := j.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &j, nil
+}
+
 // Validate the job configuration.
 func (j *JobConfiguration) Validate() error {
 
@@ -73,27 +89,27 @@ func (j *JobConfiguration) Validate() error {
 	return nil
 }
 
-// A JobStatus represents the current state of the job.
-type JobStatus string
+// A JobState represents the current state of the job.
+type JobState string
 
 const (
-	NotStarted        JobStatus = "Not started"
-	InProgress        JobStatus = "In progress"
-	Failed            JobStatus = "Failed"
-	CompleteResults   JobStatus = "CompleteResults"
-	CompleteNoResults JobStatus = "CompleteNoResults"
+	NotStarted        JobState = "Not started"
+	InProgress        JobState = "In progress"
+	Failed            JobState = "Failed"
+	CompleteResults   JobState = "Complete Results"
+	CompleteNoResults JobState = "Complete No Results"
 )
 
 // JobProgress records salient information about the job's status and timing.
 type JobProgress struct {
-	Status    JobStatus
+	State     JobState
 	StartTime time.Time
 	EndTime   time.Time
 }
 
 func NewJobProgress() JobProgress {
 	return JobProgress{
-		Status:    NotStarted,
+		State:     NotStarted,
 		StartTime: time.Time{},
 		EndTime:   time.Time{},
 	}
@@ -127,4 +143,9 @@ func NewJob(conf *JobConfiguration) (Job, error) {
 		Progress:      NewJobProgress(),
 		ResultFile:    "",
 	}, nil
+}
+
+// HasValidGuid returns true if the GUID is deemed valid.
+func (j *Job) HasValidGuid() bool {
+	return len(j.GUID) == 36
 }

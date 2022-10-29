@@ -15,6 +15,24 @@ import (
 
 const componentName = "system"
 
+// Field used in logging for the job
+const loggingGUIDField = "jobGUID"
+
+var (
+	ErrPathFinderIsNil    = fmt.Errorf("Pathfinder is nil")
+	ErrChartBuilderIsNil  = fmt.Errorf("Chartbuilder is nil")
+	ErrJobNotFound        = fmt.Errorf("Job not found")
+	ErrJobConfIsNil       = fmt.Errorf("Job configuration is nil")
+	ErrFolderDoesNotExist = fmt.Errorf("Folder doesn't exist")
+	ErrInvalidGuid        = fmt.Errorf("Invalid GUID")
+)
+
+// GUID returned on failure (instead of an empty string)
+const InvalidGUID = "invalid-guid"
+
+// Message to display to the user when no paths between entities were found
+const noPathsMessage = "Sorry, no paths were found between entities. Maybe increase the number of hops."
+
 // A JobRunner is responsible for finding the paths and generating an Excel file for i2.
 type JobRunner struct {
 	pathFinder   *bfs.PathFinder         // Path finder
@@ -23,18 +41,10 @@ type JobRunner struct {
 
 	jobs     map[string]*job.Job // Jobs (mapping of guid to job)
 	jobsLock sync.RWMutex        // Mutex for the jobs map
+
+	numberJobsExecuting     int          // Number of jobs being executed
+	numberJobsExecutingLock sync.RWMutex // Mutex for the numberJobsExecuting
 }
-
-var (
-	ErrPathFinderIsNil    = fmt.Errorf("Pathfinder is nil")
-	ErrChartBuilderIsNil  = fmt.Errorf("Chartbuilder is nil")
-	ErrJobNotFound        = fmt.Errorf("Job not found")
-	ErrJobConfIsNil       = fmt.Errorf("Job configuration is nil")
-	ErrFolderDoesNotExist = fmt.Errorf("Folder doesn't exist")
-)
-
-// GUID returned on failure
-const InvalidGUID = "invalid-guid"
 
 // NewJobRunner instantiates a new JobRunner struct.
 func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuilder,
@@ -55,10 +65,61 @@ func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuild
 
 	// Return a constructed job runner
 	return &JobRunner{
-		pathFinder:   pathFinder,
-		chartBuilder: chartBuilder,
-		folder:       folder,
+		pathFinder:              pathFinder,
+		chartBuilder:            chartBuilder,
+		folder:                  folder,
+		jobs:                    map[string]*job.Job{},
+		jobsLock:                sync.RWMutex{},
+		numberJobsExecuting:     0,
+		numberJobsExecutingLock: sync.RWMutex{},
 	}, nil
+}
+
+// goingToExecuteJob increments the number of jobs executing.
+func (j *JobRunner) goingToExecuteJob(guid string) {
+	j.numberJobsExecutingLock.Lock()
+	defer j.numberJobsExecutingLock.Unlock()
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Going to execute job")
+
+	j.numberJobsExecuting += 1
+}
+
+// finishedExecutingJob decrements the number of jobs executing.
+func (j *JobRunner) finishedExecutingJob(guid string) {
+	j.numberJobsExecutingLock.Lock()
+	defer j.numberJobsExecutingLock.Unlock()
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Finished to executing job")
+
+	j.numberJobsExecuting -= 1
+}
+
+// getNumberJobsExecuting returns the number of jobs being executed when the lock is acquired.
+func (j *JobRunner) getNumberJobsExecuting() int {
+	j.numberJobsExecutingLock.RLock()
+	defer j.numberJobsExecutingLock.RUnlock()
+
+	return j.numberJobsExecuting
+}
+
+// addJob to the map of jobs once the write lock has been acquired.
+func (j *JobRunner) addJob(j1 *job.Job) error {
+	j.jobsLock.Lock()
+	defer j.jobsLock.Unlock()
+
+	if !j1.HasValidGuid() {
+		return ErrInvalidGuid
+	}
+
+	j.jobs[j1.GUID] = j1
+	return nil
 }
 
 // Submit the job for execution.
@@ -75,7 +136,14 @@ func (j *JobRunner) Submit(jobConf *job.JobConfiguration) (string, error) {
 		return InvalidGUID, err
 	}
 
+	// Add the job to the job runner's storage
+	err = j.addJob(&job)
+	if err != nil {
+		return InvalidGUID, err
+	}
+
 	// Execute the job (in a go routine)
+	j.goingToExecuteJob(job.GUID)
 	go j.executeJob(job.GUID)
 
 	return job.GUID, nil
@@ -86,8 +154,13 @@ func (j *JobRunner) setJobToInProgress(j1 *job.Job) {
 	j.jobsLock.Lock()
 	defer j.jobsLock.Unlock()
 
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, j1.GUID).
+		Msg("Setting job to in progress")
+
 	j1.Progress.StartTime = time.Now()
-	j1.Progress.Status = job.InProgress
+	j1.Progress.State = job.InProgress
 }
 
 // setJobToFailed sets the job to failed and stores the error.
@@ -95,19 +168,50 @@ func (j *JobRunner) setJobToFailed(failedJob *job.Job, err error) {
 	j.jobsLock.Lock()
 	defer j.jobsLock.Unlock()
 
-	failedJob.Progress.Status = job.Failed
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, failedJob.GUID).
+		Msg("Setting job to failed")
+
+	failedJob.Progress.State = job.Failed
 	failedJob.Progress.EndTime = time.Now()
 	failedJob.Error = err
+
+	j.finishedExecutingJob(failedJob.GUID)
 }
 
-// setJobToComplete sets the job to complete (finished).
-func (j *JobRunner) setJobToComplete(j1 *job.Job, filepath string) {
+// setJobToComplete sets the job to complete (finished) where there were results.
+func (j *JobRunner) setJobToCompleteResults(j1 *job.Job, filepath string) {
 	j.jobsLock.Lock()
 	defer j.jobsLock.Unlock()
 
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, j1.GUID).
+		Msg("Setting job to complete with results")
+
 	j1.Progress.EndTime = time.Now()
-	j1.Progress.Status = job.Complete
+	j1.Progress.State = job.CompleteResults
 	j1.ResultFile = filepath
+
+	j.finishedExecutingJob(j1.GUID)
+}
+
+// setJobToCompleteNoResults sets the job to complete (finished) where there weren't any results.
+func (j *JobRunner) setJobToCompleteNoResults(j1 *job.Job) {
+	j.jobsLock.Lock()
+	defer j.jobsLock.Unlock()
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, j1.GUID).
+		Msg("Setting job to complete with no results")
+
+	j1.Progress.EndTime = time.Now()
+	j1.Progress.State = job.CompleteNoResults
+	j1.Message = noPathsMessage
+
+	j.finishedExecutingJob(j1.GUID)
 }
 
 // makeExcelFilepath for storage of the Excel file.
@@ -123,8 +227,9 @@ func (j *JobRunner) executeJob(guid string) {
 	if err != nil {
 		logging.Logger.Warn().
 			Str(logging.ComponentField, componentName).
-			Str("jobGUID", guid).
+			Str(loggingGUIDField, guid).
 			Msg("Failed to find job")
+		return
 	}
 
 	// Set the job to in progress
@@ -134,6 +239,12 @@ func (j *JobRunner) executeJob(guid string) {
 	conns, err := j.pathFinder.FindPaths(job.Configuration.EntitySets, job.Configuration.MaxNumberHops)
 	if err != nil {
 		j.setJobToFailed(job, err)
+		return
+	}
+
+	// If there aren't any connections, there's no need to build the i2 chart
+	if !conns.HasAnyConnections() {
+		j.setJobToCompleteNoResults(job)
 		return
 	}
 
@@ -154,10 +265,10 @@ func (j *JobRunner) executeJob(guid string) {
 		return
 	}
 
-	j.setJobToComplete(job, filepath)
+	j.setJobToCompleteResults(job, filepath)
 }
 
-// GetJob from the job runner in a thread-safe manner.
+// GetJob from the job runner in a thread-safe manner. The returned job should not be modified.
 func (j *JobRunner) GetJob(guid string) (*job.Job, error) {
 
 	// Get a lock to be able to read the jobs map
