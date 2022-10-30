@@ -1,15 +1,28 @@
-package main
+package server
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/aymerick/raymond"
 	"github.com/cdclaxton/shortest-path-web-app/job"
+	"github.com/cdclaxton/shortest-path-web-app/logging"
+	"github.com/cdclaxton/shortest-path-web-app/system"
 )
 
+// Component name used in logging
+const componentName = "server"
+
+// Field used in logging for the job
+const loggingGUIDField = "jobGUID"
+
+// Constants associated with the upload (form) page
 const (
 	MinimumNumberHops        = 1                 // Minimum number of hops from an entity to another
 	MaximumNumberHops        = 5                 // Maximum number of hops from an entity to another
@@ -19,7 +32,85 @@ const (
 	DatasetEntitiesInputName = "datasetEntities" // Prefix of the name of the text box containing entity IDs
 )
 
-// parseNumberOfHops in the HTTP POST form  data.
+// Locations of the HTML templates
+const (
+	errorTemplatePath         = "./server/templates/error.html"         // For a system error
+	inputProblemTemplatePath  = "./server/templates/input-problem.html" // For a data error
+	jobNotFoundTemplatePath   = "./server/templates/job-not-found.html" // For when a job cannot be found
+	processingJobTemplatePath = "./server/templates/processing-job.html"
+	jobFailedTemplatePath     = "./server/templates/job-failed.html"
+	jobNoResultsTemplatePath  = "./server/templates/job-no-results.html"
+	jobResultsTemplatePath    = "./server/templates/job-results.html"
+)
+
+type JobServer struct {
+	runner                *system.JobRunner // Job runner
+	errorTemplate         *raymond.Template // Template if a system error occurs
+	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
+	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
+	processingJobTemplate *raymond.Template
+	jobFailedTemplate     *raymond.Template
+	jobNoResultsTemplate  *raymond.Template
+	jobResultsTemplate    *raymond.Template
+}
+
+func NewJobServer(runner *system.JobRunner) (*JobServer, error) {
+
+	// Preconditions
+	if runner == nil {
+		return nil, fmt.Errorf("Job runner is nil")
+	}
+
+	// Read the templates
+	errorTemplate, err := raymond.ParseFile(errorTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	inputProblemTemplate, err := raymond.ParseFile(inputProblemTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	jobNotFoundTemplate, err := raymond.ParseFile(jobNotFoundTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	processingJobTemplate, err := raymond.ParseFile(processingJobTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	jobFailedTemplate, err := raymond.ParseFile(jobFailedTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	jobNoResultsTemplate, err := raymond.ParseFile(jobNoResultsTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	jobResultsTemplate, err := raymond.ParseFile(jobResultsTemplatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the job server
+	return &JobServer{
+		runner:                runner,
+		errorTemplate:         errorTemplate,
+		inputProblemTemplate:  inputProblemTemplate,
+		jobNotFoundTemplate:   jobNotFoundTemplate,
+		processingJobTemplate: processingJobTemplate,
+		jobFailedTemplate:     jobFailedTemplate,
+		jobNoResultsTemplate:  jobNoResultsTemplate,
+		jobResultsTemplate:    jobResultsTemplate,
+	}, nil
+}
+
+// parseNumberOfHops in the HTTP POST form data.
 func parseNumberOfHops(req *http.Request) (int, error) {
 
 	// Read the number of hops from the form
@@ -105,6 +196,7 @@ func parseEntitySet(req *http.Request, index int) (*job.EntitySet, error) {
 }
 
 // extractJobConfigurationFromForm extracts, parses and validates the configuration for a job.
+// If the job would not be valid, return an error message that should be meaningful to the user.
 func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*job.JobConfiguration, error) {
 
 	// Preconditions
@@ -148,42 +240,195 @@ func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*j
 	return &jobConf, nil
 }
 
-func upload(w http.ResponseWriter, req *http.Request) {
+func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 
 	// Extract the data from the form
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Handling form upload")
 	jobConf, err := extractJobConfigurationFromForm(req, MaxDatasetIndex)
 
 	// If there was an input configuration error, then show the error on a dedicated page
 	if err != nil {
-		template, err2 := raymond.ParseFile("./server/templates/input-problem.html")
-		if err2 != nil {
-			fmt.Fprintf(w, "HTML template not found. Data error: %v\n", err)
-		}
 
-		result, err3 := template.Exec(map[string]string{
+		page := j.inputProblemTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-
-		if err3 != nil {
-			fmt.Fprintf(w, "HTML template not usable. Data error: %v\n", err)
-		}
-
-		fmt.Fprintf(w, result)
+		fmt.Fprintf(w, page)
 		return
 	}
 
 	// Launch the job
-	fmt.Fprintf(w, "%v", jobConf)
+	guid, err := j.runner.Submit(jobConf)
+	if err != nil {
+
+		page := j.errorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Job successfully submitted")
+
+	redirectUrl := fmt.Sprintf("../job/%v", guid)
+	http.Redirect(w, req, redirectUrl, 302)
 }
 
-func main() {
-	fmt.Println("Hello!")
+func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the guid
+	guid := strings.TrimPrefix(req.URL.Path, "/job/")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Received request at /job")
+
+	finished, err := j.runner.IsJobFinished(guid)
+	if err == system.ErrJobNotFound {
+
+		page := j.jobNotFoundTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	if err != nil {
+		page := j.errorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Str("finished", strconv.FormatBool(finished)).
+		Msg("Job completion state")
+
+	if !finished {
+		page := j.processingJobTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	// If execution reaches this point, then the job is finished
+	// Get the job
+	j1, err := j.runner.GetJob(guid)
+	if err != nil {
+		page := j.errorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	if j1.Progress.State == job.Failed {
+		page := j.jobFailedTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprintf(w, page)
+		return
+
+	} else if j1.Progress.State == job.CompleteNoResults {
+		page := j.jobNoResultsTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprintf(w, page)
+		return
+	} else if j1.Progress.State == job.CompleteResults {
+		page := j.jobResultsTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprintf(w, page)
+		return
+	}
+
+	fmt.Fprintf(w, "Something has gone terribly wrong if you can read this")
+}
+
+// buildFilename for the download.
+func buildFilename(jobConf *job.JobConfiguration) (string, error) {
+
+	// Preconditions
+	if jobConf == nil {
+		return "", fmt.Errorf("Job configuration is nil")
+	}
+
+	datasetNames := []string{}
+	for _, entitySet := range jobConf.EntitySets {
+		datasetNames = append(datasetNames, entitySet.Name)
+	}
+
+	// Sort the dataset names
+	sort.Strings(datasetNames)
+
+	filename := "shortest-path " +
+		strings.Join(datasetNames, "-") +
+		fmt.Sprintf("-%v hops.xlsx", jobConf.MaxNumberHops)
+
+	return filename, nil
+}
+
+func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the guid
+	guid := strings.TrimPrefix(req.URL.Path, "/download/")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Received request at /download")
+
+	j1, err := j.runner.GetJob(guid)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	file, err := os.Open(j1.ResultFile)
+	if err != nil {
+		fmt.Fprintf(w, "Unable to read file for job %v", guid)
+		return
+	}
+
+	// Make the filename
+	filename, err := buildFilename(j1.Configuration)
+	if err != nil {
+		logging.Logger.Warn().
+			Str(logging.ComponentField, componentName).
+			Str(loggingGUIDField, guid).
+			Msg("Failed to build filename")
+
+		filename = "shortest-path-results.xlsx"
+	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%v", filename))
+	w.Header().Set("Content-Type", req.Header.Get("Content-Type"))
+	io.Copy(w, file)
+}
+
+func (j *JobServer) Start() {
+
+	// Uploading job configuration
+	http.HandleFunc("/upload", j.handleUpload)
+
+	// Job status
+	http.HandleFunc("/job/", j.handleJob)
+
+	// Download results
+	http.HandleFunc("/download/", j.handleDownload)
 
 	// Static content
 	http.Handle("/", http.FileServer(http.Dir("./server/static/")))
-
-	// Uploading job configuration
-	http.HandleFunc("/upload", upload)
 
 	http.ListenAndServe(":8090", nil)
 }

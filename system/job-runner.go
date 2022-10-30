@@ -96,7 +96,7 @@ func (j *JobRunner) finishedExecutingJob(guid string) {
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str(loggingGUIDField, guid).
-		Msg("Finished to executing job")
+		Msg("Finished executing job")
 
 	j.numberJobsExecuting -= 1
 }
@@ -282,4 +282,28 @@ func (j *JobRunner) GetJob(guid string) (*job.Job, error) {
 	}
 
 	return job, nil
+}
+
+// IsJobFinished given the job's GUID.
+func (j *JobRunner) IsJobFinished(guid string) (bool, error) {
+
+	// Get a lock to be able to read the jobs map
+	j.jobsLock.RLock()
+	defer j.jobsLock.RUnlock()
+
+	// Try to fetch the job
+	j1, found := j.jobs[guid]
+	if !found {
+		return false, ErrJobNotFound
+	}
+
+	// If the job is in an end state, it is finished
+	if j1.Progress.State == job.Failed ||
+		j1.Progress.State == job.CompleteNoResults ||
+		j1.Progress.State == job.CompleteResults {
+
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
