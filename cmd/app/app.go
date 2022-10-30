@@ -11,6 +11,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/system"
 )
 
+// Component name used in logging
 const componentName = "application"
 
 func main() {
@@ -80,6 +81,7 @@ func main() {
 			Msg("Failed to create job runner")
 	}
 
+	// Create the job server
 	jobServer, err := server.NewJobServer(runner)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -88,6 +90,7 @@ func main() {
 			Msg("Failed to create job server")
 	}
 
+	// Start the job server (ready for users to run jobs)
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Msg("Starting server")
