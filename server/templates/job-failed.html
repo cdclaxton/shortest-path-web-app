@@ -25,17 +25,17 @@
         </header>
 
         <div class="govuk-width-container ">
-        
             <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
-                    
                 <div class="govuk-grid-row">
                     <div class="govuk-grid-column-two-thirds">
-                        <h1 class="govuk-heading-xl">Oops!</h1>
+                        <h1 class="govuk-heading-xl">Job failed</h1>
           
+                        <!-- Helpful note for user -->
                         <div class="govuk-body">
-                            <p>There is a problem with your data</p>
-                            <p>Reason: <b>{{ reason }}</b></p>
-                        </div>               
+                            <p>Unfortunately, the job failed.</p>
+                            <p>Error message: {{ reason }}/</p>
+                        </div>
+
                     </div>
                 </div>
             </main>

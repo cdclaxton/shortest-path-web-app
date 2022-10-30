@@ -2,9 +2,8 @@
 <html class="govuk-template no-js">
     <head>
         <meta charset="utf-8">
-        <title>Entity Extraction Service</title>
-        <meta http-equiv="refresh" content="5" >
-        <link rel="stylesheet" href="govuk-frontend-4.3.1.min.css">
+        <title>Shortest Path Tool</title>
+        <link rel="stylesheet" href="/govuk-frontend-4.3.1.min.css">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#0b0c0c">
     </head>
@@ -16,7 +15,7 @@
               <div class="govuk-header__logo">
                 <a href="/" class="govuk-header__link govuk-header__link--homepage">
                     <span class="govuk-header__logotype-text">
-                        Entity extraction
+                        Shortest Path Tool
                     </span>
                   </span>
                 </a>
@@ -26,17 +25,17 @@
         </header>
 
         <div class="govuk-width-container ">
-        
             <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
-                    
                 <div class="govuk-grid-row">
                     <div class="govuk-grid-column-two-thirds">
-                        <h1 class="govuk-heading-xl">Processing ...</h1>
+                        <h1 class="govuk-heading-xl">Results</h1>
           
+                        <!-- Helpful note for user -->
                         <div class="govuk-body">
-                            <p>Your download will start as soon as entity extraction is complete</p>
-                            <p>If you need technical support, please quote job ID <b>{{ job_id }}</b></p>
-                        </div>               
+                            <p>Processing complete for job <b>{{ guid }}</b>.</p>
+                            <a href="../download/{{guid}}">Download XLSX file</a>
+                        </div>
+
                     </div>
                 </div>
             </main>
