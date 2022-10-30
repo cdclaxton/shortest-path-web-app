@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 
 # Run the tests
 echo Running tests ...
