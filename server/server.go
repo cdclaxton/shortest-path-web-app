@@ -357,7 +357,7 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 
 const resultsFilenamePrefix = "shortest-path - "
 
-// buildFilename for the download.
+// buildFilename for the XLSX results file for download.
 func buildFilename(jobConf *job.JobConfiguration) (string, error) {
 
 	// Preconditions
