@@ -11,7 +11,7 @@ fi
 
 # Build the executable
 echo Building executable ...
-go build -v -o ./app ./cmd/app
+go build -v -o ./web-app ./cmd/app
 buildResult=$?
 
 if [[ $buildResult -ne 0 ]]; then
