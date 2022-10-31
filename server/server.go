@@ -34,26 +34,29 @@ const (
 
 // Locations of the HTML templates
 const (
-	errorTemplatePath         = "./server/templates/error.html"         // For a system error
-	inputProblemTemplatePath  = "./server/templates/input-problem.html" // For a data error
-	jobNotFoundTemplatePath   = "./server/templates/job-not-found.html" // For when a job cannot be found
-	processingJobTemplatePath = "./server/templates/processing-job.html"
-	jobFailedTemplatePath     = "./server/templates/job-failed.html"
-	jobNoResultsTemplatePath  = "./server/templates/job-no-results.html"
-	jobResultsTemplatePath    = "./server/templates/job-results.html"
+	errorTemplatePath         = "./server/templates/error.html"          // For a system error
+	inputProblemTemplatePath  = "./server/templates/input-problem.html"  // For a data error
+	jobNotFoundTemplatePath   = "./server/templates/job-not-found.html"  // For when a job cannot be found
+	processingJobTemplatePath = "./server/templates/processing-job.html" // For during processing
+	jobFailedTemplatePath     = "./server/templates/job-failed.html"     // For a failed job
+	jobNoResultsTemplatePath  = "./server/templates/job-no-results.html" // For a complete job
+	jobResultsTemplatePath    = "./server/templates/job-results.html"    // For a complete job
 )
 
+// A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
 	runner                *system.JobRunner // Job runner
 	errorTemplate         *raymond.Template // Template if a system error occurs
 	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
 	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
-	processingJobTemplate *raymond.Template
-	jobFailedTemplate     *raymond.Template
-	jobNoResultsTemplate  *raymond.Template
-	jobResultsTemplate    *raymond.Template
+	processingJobTemplate *raymond.Template // Template whilst the job is processing
+	jobFailedTemplate     *raymond.Template // Template for a failed job
+	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
+	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
 }
 
+// NewJobServer given the job runner for executing jobs. It will return an error if any of the
+// required HTML templates cannot be located.
 func NewJobServer(runner *system.JobRunner) (*JobServer, error) {
 
 	// Preconditions
@@ -97,7 +100,7 @@ func NewJobServer(runner *system.JobRunner) (*JobServer, error) {
 		return nil, err
 	}
 
-	// Return the job server
+	// Return the constructed job server
 	return &JobServer{
 		runner:                runner,
 		errorTemplate:         errorTemplate,
