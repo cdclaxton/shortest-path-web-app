@@ -313,3 +313,79 @@ func TestExtractJobConfigurationFromForm(t *testing.T) {
 		assert.Equal(t, testCase.expected, actual)
 	}
 }
+
+func TestBuildFilename(t *testing.T) {
+	testCases := []struct {
+		jobConf          *job.JobConfiguration
+		errorExpected    bool
+		expectedFilename string
+	}{
+		{
+			jobConf: &job.JobConfiguration{
+				EntitySets: []job.EntitySet{
+					{
+						Name: "dataset A",
+					},
+				},
+				MaxNumberHops: 1,
+			},
+			errorExpected:    false,
+			expectedFilename: "shortest-path - dataset A - 1 hop.xlsx",
+		},
+		{
+			jobConf: &job.JobConfiguration{
+				EntitySets: []job.EntitySet{
+					{
+						Name: "dataset A",
+					},
+				},
+				MaxNumberHops: 2,
+			},
+			errorExpected:    false,
+			expectedFilename: "shortest-path - dataset A - 2 hops.xlsx",
+		},
+		{
+			jobConf: &job.JobConfiguration{
+				EntitySets: []job.EntitySet{
+					{
+						Name: "dataset A",
+					},
+					{
+						Name: "dataset B",
+					},
+				},
+				MaxNumberHops: 1,
+			},
+			errorExpected:    false,
+			expectedFilename: "shortest-path - dataset A - dataset B - 1 hop.xlsx",
+		},
+		{
+			jobConf: &job.JobConfiguration{
+				EntitySets:    nil,
+				MaxNumberHops: 1,
+			},
+			errorExpected:    true,
+			expectedFilename: "",
+		},
+		{
+			jobConf: &job.JobConfiguration{
+				EntitySets:    []job.EntitySet{},
+				MaxNumberHops: 1,
+			},
+			errorExpected:    true,
+			expectedFilename: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := buildFilename(testCase.jobConf)
+
+		if testCase.errorExpected {
+			assert.Error(t, err)
+		} else {
+			assert.Nil(t, err)
+		}
+
+		assert.Equal(t, testCase.expectedFilename, actual)
+	}
+}

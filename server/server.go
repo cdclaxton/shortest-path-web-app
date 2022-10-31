@@ -355,12 +355,18 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "Something has gone terribly wrong if you can read this")
 }
 
+const resultsFilenamePrefix = "shortest-path - "
+
 // buildFilename for the download.
 func buildFilename(jobConf *job.JobConfiguration) (string, error) {
 
 	// Preconditions
 	if jobConf == nil {
 		return "", fmt.Errorf("Job configuration is nil")
+	}
+
+	if len(jobConf.EntitySets) == 0 {
+		return "", fmt.Errorf("No entity sets")
 	}
 
 	datasetNames := []string{}
@@ -371,9 +377,18 @@ func buildFilename(jobConf *job.JobConfiguration) (string, error) {
 	// Sort the dataset names
 	sort.Strings(datasetNames)
 
-	filename := "shortest-path " +
-		strings.Join(datasetNames, "-") +
-		fmt.Sprintf("-%v hops.xlsx", jobConf.MaxNumberHops)
+	// Build the string part for the number of hops
+	var hopsPart string
+	if jobConf.MaxNumberHops == 1 {
+		hopsPart = fmt.Sprintf(" - %v hop.xlsx", jobConf.MaxNumberHops)
+	} else {
+		hopsPart = fmt.Sprintf(" - %v hops.xlsx", jobConf.MaxNumberHops)
+	}
+
+	// Build the complete filename
+	filename := resultsFilenamePrefix +
+		strings.Join(datasetNames, " - ") +
+		hopsPart
 
 	return filename, nil
 }
@@ -406,6 +421,7 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 		logging.Logger.Warn().
 			Str(logging.ComponentField, componentName).
 			Str(loggingGUIDField, guid).
+			Err(err).
 			Msg("Failed to build filename")
 
 		filename = "shortest-path-results.xlsx"
