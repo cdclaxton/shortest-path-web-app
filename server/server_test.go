@@ -389,3 +389,10 @@ func TestBuildFilename(t *testing.T) {
 		assert.Equal(t, testCase.expectedFilename, actual)
 	}
 }
+
+func TestNewJobServer(t *testing.T) {
+	runner := makeJobRunner(t)
+	server, err := NewJobServer(runner)
+	assert.NoError(t, err)
+	assert.NotNil(t, server)
+}
