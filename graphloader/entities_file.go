@@ -9,7 +9,6 @@ import (
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
-	"github.com/rs/zerolog/log"
 )
 
 // An EntitiesCsvFile specifies the location and format of a single CSV file containing entities.
@@ -147,7 +146,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		reader.numberOfRows += 1
 
 		if err != nil {
-			log.Warn().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Str("filepath", reader.entitiesCsvFile.Path).
 				Err(err).
@@ -162,7 +161,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		attributes, err := extractAttributes(record, reader.attributeFieldIndex)
 
 		if err != nil {
-			log.Warn().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Str("filepath", reader.entitiesCsvFile.Path).
 				Err(err).
@@ -174,7 +173,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 		entity, err = graphstore.NewEntity(entityId, reader.entitiesCsvFile.EntityType, attributes)
 
 		if err != nil {
-			log.Warn().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Str("filepath", reader.entitiesCsvFile.Path).
 				Err(err).
