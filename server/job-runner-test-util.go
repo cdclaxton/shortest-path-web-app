@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -35,7 +34,7 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	assert.NoError(t, err)
 
 	// Make a temporary folder for the output Excel files
-	tempFolder, err := ioutil.TempDir("", "test-job-runner")
+	tempFolder, err := os.MkdirTemp("", "test-job-runner")
 	assert.NoError(t, err)
 
 	// Make the job runner
