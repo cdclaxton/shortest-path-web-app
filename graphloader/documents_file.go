@@ -2,7 +2,7 @@ package graphloader
 
 import (
 	"encoding/csv"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -195,7 +195,7 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 func (reader *DocumentsCsvFileReader) Next() (graphstore.Document, error) {
 
 	if !reader.hasNext {
-		return graphstore.Document{}, fmt.Errorf("Next() called when no next item exists")
+		return graphstore.Document{}, errors.New("Next() called when no next item exists")
 	}
 
 	// Get the current Document
