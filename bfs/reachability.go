@@ -22,11 +22,11 @@ func ReachableVertices(g graphstore.UnipartiteGraphStore, root string,
 	}
 
 	if !found {
-		return nil, fmt.Errorf("Root vertex not found: %v", root)
+		return nil, fmt.Errorf("root vertex not found: %v", root)
 	}
 
 	if maxDepth < 0 {
-		return nil, fmt.Errorf("Invalid maximum depth: %v", maxDepth)
+		return nil, fmt.Errorf("invalid maximum depth: %v", maxDepth)
 	}
 
 	// Set of identifiers of discovered vertices
