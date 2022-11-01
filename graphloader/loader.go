@@ -223,7 +223,7 @@ func findIndicesOfFields(header []string, fields []string) (map[string]int, erro
 
 	// Return an error message if any of the fields are missing
 	if len(missingFields) != 0 {
-		return needed, fmt.Errorf("Header has missing field(s): %v",
+		return needed, fmt.Errorf("header has missing field(s): %v",
 			strings.Join(missingFields, ","))
 	}
 
@@ -269,7 +269,7 @@ func extractAttributes(row []string, attributeToFieldIndex map[string]int) (
 
 		// Check the field index is valid
 		if fieldIndex < 0 || fieldIndex >= len(row) {
-			return nil, fmt.Errorf("Invalid field index: %v", fieldIndex)
+			return nil, fmt.Errorf("invalid field index: %v", fieldIndex)
 		}
 
 		attributes[attributeName] = row[fieldIndex]
