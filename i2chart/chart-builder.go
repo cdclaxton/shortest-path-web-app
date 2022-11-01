@@ -2,6 +2,7 @@ package i2chart
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -152,7 +153,7 @@ func NewI2ChartBuilder(filepath string) (*I2ChartBuilder, error) {
 	// attributes of each entity type)
 	isValid, reasons := validateI2Config(*config)
 	if !isValid {
-		return nil, fmt.Errorf("I2 chart builder config is invalid: %v",
+		return nil, fmt.Errorf("i2 chart builder config is invalid: %v",
 			strings.Join(reasons, "; "))
 	}
 
@@ -201,7 +202,7 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 	// Document IDs in common between the two entities
 	docsInCommon := docs1.Intersection(docs2)
 	if docsInCommon.Len() == 0 {
-		return nil, fmt.Errorf("No documents in common for entities %v and %v", entity1.Id,
+		return nil, fmt.Errorf("no documents in common for entities %v and %v", entity1.Id,
 			entity2.Id)
 	}
 
@@ -214,7 +215,7 @@ func documentsLinkingEntities(entity1 *graphstore.Entity, entity2 *graphstore.En
 		}
 
 		if doc == nil {
-			return nil, fmt.Errorf("Unable to get document with ID %v", docId)
+			return nil, fmt.Errorf("unable to get document with ID %v", docId)
 		}
 		docs = append(docs, doc)
 	}
@@ -274,21 +275,21 @@ func makeI2Entity(entity *graphstore.Entity, columns []string,
 
 	// Preconditions
 	if entity == nil {
-		return nil, fmt.Errorf("Nil entity")
+		return nil, errors.New("nil entity")
 	}
 
 	if len(columns) == 0 {
-		return nil, fmt.Errorf("No columns specified")
+		return nil, errors.New("no columns specified")
 	}
 
 	if len(entity.EntityType) == 0 {
-		return nil, fmt.Errorf("Entity has an empty type")
+		return nil, errors.New("entity has an empty type")
 	}
 
 	// Get the specification of the fields given the entity type
 	fieldSpecs, found := entitySpec[entity.EntityType]
 	if !found {
-		return nil, fmt.Errorf("Specification for entity type %v not found", entity.EntityType)
+		return nil, fmt.Errorf("specification for entity type %v not found", entity.EntityType)
 	}
 
 	// Add the entity's attributes to the keywords and the entity's ID
@@ -301,7 +302,7 @@ func makeI2Entity(entity *graphstore.Entity, columns []string,
 
 		specForColumn, found := fieldSpecs[column]
 		if !found {
-			return nil, fmt.Errorf("Field spec for %v not found", column)
+			return nil, fmt.Errorf("field spec for %v not found", column)
 		}
 
 		field, err := Substitute(specForColumn, mergedKeywords, missingAttribute)
@@ -322,7 +323,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 
 	// Preconditions
 	if i.bipartite == nil {
-		return nil, fmt.Errorf("Bipartite graph has not been defined")
+		return nil, fmt.Errorf("bipartite graph has not been defined")
 	}
 
 	// Get the entities from the store
@@ -331,7 +332,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 		return nil, err
 	}
 	if entity1 == nil {
-		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId1)
+		return nil, fmt.Errorf("entity with ID %v not found in bipartite store", entityId1)
 	}
 
 	entity2, err := i.bipartite.GetEntity(entityId2)
@@ -339,7 +340,7 @@ func (i *I2ChartBuilder) rowLinkingEntities(entityId1 string, entityId2 string,
 		return nil, err
 	}
 	if entity2 == nil {
-		return nil, fmt.Errorf("Entity with ID %v not found in bipartite store", entityId2)
+		return nil, fmt.Errorf("entity with ID %v not found in bipartite store", entityId2)
 	}
 
 	// Row
@@ -388,7 +389,7 @@ func buildDatasetKeywords(entityId string, conns *bfs.NetworkConnections) (map[s
 
 	// Preconditions
 	if conns.EntityIdToSetNames == nil {
-		return nil, fmt.Errorf("Mapping from entity ID to data set names is nil")
+		return nil, fmt.Errorf("mapping from entity ID to data set names is nil")
 	}
 
 	keywords := map[string]string{}
@@ -410,11 +411,11 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 
 	// Preconditions
 	if i.bipartite == nil {
-		return nil, fmt.Errorf("Bipartite graph store is not defined")
+		return nil, errors.New("bipartite graph store is not defined")
 	}
 
 	if conns == nil {
-		return nil, fmt.Errorf("Nil connections passed to Build")
+		return nil, errors.New("nil connections passed to Build")
 	}
 
 	logging.Logger.Info().
@@ -457,9 +458,9 @@ func (i *I2ChartBuilder) Build(conns *bfs.NetworkConnections) ([][]string, error
 
 				// Check the path is valid
 				if len(path.Route) == 0 {
-					return nil, fmt.Errorf("Path with no entities encountered")
+					return nil, errors.New("path with no entities encountered")
 				} else if len(path.Route) == 1 {
-					return nil, fmt.Errorf("Path has just one entity")
+					return nil, errors.New("path has just one entity")
 				}
 
 				// Walk through each pair of entities on the path

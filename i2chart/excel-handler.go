@@ -1,6 +1,7 @@
 package i2chart
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -16,7 +17,7 @@ func columnIndexToLetter(idx int) (string, error) {
 
 	// Precondition
 	if idx < 0 || idx >= len(columnLetters) {
-		return "", fmt.Errorf("Column index is out-of-bounds")
+		return "", errors.New("column index is out-of-bounds")
 	}
 
 	return string(columnLetters[idx]), nil
@@ -27,7 +28,7 @@ func excelCellIndex(columnIndex int, rowIndex int) (string, error) {
 
 	// Precondition
 	if columnIndex < 0 || rowIndex < 0 {
-		return "", fmt.Errorf("Invalid cell index (%v,%v)", columnIndex, rowIndex)
+		return "", fmt.Errorf("invalid cell index (%v,%v)", columnIndex, rowIndex)
 	}
 
 	// Letter for the column
@@ -44,11 +45,11 @@ func WriteToExcel(filepath string, rows [][]string) error {
 
 	// Preconditions
 	if len(filepath) == 0 {
-		return fmt.Errorf("Filepath is empty")
+		return errors.New("filepath is empty")
 	}
 
 	if rows == nil {
-		return fmt.Errorf("Rows to write is nil")
+		return errors.New("rows to write is nil")
 	}
 
 	logging.Logger.Info().
