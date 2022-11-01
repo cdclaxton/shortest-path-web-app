@@ -81,7 +81,7 @@ func main() {
 	}
 
 	// Create the job server
-	jobServer, err := server.NewJobServer(runner)
+	jobServer, err := server.NewJobServer(runner, "./server/templates")
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -34,13 +35,13 @@ const (
 
 // Locations of the HTML templates
 const (
-	errorTemplatePath         = "./server/templates/error.html"          // For a system error
-	inputProblemTemplatePath  = "./server/templates/input-problem.html"  // For a data error
-	jobNotFoundTemplatePath   = "./server/templates/job-not-found.html"  // For when a job cannot be found
-	processingJobTemplatePath = "./server/templates/processing-job.html" // For during processing
-	jobFailedTemplatePath     = "./server/templates/job-failed.html"     // For a failed job
-	jobNoResultsTemplatePath  = "./server/templates/job-no-results.html" // For a complete job
-	jobResultsTemplatePath    = "./server/templates/job-results.html"    // For a complete job
+	errorTemplateFile         = "error.html"          // For a system error
+	inputProblemTemplateFile  = "input-problem.html"  // For a data error
+	jobNotFoundTemplateFile   = "job-not-found.html"  // For when a job cannot be found
+	processingJobTemplateFile = "processing-job.html" // For during processing
+	jobFailedTemplateFile     = "job-failed.html"     // For a failed job
+	jobNoResultsTemplateFile  = "job-no-results.html" // For a complete job
+	jobResultsTemplateFile    = "job-results.html"    // For a complete job
 )
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
@@ -57,45 +58,49 @@ type JobServer struct {
 
 // NewJobServer given the job runner for executing jobs. It will return an error if any of the
 // required HTML templates cannot be located.
-func NewJobServer(runner *JobRunner) (*JobServer, error) {
+func NewJobServer(runner *JobRunner, templatesFolder string) (*JobServer, error) {
 
 	// Preconditions
 	if runner == nil {
 		return nil, errors.New("job runner is nil")
 	}
 
+	if _, err := os.Stat(templatesFolder); os.IsNotExist(err) {
+		return nil, fmt.Errorf("template folder doesn't exist at %v", templatesFolder)
+	}
+
 	// Read the templates
-	errorTemplate, err := raymond.ParseFile(errorTemplatePath)
+	errorTemplate, err := raymond.ParseFile(path.Join(templatesFolder, errorTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	inputProblemTemplate, err := raymond.ParseFile(inputProblemTemplatePath)
+	inputProblemTemplate, err := raymond.ParseFile(path.Join(templatesFolder, inputProblemTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobNotFoundTemplate, err := raymond.ParseFile(jobNotFoundTemplatePath)
+	jobNotFoundTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNotFoundTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	processingJobTemplate, err := raymond.ParseFile(processingJobTemplatePath)
+	processingJobTemplate, err := raymond.ParseFile(path.Join(templatesFolder, processingJobTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobFailedTemplate, err := raymond.ParseFile(jobFailedTemplatePath)
+	jobFailedTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobFailedTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobNoResultsTemplate, err := raymond.ParseFile(jobNoResultsTemplatePath)
+	jobNoResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNoResultsTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobResultsTemplate, err := raymond.ParseFile(jobResultsTemplatePath)
+	jobResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobResultsTemplateFile))
 	if err != nil {
 		return nil, err
 	}

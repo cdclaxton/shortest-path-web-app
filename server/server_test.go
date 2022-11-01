@@ -392,7 +392,7 @@ func TestBuildFilename(t *testing.T) {
 
 func TestNewJobServer(t *testing.T) {
 	runner := makeJobRunner(t)
-	server, err := NewJobServer(runner)
+	server, err := NewJobServer(runner, "./templates")
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 }
