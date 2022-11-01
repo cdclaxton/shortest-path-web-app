@@ -1,6 +1,7 @@
 package graphstore
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
@@ -16,15 +17,15 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 
 	// Preconditions
 	if bi == nil {
-		return fmt.Errorf("Bipartite store is nil")
+		return errors.New("bipartite store is nil")
 	}
 
 	if uni == nil {
-		return fmt.Errorf("Unipartite store is nil")
+		return errors.New("unipartite store is nil")
 	}
 
 	if skipEntities == nil {
-		return fmt.Errorf("Entities to skip is nil")
+		return errors.New("entities to skip is nil")
 	}
 
 	logging.Logger.Info().
@@ -51,7 +52,7 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 			return err
 		}
 		if doc == nil {
-			return fmt.Errorf("Document doesn't exist with ID: %v", docId)
+			return fmt.Errorf("document doesn't exist with ID: %v", docId)
 		}
 
 		// Entity IDs related to the document

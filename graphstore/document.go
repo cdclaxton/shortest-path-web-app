@@ -1,7 +1,7 @@
 package graphstore
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -16,9 +16,9 @@ type Document struct {
 }
 
 var (
-	ErrDocumentIdIsBlank       = fmt.Errorf("Document ID is blank")
-	ErrDocumentTypeIsBlank     = fmt.Errorf("Document type is blank")
-	ErrDocumentAttributesIsNil = fmt.Errorf("Document attributes is nil")
+	ErrDocumentIdIsBlank       = errors.New("document ID is blank")
+	ErrDocumentTypeIsBlank     = errors.New("document type is blank")
+	ErrDocumentAttributesIsNil = errors.New("document attributes is nil")
 )
 
 // ValidateDocumentId to determine if the document ID passes minimum validation criteria.

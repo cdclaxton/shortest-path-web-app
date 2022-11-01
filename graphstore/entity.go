@@ -1,6 +1,7 @@
 package graphstore
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -16,9 +17,9 @@ type Entity struct {
 }
 
 var (
-	ErrEntityIdIsBlank       = fmt.Errorf("Entity ID is blank")
-	ErrEntityTypeIsBlank     = fmt.Errorf("Entity type is blank")
-	ErrEntityAttributesIsNil = fmt.Errorf("Entity attributes is nil")
+	ErrEntityIdIsBlank       = errors.New("entity ID is blank")
+	ErrEntityTypeIsBlank     = errors.New("entity type is blank")
+	ErrEntityAttributesIsNil = errors.New("entity attributes is nil")
 )
 
 // ValidateEntityId to determine if the document ID passes minimum validation criteria.

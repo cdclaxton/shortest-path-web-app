@@ -14,6 +14,7 @@ package graphstore
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"os"
 
@@ -32,7 +33,7 @@ func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, er
 
 	// Preconditions
 	if len(folder) == 0 {
-		return nil, fmt.Errorf("Folder name is empty")
+		return nil, errors.New("folder name is empty")
 	}
 
 	logging.Logger.Info().
@@ -78,18 +79,18 @@ func pebbleKeyToBipartiteEntityId(value []byte) (string, error) {
 
 	// Preconditions
 	if value == nil {
-		return "", fmt.Errorf("Entity key is nil")
+		return "", errors.New("entity key is nil")
 	}
 
 	keyString := string(value)
 
 	if len(keyString) == 0 {
-		return "", fmt.Errorf("Entity key has zero length")
+		return "", errors.New("entity key has zero length")
 	}
 
 	// Check the prefix
 	if string(keyString[0]) != entityKeyPrefix {
-		return "", fmt.Errorf("Entity key %v has the wrong prefix", keyString)
+		return "", fmt.Errorf("entity key %v has the wrong prefix", keyString)
 	}
 
 	// Return the entity ID by removing the prefix
@@ -101,7 +102,7 @@ func bipartiteEntityToPebbleValue(entity *Entity) ([]byte, error) {
 
 	// Preconditions
 	if entity == nil {
-		return nil, fmt.Errorf("Entity is ni")
+		return nil, errors.New("entity is nil")
 	}
 
 	var buffer bytes.Buffer
@@ -119,7 +120,7 @@ func pebbleValueToBipartiteEntity(value []byte) (*Entity, error) {
 
 	// Preconditions
 	if value == nil {
-		return nil, fmt.Errorf("Pebble value is nil")
+		return nil, errors.New("pebble value is nil")
 	}
 
 	var buffer bytes.Buffer
@@ -144,18 +145,18 @@ func pebbleKeyToBipartiteDocumentId(value []byte) (string, error) {
 
 	// Preconditions
 	if value == nil {
-		return "", fmt.Errorf("Document key is nil")
+		return "", errors.New("document key is nil")
 	}
 
 	keyString := string(value)
 
 	if len(keyString) == 0 {
-		return "", fmt.Errorf("Document key has zero length")
+		return "", errors.New("document key has zero length")
 	}
 
 	// Check the prefix
 	if string(keyString[0]) != documentKeyPrefix {
-		return "", fmt.Errorf("Document key %v has the wrong prefix", keyString)
+		return "", fmt.Errorf("document key %v has the wrong prefix", keyString)
 	}
 
 	// Return the entity ID by removing the prefix
@@ -185,7 +186,7 @@ func pebbleValueToBipartiteDocument(value []byte) (*Document, error) {
 
 	// Preconditions
 	if value == nil {
-		return nil, fmt.Errorf("Pebble value is nil")
+		return nil, errors.New("pebble value is nil")
 	}
 
 	var buffer bytes.Buffer
