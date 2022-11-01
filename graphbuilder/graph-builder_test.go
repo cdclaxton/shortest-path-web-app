@@ -1,7 +1,6 @@
 package graphbuilder
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -350,7 +349,7 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 func TestPrepareFolderForStorage(t *testing.T) {
 
 	// Create a temporary folder
-	tempFolder, err := ioutil.TempDir("", "folder-test")
+	tempFolder, err := os.MkdirTemp("", "folder-test")
 	assert.NoError(t, err)
 
 	// Prepare an empty folder

@@ -1,7 +1,6 @@
 package graphbuilder
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -9,7 +8,7 @@ import (
 // clearFolder by removing all of its contents.
 func clearFolder(folder string) error {
 
-	files, err := ioutil.ReadDir(folder)
+	files, err := os.ReadDir(folder)
 	if err != nil {
 		return err
 	}
@@ -24,7 +23,7 @@ func clearFolder(folder string) error {
 // isFolderEmpty returns true if the folder is empty of files and folders.
 func isFolderEmpty(folder string) (bool, error) {
 
-	files, err := ioutil.ReadDir(folder)
+	files, err := os.ReadDir(folder)
 	if err != nil {
 		return false, err
 	}

@@ -3,7 +3,7 @@ package graphbuilder
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -33,12 +33,12 @@ type GraphData struct {
 
 // createTempBipartitePebbleFolder in the default temp directory for the operating system.
 func createTempBipartitePebbleFolder() (string, error) {
-	return ioutil.TempDir("", TempBipartiteFolderName)
+	return os.MkdirTemp("", TempBipartiteFolderName)
 }
 
 // createTempUnipartitePebbleFolder in the default temp directory for the operating system.
 func createTempUnipartitePebbleFolder() (string, error) {
-	return ioutil.TempDir("", TempUnipartiteFolderName)
+	return os.MkdirTemp("", TempUnipartiteFolderName)
 }
 
 // prepareFolderForStorage by ensuring it is empty.
@@ -59,7 +59,7 @@ func prepareFolderForStorage(folder string, graphStoreType string, deleteFilesIn
 	// If the folder isn't empty, then clear it if config allows
 	if !folderEmpty {
 		if !deleteFilesInFolder {
-			return fmt.Errorf("Folder for %v graph store (%v) isn't empty", graphStoreType, folder)
+			return fmt.Errorf("folder for %v graph store (%v) isn't empty", graphStoreType, folder)
 		} else {
 			err := clearFolder(folder)
 			if err != nil {
@@ -107,7 +107,7 @@ func makeBipartiteGraph(config BipartiteGraphConfig) (graphstore.BipartiteGraphS
 		return graphstore.NewPebbleBipartiteGraphStore(config.Folder)
 	}
 
-	return nil, fmt.Errorf("Unknown bipartite graph storage type: %v", config.Type)
+	return nil, fmt.Errorf("unknown bipartite graph storage type: %v", config.Type)
 }
 
 // makeUnipartiteGraph given the unipartite graph storage config.
@@ -146,7 +146,7 @@ func makeUnipartiteGraph(config UnipartiteGraphConfig) (graphstore.UnipartiteGra
 		return graphstore.NewPebbleUnipartiteGraphStore(config.Folder)
 	}
 
-	return nil, fmt.Errorf("Unknown unipartite graph storage type: %v", config.Type)
+	return nil, fmt.Errorf("unknown unipartite graph storage type: %v", config.Type)
 }
 
 // BipartiteGraphConfig to instantiate a bipartite graph store.
@@ -187,7 +187,7 @@ func readGraphConfig(filepath string) (*GraphConfig, error) {
 	defer file.Close()
 
 	// Read the JSON into a byte array
-	content, err := ioutil.ReadAll(file)
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}

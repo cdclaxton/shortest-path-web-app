@@ -1,7 +1,6 @@
 package graphbuilder
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,7 +11,7 @@ import (
 func TestClearFolder(t *testing.T) {
 
 	// Make a temporary folder
-	tempFolder, err := ioutil.TempDir("", "folder-test")
+	tempFolder, err := os.MkdirTemp("", "folder-test")
 	assert.NoError(t, err)
 
 	// Create a file within the folder
