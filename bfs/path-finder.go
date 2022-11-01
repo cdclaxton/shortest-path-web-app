@@ -1,7 +1,7 @@
 package bfs
 
 import (
-	"fmt"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -16,17 +16,17 @@ const componentName = "bfs"
 
 // Errors
 var (
-	ErrInvalidHops             = fmt.Errorf("Invalid number of hops")
-	ErrUnipartiteGraphIsNil    = fmt.Errorf("Unipartite graph is nil")
-	ErrEmptyEntityId           = fmt.Errorf("Entity ID is empty")
-	ErrEmptyEntityDataset      = fmt.Errorf("Entity dataset is empty")
-	ErrPathsIsNil              = fmt.Errorf("Paths is nil")
-	ErrPathsIsEmpty            = fmt.Errorf("Slice of paths is empty")
-	ErrNetworkConnectionsIsNil = fmt.Errorf("Network connections is nil")
-	ErrEntitySetsIsNil         = fmt.Errorf("Entity sets is nil")
-	ErrEntitySetsIsEmpty       = fmt.Errorf("Entity sets is empty")
-	ErrNoEntitiesInEntitySet   = fmt.Errorf("No entity IDS in entity set")
-	ErrNoNameForEntitySet      = fmt.Errorf("No name for entity set")
+	ErrInvalidHops             = errors.New("invalid number of hops")
+	ErrUnipartiteGraphIsNil    = errors.New("unipartite graph is nil")
+	ErrEmptyEntityId           = errors.New("entity ID is empty")
+	ErrEmptyEntityDataset      = errors.New("entity dataset is empty")
+	ErrPathsIsNil              = errors.New("paths is nil")
+	ErrPathsIsEmpty            = errors.New("slice of paths is empty")
+	ErrNetworkConnectionsIsNil = errors.New("network connections is nil")
+	ErrEntitySetsIsNil         = errors.New("entity sets is nil")
+	ErrEntitySetsIsEmpty       = errors.New("entity sets is empty")
+	ErrNoEntitiesInEntitySet   = errors.New("no entity IDS in entity set")
+	ErrNoNameForEntitySet      = errors.New("no name for entity set")
 )
 
 // PathFinder uses an unidirected unipartite graph to find paths from one entity to another.
