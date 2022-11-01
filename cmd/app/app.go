@@ -8,7 +8,6 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/server"
-	"github.com/cdclaxton/shortest-path-web-app/system"
 )
 
 // Component name used in logging
@@ -73,7 +72,7 @@ func main() {
 	}
 
 	// Create the job runner
-	runner, err := system.NewJobRunner(pathFinder, chartBuilder, *chartFolder)
+	runner, err := server.NewJobRunner(pathFinder, chartBuilder, *chartFolder)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).
