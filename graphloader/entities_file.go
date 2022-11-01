@@ -2,7 +2,7 @@ package graphloader
 
 import (
 	"encoding/csv"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -194,7 +194,7 @@ func (reader *EntitiesCsvFileReader) readRecord() (graphstore.Entity, bool) {
 func (reader *EntitiesCsvFileReader) Next() (graphstore.Entity, error) {
 
 	if !reader.hasNext {
-		return graphstore.Entity{}, fmt.Errorf("Next() called when no next item exists")
+		return graphstore.Entity{}, errors.New("Next() called when no next item exists")
 	}
 
 	// Get the current Entity
