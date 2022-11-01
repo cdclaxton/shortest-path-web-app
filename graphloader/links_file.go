@@ -15,7 +15,7 @@ package graphloader
 
 import (
 	"encoding/csv"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -162,7 +162,7 @@ func (reader *LinksCsvFileReader) Next() (graphstore.Link, error) {
 
 	// Preconditions
 	if !reader.hasNext {
-		return graphstore.Link{}, fmt.Errorf("Next() called when no next item exists")
+		return graphstore.Link{}, errors.New("Next() called when no next item exists")
 	}
 
 	// Get the current Links struct
