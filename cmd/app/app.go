@@ -8,9 +8,9 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/server"
-	"github.com/cdclaxton/shortest-path-web-app/system"
 )
 
+// Component name used in logging
 const componentName = "application"
 
 func main() {
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	// Create the job runner
-	runner, err := system.NewJobRunner(pathFinder, chartBuilder, *chartFolder)
+	runner, err := server.NewJobRunner(pathFinder, chartBuilder, *chartFolder)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).
@@ -80,7 +80,8 @@ func main() {
 			Msg("Failed to create job runner")
 	}
 
-	jobServer, err := server.NewJobServer(runner)
+	// Create the job server
+	jobServer, err := server.NewJobServer(runner, "./server/templates")
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).
@@ -88,6 +89,7 @@ func main() {
 			Msg("Failed to create job server")
 	}
 
+	// Start the job server (ready for users to run jobs)
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Msg("Starting server")

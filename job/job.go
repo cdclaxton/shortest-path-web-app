@@ -1,7 +1,7 @@
 package job
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 	"time"
 
@@ -16,10 +16,10 @@ type EntitySet struct {
 }
 
 var (
-	ErrEntitySetNoName      = fmt.Errorf("Entity set doesn't have a name")
-	ErrEntitySetNoEntityIDs = fmt.Errorf("Entity set doesn't have any entity IDs")
-	ErrInvalidNumberOfHops  = fmt.Errorf("Invalid number of hops")
-	ErrNoEntitySets         = fmt.Errorf("No entity sets")
+	ErrEntitySetNoName      = errors.New("entity set doesn't have a name")
+	ErrEntitySetNoEntityIDs = errors.New("entity set doesn't have any entity IDs")
+	ErrInvalidNumberOfHops  = errors.New("invalid number of hops")
+	ErrNoEntitySets         = errors.New("no entity sets")
 )
 
 // Validate the EntitySet.

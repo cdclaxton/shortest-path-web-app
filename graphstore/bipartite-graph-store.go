@@ -1,7 +1,7 @@
 package graphstore
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -41,12 +41,12 @@ type BipartiteGraphStore interface {
 
 // Error constants
 var (
-	ErrEntityNotFound    = fmt.Errorf("Entity not found in bipartite store")
-	ErrDocumentNotFound  = fmt.Errorf("Document not found in bipartite store")
-	ErrEntityIsNil       = fmt.Errorf("Entity is nil")               // Entity pointer is nil
-	ErrDocumentIsNil     = fmt.Errorf("Document is nil")             // Document pointer is nil
-	ErrEntityIdIsEmpty   = fmt.Errorf("Entity ID has length zero")   // Empty string
-	ErrDocumentIdIsEmpty = fmt.Errorf("Document ID has length zero") // Empty string
+	ErrEntityNotFound    = errors.New("Entity not found in bipartite store")
+	ErrDocumentNotFound  = errors.New("Document not found in bipartite store")
+	ErrEntityIsNil       = errors.New("Entity is nil")               // Entity pointer is nil
+	ErrDocumentIsNil     = errors.New("Document is nil")             // Document pointer is nil
+	ErrEntityIdIsEmpty   = errors.New("Entity ID has length zero")   // Empty string
+	ErrDocumentIdIsEmpty = errors.New("Document ID has length zero") // Empty string
 )
 
 // BulkLoadBipartiteGraphStore given entities, documents and links.
@@ -230,7 +230,7 @@ func AllDocuments(iter DocumentIdIterator) (*set.Set[string], error) {
 
 	// Preconditions
 	if iter == nil {
-		return nil, fmt.Errorf("Document iterator is nil")
+		return nil, errors.New("Document iterator is nil")
 	}
 
 	ids := set.NewSet[string]()
@@ -251,7 +251,7 @@ func AllEntities(iter EntityIdIterator) (*set.Set[string], error) {
 
 	// Preconditions
 	if iter == nil {
-		return nil, fmt.Errorf("Entity iterator is nil")
+		return nil, errors.New("Entity iterator is nil")
 	}
 
 	ids := set.NewSet[string]()

@@ -1,7 +1,7 @@
 package i2chart
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"strings"
 
@@ -36,11 +36,11 @@ func Substitute(format string, keywordToValue map[string]string, missing string)
 	// Preconditions
 	for keyword := range keywordToValue {
 		if len(keyword) == 0 {
-			return "", fmt.Errorf("Empty keyword found")
+			return "", errors.New("empty keyword found")
 		}
 
 		if strings.Contains(keyword, "<") || strings.Contains(keyword, ">") {
-			return "", fmt.Errorf("Keyword contains illegal characters")
+			return "", errors.New("keyword contains illegal characters")
 		}
 	}
 

@@ -1,10 +1,12 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -13,7 +15,6 @@ import (
 	"github.com/aymerick/raymond"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
-	"github.com/cdclaxton/shortest-path-web-app/system"
 )
 
 // Component name used in logging
@@ -34,70 +35,77 @@ const (
 
 // Locations of the HTML templates
 const (
-	errorTemplatePath         = "./server/templates/error.html"         // For a system error
-	inputProblemTemplatePath  = "./server/templates/input-problem.html" // For a data error
-	jobNotFoundTemplatePath   = "./server/templates/job-not-found.html" // For when a job cannot be found
-	processingJobTemplatePath = "./server/templates/processing-job.html"
-	jobFailedTemplatePath     = "./server/templates/job-failed.html"
-	jobNoResultsTemplatePath  = "./server/templates/job-no-results.html"
-	jobResultsTemplatePath    = "./server/templates/job-results.html"
+	errorTemplateFile         = "error.html"          // For a system error
+	inputProblemTemplateFile  = "input-problem.html"  // For a data error
+	jobNotFoundTemplateFile   = "job-not-found.html"  // For when a job cannot be found
+	processingJobTemplateFile = "processing-job.html" // For during processing
+	jobFailedTemplateFile     = "job-failed.html"     // For a failed job
+	jobNoResultsTemplateFile  = "job-no-results.html" // For a complete job
+	jobResultsTemplateFile    = "job-results.html"    // For a complete job
 )
 
+// A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
-	runner                *system.JobRunner // Job runner
+	runner                *JobRunner        // Job runner
 	errorTemplate         *raymond.Template // Template if a system error occurs
 	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
 	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
-	processingJobTemplate *raymond.Template
-	jobFailedTemplate     *raymond.Template
-	jobNoResultsTemplate  *raymond.Template
-	jobResultsTemplate    *raymond.Template
+	processingJobTemplate *raymond.Template // Template whilst the job is processing
+	jobFailedTemplate     *raymond.Template // Template for a failed job
+	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
+	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
 }
 
-func NewJobServer(runner *system.JobRunner) (*JobServer, error) {
+// NewJobServer given the job runner for executing jobs. It will return an error if any of the
+// required HTML templates cannot be located.
+func NewJobServer(runner *JobRunner, templatesFolder string) (*JobServer, error) {
 
 	// Preconditions
 	if runner == nil {
-		return nil, fmt.Errorf("Job runner is nil")
+		return nil, errors.New("job runner is nil")
+	}
+
+	if _, err := os.Stat(templatesFolder); os.IsNotExist(err) {
+		return nil, fmt.Errorf("template folder doesn't exist at %v", templatesFolder)
 	}
 
 	// Read the templates
-	errorTemplate, err := raymond.ParseFile(errorTemplatePath)
+	errorTemplate, err := raymond.ParseFile(path.Join(templatesFolder, errorTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	inputProblemTemplate, err := raymond.ParseFile(inputProblemTemplatePath)
+	inputProblemTemplate, err := raymond.ParseFile(path.Join(templatesFolder, inputProblemTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobNotFoundTemplate, err := raymond.ParseFile(jobNotFoundTemplatePath)
+	jobNotFoundTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNotFoundTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	processingJobTemplate, err := raymond.ParseFile(processingJobTemplatePath)
+	processingJobTemplate, err := raymond.ParseFile(path.Join(templatesFolder, processingJobTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobFailedTemplate, err := raymond.ParseFile(jobFailedTemplatePath)
+	jobFailedTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobFailedTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobNoResultsTemplate, err := raymond.ParseFile(jobNoResultsTemplatePath)
+	jobNoResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNoResultsTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	jobResultsTemplate, err := raymond.ParseFile(jobResultsTemplatePath)
+	jobResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobResultsTemplateFile))
 	if err != nil {
 		return nil, err
 	}
 
-	// Return the job server
+	// Return the constructed job server
 	return &JobServer{
 		runner:                runner,
 		errorTemplate:         errorTemplate,
@@ -117,18 +125,18 @@ func parseNumberOfHops(req *http.Request) (int, error) {
 	numberHops := req.FormValue(NumberHopsInputName)
 
 	if len(numberHops) == 0 {
-		return 0, fmt.Errorf("Number of hops is blank")
+		return 0, errors.New("number of hops is blank")
 	}
 
 	// Convert the string version of the number of hops to an integer
 	value, err := strconv.Atoi(numberHops)
 	if err != nil {
-		return 0, fmt.Errorf("Invalid number of hops: %v", value)
+		return 0, fmt.Errorf("invalid number of hops: %v", value)
 	}
 
 	// Validate the number of hops
 	if value < MinimumNumberHops || value > MaximumNumberHops {
-		return 0, fmt.Errorf("Invalid number of hops: %v", value)
+		return 0, fmt.Errorf("invalid number of hops: %v", value)
 	}
 
 	return value, nil
@@ -154,8 +162,8 @@ func splitEntityIDs(text string) []string {
 
 // Errors that can occur with user-defined datasets
 var (
-	DatasetErrorNoName     = fmt.Errorf("Dataset has no name")
-	DatasetErrorNoEntities = fmt.Errorf("Dataset has no entity IDs")
+	ErrDatasetNoName     = errors.New("dataset has no name")
+	ErrDatasetNoEntities = errors.New("dataset has no entity IDs")
 )
 
 // parseEntitySet from the HTTP POST form data.
@@ -167,7 +175,7 @@ func parseEntitySet(req *http.Request, index int) (*job.EntitySet, error) {
 	}
 
 	if index < 0 || index > MaxDatasetIndex {
-		return nil, fmt.Errorf("Invalid dataset index: %v", index)
+		return nil, fmt.Errorf("invalid dataset index: %v", index)
 	}
 
 	// Extract the (user-friendly) name of the dataset from the form
@@ -187,9 +195,9 @@ func parseEntitySet(req *http.Request, index int) (*job.EntitySet, error) {
 			EntityIds: entityIds,
 		}, nil
 	} else if hasName && !hasEntityIds {
-		return nil, DatasetErrorNoEntities
+		return nil, ErrDatasetNoEntities
 	} else if !hasName && hasEntityIds {
-		return nil, DatasetErrorNoName
+		return nil, ErrDatasetNoName
 	} else {
 		return nil, nil
 	}
@@ -205,13 +213,13 @@ func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*j
 	}
 
 	if err := req.ParseForm(); err != nil {
-		return nil, fmt.Errorf("Unable to parse form: %v", err)
+		return nil, fmt.Errorf("unable to parse form: %v", err)
 	}
 
 	// Parse the number of hops
 	numberHops, err := parseNumberOfHops(req)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid number of hops: %v", err)
+		return nil, fmt.Errorf("invalid number of hops: %v", err)
 	}
 
 	// Initialise the job configuration
@@ -225,7 +233,7 @@ func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*j
 		entitySet, err := parseEntitySet(req, idx)
 
 		if err != nil {
-			return nil, fmt.Errorf("Dataset parse error: %v", err)
+			return nil, fmt.Errorf("dataset parse error: %v", err)
 		}
 
 		if entitySet != nil {
@@ -234,7 +242,7 @@ func extractJobConfigurationFromForm(req *http.Request, maxDatasetIndex int) (*j
 	}
 
 	if len(jobConf.EntitySets) == 0 {
-		return nil, fmt.Errorf("There are no datasets")
+		return nil, fmt.Errorf("there are no datasets")
 	}
 
 	return &jobConf, nil
@@ -254,7 +262,7 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 		page := j.inputProblemTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -265,7 +273,7 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 		page := j.errorTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -275,7 +283,7 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 		Msg("Job successfully submitted")
 
 	redirectUrl := fmt.Sprintf("../job/%v", guid)
-	http.Redirect(w, req, redirectUrl, 302)
+	http.Redirect(w, req, redirectUrl, http.StatusFound)
 }
 
 func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
@@ -289,12 +297,12 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 		Msg("Received request at /job")
 
 	finished, err := j.runner.IsJobFinished(guid)
-	if err == system.ErrJobNotFound {
+	if err == ErrJobNotFound {
 
 		page := j.jobNotFoundTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -302,7 +310,7 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 		page := j.errorTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -316,7 +324,7 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 		page := j.processingJobTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -327,7 +335,7 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 		page := j.errorTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
@@ -335,32 +343,38 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 		page := j.jobFailedTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 
 	} else if j1.Progress.State == job.CompleteNoResults {
 		page := j.jobNoResultsTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	} else if j1.Progress.State == job.CompleteResults {
 		page := j.jobResultsTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
-		fmt.Fprintf(w, page)
+		fmt.Fprint(w, page)
 		return
 	}
 
 	fmt.Fprintf(w, "Something has gone terribly wrong if you can read this")
 }
 
-// buildFilename for the download.
+const resultsFilenamePrefix = "shortest-path - "
+
+// buildFilename for the XLSX results file for download.
 func buildFilename(jobConf *job.JobConfiguration) (string, error) {
 
 	// Preconditions
 	if jobConf == nil {
-		return "", fmt.Errorf("Job configuration is nil")
+		return "", fmt.Errorf("job configuration is nil")
+	}
+
+	if len(jobConf.EntitySets) == 0 {
+		return "", fmt.Errorf("no entity sets")
 	}
 
 	datasetNames := []string{}
@@ -371,9 +385,18 @@ func buildFilename(jobConf *job.JobConfiguration) (string, error) {
 	// Sort the dataset names
 	sort.Strings(datasetNames)
 
-	filename := "shortest-path " +
-		strings.Join(datasetNames, "-") +
-		fmt.Sprintf("-%v hops.xlsx", jobConf.MaxNumberHops)
+	// Build the string part for the number of hops
+	var hopsPart string
+	if jobConf.MaxNumberHops == 1 {
+		hopsPart = fmt.Sprintf(" - %v hop.xlsx", jobConf.MaxNumberHops)
+	} else {
+		hopsPart = fmt.Sprintf(" - %v hops.xlsx", jobConf.MaxNumberHops)
+	}
+
+	// Build the complete filename
+	filename := resultsFilenamePrefix +
+		strings.Join(datasetNames, " - ") +
+		hopsPart
 
 	return filename, nil
 }
@@ -406,6 +429,7 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 		logging.Logger.Warn().
 			Str(logging.ComponentField, componentName).
 			Str(loggingGUIDField, guid).
+			Err(err).
 			Msg("Failed to build filename")
 
 		filename = "shortest-path-results.xlsx"

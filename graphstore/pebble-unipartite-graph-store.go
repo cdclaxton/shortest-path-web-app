@@ -166,7 +166,7 @@ func (p *PebbleUnipartiteGraphStore) AddDirected(src string, dst string) error {
 	}
 
 	if src == dst {
-		return fmt.Errorf("Source and destination IDs are identical (%v)", src)
+		return fmt.Errorf("source and destination IDs are identical (%v)", src)
 	}
 
 	existingSet, found, err := p.dstEntityIds(src)
@@ -199,7 +199,7 @@ func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error
 	}
 
 	if src == dst {
-		return fmt.Errorf("Source and destination IDs are identical (%v)", src)
+		return fmt.Errorf("source and destination IDs are identical (%v)", src)
 	}
 
 	// Add the src --> dst connection
@@ -310,7 +310,7 @@ func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.
 	}
 
 	if !found {
-		return nil, fmt.Errorf("Entity ID not found: %v", entityId)
+		return nil, fmt.Errorf("entity ID not found: %v", entityId)
 	}
 
 	return dsts, nil

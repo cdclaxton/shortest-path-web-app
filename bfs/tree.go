@@ -9,9 +9,9 @@ import (
 //
 // An example of a tree is:
 //
-//   a --> b --> c
-//         |
-//         ----> d
+//	a --> b --> c
+//	      |
+//	      ----> d
 //
 // where node 'b' has the parent 'a' and children 'c' and 'd'.
 type TreeNode struct {
@@ -36,7 +36,7 @@ func (t *TreeNode) MakeChild(name string, marked bool) (*TreeNode, error) {
 
 	// Ensure the node is not in the lineage
 	if t.ContainsParentNode(name) {
-		return nil, fmt.Errorf("Lineage already contains %v", name)
+		return nil, fmt.Errorf("lineage already contains %v", name)
 	}
 
 	// Make the new node

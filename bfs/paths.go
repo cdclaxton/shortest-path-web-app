@@ -118,7 +118,7 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 	}
 
 	if maxDepth < 0 {
-		return nil, fmt.Errorf("Invalid maximum depth: %v", maxDepth)
+		return nil, fmt.Errorf("invalid maximum depth: %v", maxDepth)
 	}
 
 	// Number of steps traversed from root vertex
@@ -148,7 +148,7 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 
 			// Check the node
 			if node.marked {
-				return nil, fmt.Errorf("Trying to traverse from a marked node: %v", node.name)
+				return nil, fmt.Errorf("trying to traverse from a marked node: %v", node.name)
 			}
 
 			// Get the vertices adjacent to the node
@@ -188,7 +188,7 @@ func AllPaths(graph graphstore.UnipartiteGraphStore, root string, goal string,
 	// Postconditions
 	for _, path := range paths {
 		if path.Start() != root || path.End() != goal {
-			return nil, fmt.Errorf("Invalid path generated")
+			return nil, fmt.Errorf("invalid path generated")
 		}
 	}
 

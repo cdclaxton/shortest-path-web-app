@@ -1,6 +1,7 @@
-package system
+package server
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -13,18 +14,13 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
-const componentName = "system"
-
-// Field used in logging for the job
-const loggingGUIDField = "jobGUID"
-
 var (
-	ErrPathFinderIsNil    = fmt.Errorf("Pathfinder is nil")
-	ErrChartBuilderIsNil  = fmt.Errorf("Chartbuilder is nil")
-	ErrJobNotFound        = fmt.Errorf("Job not found")
-	ErrJobConfIsNil       = fmt.Errorf("Job configuration is nil")
-	ErrFolderDoesNotExist = fmt.Errorf("Folder doesn't exist")
-	ErrInvalidGuid        = fmt.Errorf("Invalid GUID")
+	ErrPathFinderIsNil    = errors.New("pathfinder is nil")
+	ErrChartBuilderIsNil  = errors.New("chartbuilder is nil")
+	ErrJobNotFound        = errors.New("job not found")
+	ErrJobConfIsNil       = errors.New("job configuration is nil")
+	ErrFolderDoesNotExist = errors.New("folder doesn't exist")
+	ErrInvalidGuid        = errors.New("invalid GUID")
 )
 
 // GUID returned on failure (instead of an empty string)
@@ -101,8 +97,8 @@ func (j *JobRunner) finishedExecutingJob(guid string) {
 	j.numberJobsExecuting -= 1
 }
 
-// getNumberJobsExecuting returns the number of jobs being executed when the lock is acquired.
-func (j *JobRunner) getNumberJobsExecuting() int {
+// GetNumberJobsExecuting returns the number of jobs being executed when the lock is acquired.
+func (j *JobRunner) GetNumberJobsExecuting() int {
 	j.numberJobsExecutingLock.RLock()
 	defer j.numberJobsExecutingLock.RUnlock()
 

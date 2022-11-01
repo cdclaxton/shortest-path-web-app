@@ -1,7 +1,7 @@
 package graphstore
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
@@ -30,11 +30,11 @@ func BuildFromEdgeList(graph UnipartiteGraphStore, edges []Edge) error {
 
 	// Preconditions
 	if graph == nil {
-		return fmt.Errorf("Unipartite graph store is nil")
+		return errors.New("unipartite graph store is nil")
 	}
 
 	if edges == nil {
-		return fmt.Errorf("Edges is nil")
+		return errors.New("edges is nil")
 	}
 
 	// Walk through each edge and add it to the graph
@@ -53,11 +53,11 @@ func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore
 
 	// Preconditions
 	if g1 == nil {
-		return false, fmt.Errorf("Graph store g1 is nil")
+		return false, errors.New("graph store g1 is nil")
 	}
 
 	if g2 == nil {
-		return false, fmt.Errorf("Graph store g2 is nil")
+		return false, errors.New("graph store g2 is nil")
 	}
 
 	// Get lists of entity IDs
