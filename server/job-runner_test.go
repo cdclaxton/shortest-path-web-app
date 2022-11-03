@@ -1,12 +1,43 @@
 package server
 
 import (
+	"os"
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewJobRunner(t *testing.T) {
+
+	// Make simple PathFinder and ChartBuilder structs
+	pathFinder := bfs.PathFinder{}
+	chartBuilder := &i2chart.I2ChartBuilder{}
+
+	// Make a folder and a folder path that doesn't exist
+	folder, err := os.MkdirTemp("", "test-job-runner")
+	assert.NoError(t, err)
+	defer os.RemoveAll(folder) // Delete the temporary folder
+
+	nonExistentTempFolder := folder + "-A"
+
+	// Job runner with a nil Pathfinder
+	runner, err := NewJobRunner(nil, chartBuilder, folder)
+	assert.Error(t, err)
+	assert.Nil(t, runner)
+
+	// Job runner with a nil Chartbuilder
+	runner, err = NewJobRunner(&pathFinder, nil, folder)
+	assert.Error(t, err)
+	assert.Nil(t, runner)
+
+	// Job runner with a folder that doesn't exist
+	runner, err = NewJobRunner(&pathFinder, chartBuilder, nonExistentTempFolder)
+	assert.Error(t, err)
+	assert.Nil(t, runner)
+}
 
 func TestMakeExcelFilepath(t *testing.T) {
 	result := makeExcelFilepath("../data/output", "1234")
@@ -62,6 +93,11 @@ func TestSubmitJob(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, j)
 
+	// Try to get whether a job is finished that doesn't exist
+	finished, err := runner.IsJobFinished("1234")
+	assert.Error(t, err)
+	assert.False(t, finished)
+
 	// Try to submit a job that has invalid configuration
 	conf := &job.JobConfiguration{}
 	guid, err := runner.Submit(conf)
@@ -92,6 +128,11 @@ func TestSubmitJob(t *testing.T) {
 	assert.NotNil(t, j1)
 
 	checkJob(t, j1, guid, conf, job.CompleteNoResults, false, noPathsMessage, false)
+
+	// Check that the job is finished
+	finished, err = runner.IsJobFinished(guid)
+	assert.NoError(t, err)
+	assert.True(t, finished)
 
 	// Run a job that will return paths
 	conf, err = job.NewJobConfiguration(entitySets, 2)

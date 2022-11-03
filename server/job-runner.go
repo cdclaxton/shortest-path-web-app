@@ -159,7 +159,7 @@ func (j *JobRunner) setJobToInProgress(j1 *job.Job) {
 	j1.Progress.State = job.InProgress
 }
 
-// setJobToFailed sets the job to failed and stores the error.
+// setJobToFailed sets the job to failed and stores the error in the job.
 func (j *JobRunner) setJobToFailed(failedJob *job.Job, err error) {
 	j.jobsLock.Lock()
 	defer j.jobsLock.Unlock()
