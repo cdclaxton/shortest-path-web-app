@@ -16,11 +16,12 @@ func TestNewJobRunner(t *testing.T) {
 	pathFinder := bfs.PathFinder{}
 	chartBuilder := &i2chart.I2ChartBuilder{}
 
-	// Make a folder and a folder path that doesn't exist
+	// Make a folder
 	folder, err := os.MkdirTemp("", "test-job-runner")
 	assert.NoError(t, err)
 	defer os.RemoveAll(folder) // Delete the temporary folder
 
+	// Make a folder path that doesn't exist
 	nonExistentTempFolder := folder + "-A"
 
 	// Job runner with a nil Pathfinder

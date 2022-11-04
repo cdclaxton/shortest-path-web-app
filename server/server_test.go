@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -391,8 +392,98 @@ func TestBuildFilename(t *testing.T) {
 }
 
 func TestNewJobServer(t *testing.T) {
+
+	// Try to make a JobServer with a nil runner
+	server, err := NewJobServer(nil, "./templates")
+	assert.Error(t, err)
+	assert.Nil(t, server)
+
+	// Make a well-configured job runner
 	runner := makeJobRunner(t)
+	defer cleanUpJobRunner(t, runner)
+
+	// Try to make a JobServer with inaccessible templates
+	server, err = NewJobServer(runner, "./non-existent-templates")
+	assert.Error(t, err)
+	assert.Nil(t, server)
+
+	// Make a Job server that is correctly configured
+	server, err = NewJobServer(runner, "./templates")
+	assert.NoError(t, err)
+	assert.NotNil(t, server)
+}
+
+func makeJobServer(t *testing.T) *JobServer {
+
+	// Make a well-configured job runner
+	runner := makeJobRunner(t)
+	defer cleanUpJobRunner(t, runner)
+
+	// Make a Job server that is correctly configured
 	server, err := NewJobServer(runner, "./templates")
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
+
+	return server
+}
+
+func TestHandleInvalidDownload(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Try to download without a GUID
+	req := httptest.NewRequest(http.MethodGet, "/download", strings.NewReader(""))
+	w := httptest.NewRecorder()
+
+	server.handleDownload(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	// Try to download for a GUID that doesn't exist
+	req = httptest.NewRequest(http.MethodGet, "/download/1234", strings.NewReader(""))
+	w = httptest.NewRecorder()
+
+	server.handleDownload(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+// buildFormData for the /upload endpoint for testing purposes.
+func buildFormData(maxNumberHops int,
+	dataset1 string, entities1 string,
+	dataset2 string, entities2 string,
+	dataset3 string, entities3 string) url.Values {
+
+	form := url.Values{}
+	form.Add(NumberHopsInputName, strconv.Itoa(maxNumberHops))
+	form.Add(fmt.Sprintf("%v%v", DatasetNameInputName, 1), dataset1)
+	form.Add(fmt.Sprintf("%v%v", DatasetEntitiesInputName, 1), entities1)
+	form.Add(fmt.Sprintf("%v%v", DatasetNameInputName, 2), dataset2)
+	form.Add(fmt.Sprintf("%v%v", DatasetEntitiesInputName, 2), entities2)
+	form.Add(fmt.Sprintf("%v%v", DatasetNameInputName, 3), dataset3)
+	form.Add(fmt.Sprintf("%v%v", DatasetEntitiesInputName, 3), entities3)
+
+	return form
+}
+
+func TestUploadInvalidConfiguration(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Upload an empty form
+	req := httptest.NewRequest(http.MethodGet, "/upload", strings.NewReader(""))
+	w := httptest.NewRecorder()
+
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	// Upload a form with one dataset, but no entity IDs
+
+	//
+
+	fmt.Println(w)
+
+	assert.False(t, true)
 }

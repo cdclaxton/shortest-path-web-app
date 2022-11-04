@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// MakeJobRunner for testing purposes that is configured to be able to run
-// jobs successfully.
+// makeJobRunner for testing purposes that is configured to be able to run
+// jobs successfully. Ensure cleanUpJobRunner() is called after testing is complete.
 func makeJobRunner(t *testing.T) *JobRunner {
 
 	folder := "../test-data-sets/set-1/"
@@ -44,6 +44,7 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	return runner
 }
 
+// cleanUpJobRunner removes the runner folder.
 func cleanUpJobRunner(t *testing.T, runner *JobRunner) {
 	assert.NoError(t, os.RemoveAll(runner.folder))
 }

@@ -259,6 +259,8 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 	// If there was an input configuration error, then show the error on a dedicated page
 	if err != nil {
 
+		w.WriteHeader(http.StatusBadRequest)
+
 		page := j.inputProblemTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
 		})
