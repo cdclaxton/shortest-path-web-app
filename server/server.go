@@ -257,6 +257,7 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 	jobConf, err := extractJobConfigurationFromForm(req, MaxDatasetIndex)
 
 	// If there was an input configuration error, then show the error on a dedicated page
+	// and return a 400 error
 	if err != nil {
 
 		w.WriteHeader(http.StatusBadRequest)
@@ -268,9 +269,11 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Launch the job
+	// Launch the job. If it fails return a 500 error code
 	guid, err := j.runner.Submit(jobConf)
 	if err != nil {
+
+		w.WriteHeader(http.StatusInternalServerError)
 
 		page := j.errorTemplate.MustExec(map[string]string{
 			"reason": err.Error(),
@@ -342,19 +345,23 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if j1.Progress.State == job.Failed {
+
 		page := j.jobFailedTemplate.MustExec(map[string]string{
-			"reason": err.Error(),
+			"reason": j1.Error.Error(),
 		})
 		fmt.Fprint(w, page)
 		return
 
 	} else if j1.Progress.State == job.CompleteNoResults {
+
 		page := j.jobNoResultsTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
 		fmt.Fprint(w, page)
 		return
+
 	} else if j1.Progress.State == job.CompleteResults {
+
 		page := j.jobResultsTemplate.MustExec(map[string]string{
 			"guid": guid,
 		})
