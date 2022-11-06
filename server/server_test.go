@@ -530,6 +530,36 @@ func isPageWithResults(w *httptest.ResponseRecorder, guid string) bool {
 	return strings.Contains(body, "Download Excel file")
 }
 
+// isErrorPage returns true if the HTTP resoonse shows that the job errored.
+func isErrorPage(w *httptest.ResponseRecorder, guid string) bool {
+
+	// Extract the body of the HTTP response as a string
+	body := w.Body.String()
+
+	// Check that the (correct) GUID is present
+	if !strings.Contains(body, guid) {
+		return false
+	}
+
+	// Check the text
+	return strings.Contains(body, "Job failed")
+}
+
+// isJobNotFoundPage returns true if the HTTP resoonse shows that the job could not be found.
+func isJobNotFoundPage(w *httptest.ResponseRecorder, guid string) bool {
+
+	// Extract the body of the HTTP response as a string
+	body := w.Body.String()
+
+	// Check that the (correct) GUID is present
+	if !strings.Contains(body, guid) {
+		return false
+	}
+
+	// Check the text
+	return strings.Contains(body, "Oops! Job not found")
+}
+
 func TestUploadNoResults(t *testing.T) {
 
 	// Make a valid job server
@@ -599,4 +629,95 @@ func TestUploadWithResults(t *testing.T) {
 	server.handleJob(w, req)
 	assert.True(t, len(w.Body.String()) > 0)
 	assert.True(t, isPageWithResults(w, guid))
+}
+
+func TestDownloadWithResults(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Upload a form with one dataset, but no matching entity IDs
+	form := buildFormData(1, "Dataset-1", "e-1, e-2", "", "", "", "")
+	req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+	req.Form = form
+
+	w := httptest.NewRecorder()
+
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusFound, w.Code)
+
+	// Extract the location
+	location := w.Result().Header.Get("Location")
+	assert.True(t, len(location) > 0)
+	assert.True(t, strings.HasPrefix(location, "/job/"))
+
+	// Get the job GUID from the location
+	guid := extractGuidFromLocation(t, location)
+
+	// Wait until the job is complete
+	waitForJobsToFinish(server.runner)
+
+	// Try to download the results
+	url := fmt.Sprintf("/download/%v", guid)
+	req = httptest.NewRequest(http.MethodGet, url, nil)
+	w = httptest.NewRecorder()
+
+	server.handleDownload(w, req)
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	assert.True(t, len(w.Body.String()) > 0)
+
+	disposition := w.Result().Header.Get("Content-Disposition")
+	assert.Equal(t, "attachment; filename=shortest-path - Dataset-1 - 1 hop.xlsx", disposition)
+}
+
+func TestUploadFailedJob(t *testing.T) {
+
+	// Make a valid job server, but remove the folder from the job runner so that the job errors
+	server := makeJobServer(t)
+	cleanUpJobRunner(t, server.runner)
+
+	// Upload a form with one dataset, but no matching entity IDs
+	form := buildFormData(1, "Dataset-1", "e-1, e-2", "", "", "", "")
+	req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+	req.Form = form
+
+	w := httptest.NewRecorder()
+
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusFound, w.Code)
+
+	// Extract the location
+	location := w.Result().Header.Get("Location")
+	assert.True(t, len(location) > 0)
+	assert.True(t, strings.HasPrefix(location, "/job/"))
+
+	// Get the job GUID from the location
+	guid := extractGuidFromLocation(t, location)
+
+	// Wait until the job is complete
+	waitForJobsToFinish(server.runner)
+
+	// Request the job
+	req = httptest.NewRequest(http.MethodGet, location, nil)
+	w = httptest.NewRecorder()
+
+	server.handleJob(w, req)
+	assert.True(t, len(w.Body.String()) > 0)
+	assert.True(t, isErrorPage(w, guid))
+}
+
+func TestHandleJobInvalidJob(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Request the job
+	req := httptest.NewRequest(http.MethodGet, "/job/1234", nil)
+	w := httptest.NewRecorder()
+
+	server.handleJob(w, req)
+	assert.True(t, len(w.Body.String()) > 0)
+	assert.True(t, isJobNotFoundPage(w, "1234"))
 }
