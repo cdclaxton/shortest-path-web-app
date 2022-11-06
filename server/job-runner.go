@@ -167,6 +167,7 @@ func (j *JobRunner) setJobToFailed(failedJob *job.Job, err error) {
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str(loggingGUIDField, failedJob.GUID).
+		Str("error", err.Error()).
 		Msg("Setting job to failed")
 
 	failedJob.Progress.State = job.Failed
