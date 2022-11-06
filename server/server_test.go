@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -417,7 +418,6 @@ func makeJobServer(t *testing.T) *JobServer {
 
 	// Make a well-configured job runner
 	runner := makeJobRunner(t)
-	defer cleanUpJobRunner(t, runner)
 
 	// Make a Job server that is correctly configured
 	server, err := NewJobServer(runner, "./templates")
@@ -480,10 +480,123 @@ func TestUploadInvalidConfiguration(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	// Upload a form with one dataset, but no entity IDs
+	form := buildFormData(1, "Dataset-1", "", "", "", "", "")
+	req = httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+	req.Form = form
+	w = httptest.NewRecorder()
 
-	//
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-	fmt.Println(w)
+// extractGuidFromLocation returns the job GUID from a path for the form /job/<GUID>.
+func extractGuidFromLocation(t *testing.T, location string) string {
+	assert.True(t, strings.Contains(location, "/job/"))
 
-	assert.False(t, true)
+	pattern := regexp.MustCompile("^/job/(.*)")
+	matches := pattern.FindStringSubmatch(location)
+	assert.Equal(t, 2, len(matches))
+
+	return matches[1]
+}
+
+// isNoResultsPage returns true if the HTTP response shows that there are no results for the job.
+func isNoResultsPage(w *httptest.ResponseRecorder, guid string) bool {
+
+	// Extract the body of the HTTP response as a string
+	body := w.Body.String()
+
+	// Check that the (correct) GUID is present
+	if !strings.Contains(body, guid) {
+		return false
+	}
+
+	// Check the text
+	return strings.Contains(body, "No results")
+}
+
+// isPageWithResults returns true if the HTTP response shows that there are results for the job.
+func isPageWithResults(w *httptest.ResponseRecorder, guid string) bool {
+
+	// Extract the body of the HTTP response as a string
+	body := w.Body.String()
+
+	// Check that the (correct) GUID is present
+	if !strings.Contains(body, guid) {
+		return false
+	}
+
+	// Check the text
+	return strings.Contains(body, "Download Excel file")
+}
+
+func TestUploadNoResults(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Upload a form with one dataset, but no matching entity IDs
+	form := buildFormData(1, "Dataset-1", "e-100,e-102", "", "", "", "")
+	req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+	req.Form = form
+
+	w := httptest.NewRecorder()
+
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusFound, w.Code)
+
+	// Extract the location
+	location := w.Result().Header.Get("Location")
+	assert.True(t, len(location) > 0)
+	assert.True(t, strings.HasPrefix(location, "/job/"))
+
+	// Get the job GUID from the location
+	guid := extractGuidFromLocation(t, location)
+
+	// Wait until the job is complete
+	waitForJobsToFinish(server.runner)
+
+	// Request the job
+	req = httptest.NewRequest(http.MethodGet, location, nil)
+	w = httptest.NewRecorder()
+
+	server.handleJob(w, req)
+	assert.True(t, isNoResultsPage(w, guid))
+}
+
+func TestUploadWithResults(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Upload a form with one dataset, but no matching entity IDs
+	form := buildFormData(1, "Dataset-1", "e-1, e-2", "", "", "", "")
+	req := httptest.NewRequest(http.MethodPost, "/upload", strings.NewReader(form.Encode()))
+	req.Form = form
+
+	w := httptest.NewRecorder()
+
+	server.handleUpload(w, req)
+	assert.Equal(t, http.StatusFound, w.Code)
+
+	// Extract the location
+	location := w.Result().Header.Get("Location")
+	assert.True(t, len(location) > 0)
+	assert.True(t, strings.HasPrefix(location, "/job/"))
+
+	// Get the job GUID from the location
+	guid := extractGuidFromLocation(t, location)
+
+	// Wait until the job is complete
+	waitForJobsToFinish(server.runner)
+
+	// Request the job
+	req = httptest.NewRequest(http.MethodGet, location, nil)
+	w = httptest.NewRecorder()
+
+	server.handleJob(w, req)
+	assert.True(t, len(w.Body.String()) > 0)
+	assert.True(t, isPageWithResults(w, guid))
 }

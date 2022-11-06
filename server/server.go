@@ -422,20 +422,37 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 
 	j1, err := j.runner.GetJob(guid)
 	if err != nil {
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str(loggingGUIDField, guid).
+			Msg("Job not found")
+
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	file, err := os.Open(j1.ResultFile)
 	if err != nil {
-		fmt.Fprintf(w, "Unable to read file for job %v", guid)
+
+		logging.Logger.Error().
+			Str(logging.ComponentField, componentName).
+			Str(loggingGUIDField, guid).
+			Msg("Failed to read Excel file for job")
+
+		page := j.jobFailedTemplate.MustExec(map[string]string{
+			"reason": fmt.Sprintf("Failed to read Excel file for job %v", guid),
+		})
+
+		fmt.Fprint(w, page)
 		return
 	}
 
 	// Make the filename
 	filename, err := buildFilename(j1.Configuration)
 	if err != nil {
-		logging.Logger.Warn().
+
+		logging.Logger.Error().
 			Str(logging.ComponentField, componentName).
 			Str(loggingGUIDField, guid).
 			Err(err).
