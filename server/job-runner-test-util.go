@@ -37,6 +37,10 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	tempFolder, err := os.MkdirTemp("", "test-job-runner")
 	assert.NoError(t, err)
 
+	// Check that the output folder has been made
+	_, err = os.Stat(tempFolder)
+	assert.False(t, os.IsNotExist(err))
+
 	// Make the job runner
 	runner, err := NewJobRunner(pathFinder, chartBuilder, tempFolder)
 	assert.NoError(t, err)
