@@ -70,6 +70,13 @@ func WriteToExcel(filepath string, rows [][]string) error {
 			// Cell index
 			cellIndex, err := excelCellIndex(colIdx, rowIdx)
 			if err != nil {
+
+				logging.Logger.Error().
+					Err(err).
+					Str("column index", strconv.Itoa(colIdx)).
+					Str("row index", strconv.Itoa(rowIdx)).
+					Msg("failed to get Excel cell index")
+
 				return err
 			}
 
