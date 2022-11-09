@@ -433,6 +433,8 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 	}
 
 	file, err := os.Open(j1.ResultFile)
+	defer file.Close()
+
 	if err != nil {
 
 		logging.Logger.Error().
