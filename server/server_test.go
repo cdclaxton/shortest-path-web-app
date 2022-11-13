@@ -392,35 +392,13 @@ func TestBuildFilename(t *testing.T) {
 	}
 }
 
-func TestNewJobServer(t *testing.T) {
-
-	// Try to make a JobServer with a nil runner
-	server, err := NewJobServer(nil, "./templates")
-	assert.Error(t, err)
-	assert.Nil(t, server)
-
-	// Make a well-configured job runner
-	runner := makeJobRunner(t)
-	defer cleanUpJobRunner(t, runner)
-
-	// Try to make a JobServer with inaccessible templates
-	server, err = NewJobServer(runner, "./non-existent-templates")
-	assert.Error(t, err)
-	assert.Nil(t, server)
-
-	// Make a Job server that is correctly configured
-	server, err = NewJobServer(runner, "./templates")
-	assert.NoError(t, err)
-	assert.NotNil(t, server)
-}
-
 func makeJobServer(t *testing.T) *JobServer {
 
 	// Make a well-configured job runner
 	runner := makeJobRunner(t)
 
 	// Make a Job server that is correctly configured
-	server, err := NewJobServer(runner, "./templates")
+	server, err := NewJobServer(runner)
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 

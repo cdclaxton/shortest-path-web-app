@@ -1,12 +1,13 @@
 package server
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
-	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -35,13 +36,13 @@ const (
 
 // Locations of the HTML templates
 const (
-	errorTemplateFile         = "error.html"          // For a system error
-	inputProblemTemplateFile  = "input-problem.html"  // For a data error
-	jobNotFoundTemplateFile   = "job-not-found.html"  // For when a job cannot be found
-	processingJobTemplateFile = "processing-job.html" // For during processing
-	jobFailedTemplateFile     = "job-failed.html"     // For a failed job
-	jobNoResultsTemplateFile  = "job-no-results.html" // For a complete job
-	jobResultsTemplateFile    = "job-results.html"    // For a complete job
+	errorTemplateFile         = "templates/error.html"          // For a system error
+	inputProblemTemplateFile  = "templates/input-problem.html"  // For a data error
+	jobNotFoundTemplateFile   = "templates/job-not-found.html"  // For when a job cannot be found
+	processingJobTemplateFile = "templates/processing-job.html" // For during processing
+	jobFailedTemplateFile     = "templates/job-failed.html"     // For a failed job
+	jobNoResultsTemplateFile  = "templates/job-no-results.html" // For a complete job
+	jobResultsTemplateFile    = "templates/job-results.html"    // For a complete job
 )
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
@@ -56,51 +57,69 @@ type JobServer struct {
 	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
 }
 
+//go:embed templates/*
+var templatesFS embed.FS
+
+//go:embed static/*
+var staticFS embed.FS
+
+// readTemplate from an embedded file.
+func readTemplate(filepath string) (*raymond.Template, error) {
+
+	// Read the file from the embedded files
+	bytes, err := templatesFS.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the bytes to a string
+	templateString := string(bytes)
+
+	// Parse the template
+	return raymond.Parse(templateString)
+}
+
 // NewJobServer given the job runner for executing jobs. It will return an error if any of the
 // required HTML templates cannot be located.
-func NewJobServer(runner *JobRunner, templatesFolder string) (*JobServer, error) {
+func NewJobServer(runner *JobRunner) (*JobServer, error) {
 
 	// Preconditions
 	if runner == nil {
 		return nil, errors.New("job runner is nil")
 	}
 
-	if _, err := os.Stat(templatesFolder); os.IsNotExist(err) {
-		return nil, fmt.Errorf("template folder doesn't exist at %v", templatesFolder)
-	}
-
 	// Read the templates
-	errorTemplate, err := raymond.ParseFile(path.Join(templatesFolder, errorTemplateFile))
+	errorTemplate, err := readTemplate(errorTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	inputProblemTemplate, err := raymond.ParseFile(path.Join(templatesFolder, inputProblemTemplateFile))
+	inputProblemTemplate, err := readTemplate(inputProblemTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	jobNotFoundTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNotFoundTemplateFile))
+	jobNotFoundTemplate, err := readTemplate(jobNotFoundTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	processingJobTemplate, err := raymond.ParseFile(path.Join(templatesFolder, processingJobTemplateFile))
+	processingJobTemplate, err := readTemplate(processingJobTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	jobFailedTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobFailedTemplateFile))
+	jobFailedTemplate, err := readTemplate(jobFailedTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	jobNoResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobNoResultsTemplateFile))
+	jobNoResultsTemplate, err := readTemplate(jobNoResultsTemplateFile)
 	if err != nil {
 		return nil, err
 	}
 
-	jobResultsTemplate, err := raymond.ParseFile(path.Join(templatesFolder, jobResultsTemplateFile))
+	jobResultsTemplate, err := readTemplate(jobResultsTemplateFile)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +499,12 @@ func (j *JobServer) Start() {
 	http.HandleFunc("/download/", j.handleDownload)
 
 	// Static content
-	http.Handle("/", http.FileServer(http.Dir("./server/static/")))
+	sub, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		logging.Logger.Fatal().Msg("failed to get sub-directory of static")
+	}
+	http.Handle("/", http.FileServer(http.FS(sub)))
 
+	// Run the server
 	http.ListenAndServe(":8090", nil)
 }

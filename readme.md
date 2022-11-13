@@ -1,17 +1,28 @@
 # Shortest path web-app
 
-## Building
+## Quick demo
 
-To build the Shortest Path application:
-
-```
-go build -v -o ./app ./cmd/app
-```
-
-## Running the application
+Build and test the executable using
 
 ```bash
-./app <folder>
+./build.sh
+```
+
+and then run the demo using
+
+```bash
+./demo.sh
+```
+
+The demo uses one of the small test datasets, but it's enough to show the functionality. Navigate to http://localhost:8090 to access the web-app.
+
+## Build the Docker image
+
+The `Dockerfile` in this project builds a minimal image in two stages. To build and run:
+
+```bash
+docker compose build
+docker compose up
 ```
 
 ## Location of the data files
