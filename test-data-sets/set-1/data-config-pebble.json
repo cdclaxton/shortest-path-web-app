@@ -57,12 +57,12 @@
     },
     "bipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "/pebble/bipartite",
+        "folder": "./working/bipartitePebble/",
         "deleteFilesInFolder": true
     },
     "unipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "/pebble/unipartite",
+        "folder": "./working/unipartitePebble/",
         "deleteFilesInFolder": true
     }
 }

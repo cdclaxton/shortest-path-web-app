@@ -9,3 +9,12 @@ services:
       - "8090:8090"
     volumes:
       - "${PWD}/test-data-sets/docker/:/data/"
+      - unipartitePebbleStore:/pebble/unipartite
+      - bipartitePebbleStore:/pebble/bipartite
+
+volumes:
+  bipartitePebbleStore:
+    external: false
+
+  unipartitePebbleStore:
+    external: false

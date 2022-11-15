@@ -1,6 +1,6 @@
-echo "Running Shortest Path App in demo mode"
+echo "Running Shortest Path App in demo mode (in-memory)"
 
-OUTPUT_FOLDER=./working/
+OUTPUT_FOLDER=./working/i2/
 
 # Clean the working folder
 rm -f ./${OUTPUT_FOLDER}/*
