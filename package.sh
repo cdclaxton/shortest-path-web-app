@@ -72,7 +72,7 @@ done;
 # Zip up the folder
 echo "Zipping package ..."
 cd $folder/..
-zip -r $output_file $folder
+zip -r $output_file shortest-path
 
 if [ $? -ne 0 ]; then
     echo "Zipping failed. Packinging stopped"
