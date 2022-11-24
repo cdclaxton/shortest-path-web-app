@@ -58,7 +58,7 @@ else
 fi
 
 # Copy the scripts to the folder
-scripts=( ./scripts/data_config_generator/nr6.py  )
+scripts=( ./scripts/data_config_generator/nr6.py ./scripts/convert.awk ./scripts/convert_files.sh )
 
 for file in "${scripts[@]}"; do
     echo "Copying $file"
