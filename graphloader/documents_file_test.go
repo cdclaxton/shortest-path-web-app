@@ -128,13 +128,48 @@ func TestReadDocumentsFile(t *testing.T) {
 				FieldToAttribute: map[string]string{
 					"title":  "Title",
 					"date":   "Date",
-					"serial": "Serial",
+					"serial": "Serial", // This field doesn't exist
 				},
 			},
 			expectedDocuments:       nil,
 			expectedError:           true,
 			expectedNumberRows:      1,
 			expectedNumberDocuments: 0,
+		},
+		{
+			csv: DocumentsCsvFile{
+				Path:            "./test-data/documents_3.csv",
+				DocumentType:    "Source-1",
+				Delimiter:       "|",
+				DocumentIdField: "document_id",
+				FieldToAttribute: map[string]string{
+					"title": "Title",
+					"date":  "Date",
+				},
+			},
+			expectedDocuments: []graphstore.Document{
+				{
+					Id:           "d-1",
+					DocumentType: "Source-1",
+					Attributes: map[string]string{
+						"Title": "A summary of activity",
+						"Date":  "06/08/2022",
+					},
+					LinkedEntityIds: set.NewSet[string](),
+				},
+				{
+					Id:           "d-2",
+					DocumentType: "Source-1",
+					Attributes: map[string]string{
+						"Title": "New information|found",
+						"Date":  "",
+					},
+					LinkedEntityIds: set.NewSet[string](),
+				},
+			},
+			expectedError:           false,
+			expectedNumberRows:      3,
+			expectedNumberDocuments: 2,
 		},
 	}
 

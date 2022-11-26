@@ -76,8 +76,16 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 		Str("filepath", reader.documentsCsvFile.Path).
 		Msg("Creating the CSV reader")
 
+	// Parse delimiter
+	delimiter, err := parseDelimiter(reader.documentsCsvFile.Delimiter)
+	if err != nil {
+		reader.file.Close()
+		return err
+	}
+
 	// Create the CSV reader
 	reader.csvReader = csv.NewReader(reader.file)
+	reader.csvReader.Comma = delimiter
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
@@ -87,6 +95,7 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 	// Read the header from the file
 	header, err := reader.csvReader.Read()
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 
@@ -102,6 +111,7 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 	fieldToIndex, err := findIndicesOfFields(header, []string{reader.documentsCsvFile.DocumentIdField})
 
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 
@@ -116,6 +126,7 @@ func (reader *DocumentsCsvFileReader) Initialise() error {
 	reader.attributeFieldIndex, err = attributeToFieldIndex(header, reader.documentsCsvFile.FieldToAttribute)
 
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 

@@ -136,6 +136,41 @@ func TestReadEntitiesFile(t *testing.T) {
 			expectedNumberRows:     1,
 			expectedNumberEntities: 0,
 		},
+		{
+			csv: EntitiesCsvFile{
+				Path:          "./test-data/entities_4.csv",
+				EntityType:    "Person",
+				Delimiter:     "|",
+				EntityIdField: "entity_id",
+				FieldToAttribute: map[string]string{
+					"first name": "Forename",
+					"last name":  "Surname",
+				},
+			},
+			expectedEntities: []graphstore.Entity{
+				{
+					Id:         "e-1",
+					EntityType: "Person",
+					Attributes: map[string]string{
+						"Forename": "Bob",
+						"Surname":  "Smith",
+					},
+					LinkedDocumentIds: set.NewSet[string](),
+				},
+				{
+					Id:         "e-2",
+					EntityType: "Person",
+					Attributes: map[string]string{
+						"Forename": "Sally|Kat",
+						"Surname":  "Jones",
+					},
+					LinkedDocumentIds: set.NewSet[string](),
+				},
+			},
+			expectedError:          false,
+			expectedNumberRows:     3,
+			expectedNumberEntities: 2,
+		},
 	}
 
 	for _, testCase := range testCases {

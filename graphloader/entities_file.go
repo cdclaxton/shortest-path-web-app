@@ -74,8 +74,16 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 		Str("filepath", reader.entitiesCsvFile.Path).
 		Msg("Creating the CSV reader")
 
+	// Parse delimiter
+	delimiter, err := parseDelimiter(reader.entitiesCsvFile.Delimiter)
+	if err != nil {
+		reader.file.Close()
+		return err
+	}
+
 	// Create the CSV reader
 	reader.csvReader = csv.NewReader(reader.file)
+	reader.csvReader.Comma = delimiter
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).

@@ -346,3 +346,23 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 		assert.True(t, found)
 	}
 }
+
+func TestParseDelimiter(t *testing.T) {
+
+	// Empty delimiter
+	_, err := parseDelimiter("")
+	assert.Equal(t, ErrEmptyDelimiter, err)
+
+	// Two character delimiter
+	_, err = parseDelimiter(";-")
+	assert.Equal(t, ErrInvalidDelimiter, err)
+
+	// Single character delimiter
+	r, err := parseDelimiter(",")
+	assert.NoError(t, err)
+	assert.Equal(t, rune(','), r)
+
+	r, err = parseDelimiter("|")
+	assert.NoError(t, err)
+	assert.Equal(t, rune('|'), r)
+}

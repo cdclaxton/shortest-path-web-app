@@ -1,6 +1,7 @@
 package graphloader
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -276,4 +277,25 @@ func extractAttributes(row []string, attributeToFieldIndex map[string]int) (
 	}
 
 	return attributes, nil
+}
+
+var (
+	ErrEmptyDelimiter   = errors.New("empty delimiter")
+	ErrInvalidDelimiter = errors.New("invalid delimiter")
+)
+
+// parseDelimiter to use when reading CSV files.
+func parseDelimiter(delimiter string) (rune, error) {
+
+	// Preconditions
+	if len(delimiter) == 0 {
+		return rune(0), ErrEmptyDelimiter
+	}
+
+	if len(delimiter) > 1 {
+		return rune(0), ErrInvalidDelimiter
+	}
+
+	// Return the rune
+	return rune(delimiter[0]), nil
 }

@@ -106,8 +106,30 @@ func TestReadLinksFile(t *testing.T) {
 			},
 			expected:            nil,
 			expectedError:       true,
-			expectedNumberRows:  0,
+			expectedNumberRows:  1,
 			expectedNumberLinks: 0,
+		},
+		{
+			// CSV file has pipe separated fields
+			csv: LinksCsvFile{
+				Path:            "./test-data/links_5.csv",
+				EntityIdField:   "entity_id",
+				DocumentIdField: "document_id",
+				Delimiter:       "|",
+			},
+			expected: []graphstore.Link{
+				{
+					EntityId:   "e-100",
+					DocumentId: "d-3",
+				},
+				{
+					EntityId:   "e-101",
+					DocumentId: "d-4",
+				},
+			},
+			expectedError:       false,
+			expectedNumberRows:  3,
+			expectedNumberLinks: 2,
 		},
 	}
 
