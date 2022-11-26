@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script builds and packages everything required for transferring to the system on which
-# it will deployed.
+# the web-app will deployed.
 
 # --------------------------------------------------------------------------------------------------
 # Parameters
@@ -58,7 +58,7 @@ else
 fi
 
 # Copy the scripts to the folder
-scripts=( ./scripts/data_config_generator/nr6.py ./scripts/convert.awk ./scripts/convert_files.sh )
+scripts=( ./scripts/nr6_data_config_generator.py )
 
 for file in "${scripts[@]}"; do
     echo "Copying $file"
