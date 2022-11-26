@@ -8,7 +8,6 @@ Build and test the executable using
 ./build.sh
 ```
 
-e
 and then run the demo using
 
 ```bash
