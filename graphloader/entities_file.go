@@ -93,6 +93,7 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	// Read the header from the file
 	header, err := reader.csvReader.Read()
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 
@@ -107,6 +108,7 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	fieldToIndex, err := findIndicesOfFields(header, []string{reader.entitiesCsvFile.EntityIdField})
 
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 
@@ -121,6 +123,7 @@ func (reader *EntitiesCsvFileReader) Initialise() error {
 	reader.attributeFieldIndex, err = attributeToFieldIndex(header, reader.entitiesCsvFile.FieldToAttribute)
 
 	if err != nil {
+		reader.file.Close()
 		return err
 	}
 
