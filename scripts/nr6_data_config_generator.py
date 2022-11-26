@@ -65,7 +65,7 @@ def build_document_files(prefix, doc_types):
     return [{
         "path": f"{prefix}_doc_{short}.csv",
         "documentType": long,
-        "delimiter": ",",
+        "delimiter": "|",
         "documentIdField": "document_id",
         "fieldToAttribute": {
             "document_label": "label",
