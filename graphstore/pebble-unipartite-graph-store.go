@@ -119,7 +119,7 @@ func (p *PebbleUnipartiteGraphStore) setSrcToDsts(src string, dsts *set.Set[stri
 		return err
 	}
 
-	return p.db.Set(key, value, pebble.Sync)
+	return p.db.Set(key, value, pebble.NoSync)
 }
 
 // HasEntity returns true if the entity ID is held within the backend.

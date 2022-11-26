@@ -219,7 +219,7 @@ func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 		return err
 	}
 
-	return p.db.Set(pebbleKey, pebbleValue, pebble.Sync)
+	return p.db.Set(pebbleKey, pebbleValue, pebble.NoSync)
 }
 
 // GetEntity given its ID from the Pebble store.
@@ -289,7 +289,7 @@ func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 		return err
 	}
 
-	return p.db.Set(pebbleKey, pebbleValue, pebble.Sync)
+	return p.db.Set(pebbleKey, pebbleValue, pebble.NoSync)
 }
 
 // GetDocument from the Pebble store given its ID.

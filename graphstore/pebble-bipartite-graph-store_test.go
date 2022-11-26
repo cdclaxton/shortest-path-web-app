@@ -1,6 +1,9 @@
 package graphstore
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -127,6 +130,54 @@ func TestAddBipartiteEntity(t *testing.T) {
 	found, err = store.HasEntity(&e2)
 	assert.NoError(t, err)
 	assert.False(t, found)
+}
+
+func BenchmarkAddEntity(b *testing.B) {
+
+	b.StopTimer()
+
+	for i := 0; i < b.N; i++ {
+
+		// Create the temp folder
+		dir, err := ioutil.TempDir("", "pebble")
+		if err != nil {
+			panic(err)
+		}
+
+		// Create a new Pebble-backed bipartite store
+		store, err := NewPebbleBipartiteGraphStore(dir)
+		if err != nil {
+			panic(err)
+		}
+
+		b.StartTimer()
+
+		// Add a set number of entities to the store
+		for entityIdx := 0; entityIdx < 10000; entityIdx++ {
+
+			entityId := fmt.Sprintf("e-%d", entityIdx)
+
+			// Create an entity to store
+			e1, err := NewEntity(entityId, "Person", map[string]string{
+				"Name": "Bob Smith",
+				"Age":  "32",
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			// Store the entity
+			err = store.AddEntity(e1)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		b.StopTimer()
+
+		store.Destroy()
+		os.RemoveAll(dir)
+	}
 }
 
 func TestAddBipartiteDocument(t *testing.T) {
