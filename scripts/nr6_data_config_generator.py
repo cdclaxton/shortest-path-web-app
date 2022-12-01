@@ -11,7 +11,7 @@
 #
 # The document CSV files have the form:
 #   * Filename: <prefix>_doc_<doc-type>.csv
-#   * Fields: document_id,document_date,document_label
+#   * Fields: document_id|document_date|document_label
 #
 # The link CSV files have the form:
 #   * Filename: <prefix>_entities_<entity-type>.csv
@@ -45,7 +45,7 @@ def build_entity_files(prefix, entity_types):
         entity_types) == dict, f"Expected a dict, got {type(entity_types)}"
 
     return [{
-        "path": f"{prefix}_entities_{short}_labels.csv",
+        "path": f"{prefix}_entities_{short.lower()}_labels.csv",
         "entityType": long,
         "delimiter": ",",
         "entityIdField": "entity_id",
@@ -63,7 +63,7 @@ def build_document_files(prefix, doc_types):
         doc_types) == dict, f"Expected a dict, got {type(doc_types)}"
 
     return [{
-        "path": f"{prefix}_doc_{short}.csv",
+        "path": f"{prefix}_doc_{short.lower()}.csv",
         "documentType": long,
         "delimiter": "|",
         "documentIdField": "document_id",
@@ -82,7 +82,7 @@ def build_link_files(prefix, entity_types):
         entity_types) == list, f"Expected a list, got {type(entity_types)}"
 
     return [{
-        "path": f"{prefix}_entities_{tpe}.csv",
+        "path": f"{prefix}_entities_{tpe.lower()}.csv",
         "entityIdField": "entity_id",
         "documentIdField": "document_id",
         "delimiter": ","
