@@ -32,7 +32,7 @@ and then run the demo using
 The demo uses one of the small test datasets, but it's enough to show the functionality.
 Navigate to http://localhost:8090 to access the web-app.
 
-To see a case whereby there are no paths, set:
+To see a case whereby there are no paths (and thus no chart), set:
 
 - `Maximum number of hops from one entity to another`: 1
 - `Dataset 1`: Test
