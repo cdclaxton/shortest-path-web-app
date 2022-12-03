@@ -56,10 +56,14 @@
         "skipEntitiesFile": "skip_entities.txt"
     },
     "bipartiteGraphConfig": {
-        "type": "memory"
+        "type": "pebble",
+        "folder": "./working/bipartitePebble/",
+        "deleteFilesInFolder": true
     },
     "unipartiteGraphConfig": {
-        "type": "memory"
+        "type": "pebble",
+        "folder": "./working/unipartitePebble/",
+        "deleteFilesInFolder": true
     },
-    "ignoreInvalidLinks": false
+    "ignoreInvalidLinks": true
 }

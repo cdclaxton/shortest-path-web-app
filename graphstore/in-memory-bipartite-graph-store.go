@@ -15,6 +15,12 @@ func NewInMemoryBipartiteGraphStore() *InMemoryBipartiteGraphStore {
 // AddEntity to the in-memory graph store (replaces the existing entity if the ID already exists).
 func (store *InMemoryBipartiteGraphStore) AddEntity(entity Entity) error {
 
+	// Preconditions
+	err := ValidateEntityId(entity.Id)
+	if err != nil {
+		return ErrEntityIdIsEmpty
+	}
+
 	// Store the entity against its entity ID
 	store.entities[entity.Id] = entity
 	return nil
@@ -22,6 +28,12 @@ func (store *InMemoryBipartiteGraphStore) AddEntity(entity Entity) error {
 
 // AddDocument to the in-memory graph store (replaces the existing document if the ID already exists).
 func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
+
+	// Preconditions
+	err := ValidateDocumentId(document.Id)
+	if err != nil {
+		return ErrDocumentIdIsEmpty
+	}
 
 	// Store the document against its ID
 	store.documents[document.Id] = document
@@ -36,6 +48,12 @@ func (store *InMemoryBipartiteGraphStore) Equal(other BipartiteGraphStore) (bool
 // GetEntity given its ID.
 func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) {
 
+	// Preconditions
+	err := ValidateEntityId(entityId)
+	if err != nil {
+		return nil, ErrEntityIdIsEmpty
+	}
+
 	entity, found := store.entities[entityId]
 
 	if found {
@@ -47,6 +65,12 @@ func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) (*Entity, e
 // GetDocument given its ID.
 func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) (*Document, error) {
 
+	// Preconditions
+	err := ValidateDocumentId(documentId)
+	if err != nil {
+		return nil, ErrDocumentIdIsEmpty
+	}
+
 	document, found := store.documents[documentId]
 
 	if found {
@@ -57,6 +81,17 @@ func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) (*Docum
 
 // AddLink from an entity to a document.
 func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
+
+	// Preconditions
+	err := ValidateEntityId(link.EntityId)
+	if err != nil {
+		return ErrEntityIdIsEmpty
+	}
+
+	err = ValidateDocumentId(link.DocumentId)
+	if err != nil {
+		return ErrDocumentIdIsEmpty
+	}
 
 	// Get the entity from the store
 	entity, err := store.GetEntity(link.EntityId)

@@ -165,9 +165,10 @@ type UnipartiteGraphConfig struct {
 
 // GraphConfig for the input data, bipartite and unipartite graphs.
 type GraphConfig struct {
-	Data             GraphData             `json:"graphData"`
-	BipartiteConfig  BipartiteGraphConfig  `json:"bipartiteGraphConfig"`
-	UnipartiteConfig UnipartiteGraphConfig `json:"unipartiteGraphConfig"`
+	Data               GraphData             `json:"graphData"`
+	BipartiteConfig    BipartiteGraphConfig  `json:"bipartiteGraphConfig"`
+	UnipartiteConfig   UnipartiteGraphConfig `json:"unipartiteGraphConfig"`
+	IgnoreInvalidLinks bool                  `json:"ignoreInvalidLinks"`
 }
 
 // readGraphConfig from a JSON file.
@@ -264,10 +265,12 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		Str(logging.ComponentField, componentName).
 		Msg("Loading the bipartite graph store from CSV files")
 
-	bipartiteLoader := graphloader.NewGraphStoreLoaderFromCsv(builder.Bipartite,
+	bipartiteLoader := graphloader.NewGraphStoreLoaderFromCsv(
+		builder.Bipartite,
 		config.Data.EntitiesFiles,
 		config.Data.DocumentsFiles,
-		config.Data.LinksFiles)
+		config.Data.LinksFiles,
+		config.IgnoreInvalidLinks)
 
 	err = bipartiteLoader.Load()
 	if err != nil {

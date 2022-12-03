@@ -245,7 +245,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 		},
 	}
 
-	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles)
+	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false)
 
 	err := loader.Load()
 	assert.NoError(t, err)
@@ -365,4 +365,155 @@ func TestParseDelimiter(t *testing.T) {
 	r, err = parseDelimiter("|")
 	assert.NoError(t, err)
 	assert.Equal(t, rune('|'), r)
+}
+
+func TestGraphStoreLoaderFromCsvWithInvalidData(t *testing.T) {
+	g := graphstore.NewInMemoryBipartiteGraphStore()
+
+	entityFiles := []EntitiesCsvFile{
+		{
+			Path:          testDataSetFolder + "/set-2/data/address.csv",
+			EntityType:    "Address",
+			Delimiter:     ",",
+			EntityIdField: "entity ID",
+			FieldToAttribute: map[string]string{
+				"first line": "First line",
+				"postcode":   "Postcode",
+			},
+		},
+		{
+			Path:          testDataSetFolder + "/set-2/data/person.csv",
+			EntityType:    "Person",
+			Delimiter:     ",",
+			EntityIdField: "entity ID",
+			FieldToAttribute: map[string]string{
+				"forename":      "Forename",
+				"surname":       "Surname",
+				"date of birth": "DOB",
+			},
+		},
+	}
+
+	documentFiles := []DocumentsCsvFile{
+		{
+			Path:            testDataSetFolder + "/set-2/data/documents.csv",
+			DocumentType:    "Source A",
+			Delimiter:       ",",
+			DocumentIdField: "document ID",
+			FieldToAttribute: map[string]string{
+				"title": "Title",
+				"date":  "Date",
+			},
+		},
+	}
+
+	linksFiles := []LinksCsvFile{
+		{
+			Path:            testDataSetFolder + "/set-2/data/links.csv",
+			EntityIdField:   "entity ID",
+			DocumentIdField: "document ID",
+			Delimiter:       ",",
+		},
+	}
+
+	// Test loading with a missing entity
+	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false)
+	assert.Error(t, loader.Load())
+
+	// Test loading with a missing entity, but where link errors are ignored
+	loader = NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, true)
+	assert.NoError(t, loader.Load())
+
+	// Check the entities
+	nEntities, err := g.NumberOfEntities()
+	assert.NoError(t, err)
+	assert.Equal(t, 3, nEntities)
+
+	expectedEntities := []graphstore.Entity{
+		{
+			Id:         "e-1",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Forename": "Bob",
+				"Surname":  "Smith",
+				"DOB":      "03/04/1981",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet("d-1", "d-2", "d-3"),
+		},
+		{
+			Id:         "e-2",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"Forename": "Sally",
+				"Surname":  "Jones",
+				"DOB":      "21/11/1986",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet("d-1", "d-2"),
+		},
+		{
+			Id:         "e-3",
+			EntityType: "Address",
+			Attributes: map[string]string{
+				"First line": "31 Field Drive",
+				"Postcode":   "EH36 5PB",
+			},
+			LinkedDocumentIds: set.NewPopulatedSet("d-3", "d-4"),
+		},
+	}
+
+	for _, expectedEntity := range expectedEntities {
+		present, err := g.HasEntity(&expectedEntity)
+		assert.NoError(t, err)
+		assert.True(t, present)
+	}
+
+	// Check the documents
+	nDocuments, err := g.NumberOfDocuments()
+	assert.NoError(t, err)
+	assert.Equal(t, 4, nDocuments)
+
+	expectedDocuments := []graphstore.Document{
+		{
+			Id:           "d-1",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 1",
+				"Date":  "06/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2"),
+		},
+		{
+			Id:           "d-2",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 2",
+				"Date":  "07/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2"),
+		},
+		{
+			Id:           "d-3",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 3",
+				"Date":  "09/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-3"),
+		},
+		{
+			Id:           "d-4",
+			DocumentType: "Source A",
+			Attributes: map[string]string{
+				"Title": "Summary 4",
+				"Date":  "10/08/2022",
+			},
+			LinkedEntityIds: set.NewPopulatedSet("e-3"),
+		},
+	}
+
+	for _, expectedDocument := range expectedDocuments {
+		found, err := g.HasDocument(&expectedDocument)
+		assert.NoError(t, err)
+		assert.True(t, found)
+	}
 }

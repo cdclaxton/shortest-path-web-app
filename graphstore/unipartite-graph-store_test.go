@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SelfConnection(t *testing.T, g UnipartiteGraphStore) {
+func checkSelfConnection(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.Error(t, g.AddDirected("a", "a"))
 	assert.Error(t, g.AddUndirected("a", "a"))
@@ -28,10 +28,10 @@ func checkConnections(t *testing.T, g UnipartiteGraphStore, conns []connection) 
 	}
 }
 
-// SimpleGraph1 with the structure:
+// simpleGraph1 with the structure:
 //
 //    A--B
-func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
+func simpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 
@@ -71,14 +71,14 @@ func SimpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	assert.Error(t, err)
 }
 
-// SimpleGraph2 with the structure:
+// simpleGraph2 with the structure:
 //
 //         A--B----
 //         |      |
 //   C--D--E--F---G
 //         |      |
 //         H-------
-func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
+func simpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
 	assert.NoError(t, g.AddUndirected("A", "E"))
@@ -133,7 +133,7 @@ func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	checkConnections(t, g, expectedConnections)
 }
 
-// EqualGraphs checks situations where two graphs should be equal.
+// equalGraphs checks situations where two graphs should be equal.
 //
 // Graph 1 is:
 //
@@ -146,7 +146,7 @@ func SimpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 //   A--B--C
 //   |     |
 //   -------
-func EqualGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) {
+func equalGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) {
 
 	// Test 1
 	g1.Clear()
@@ -179,12 +179,12 @@ func EqualGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore)
 	assert.False(t, equal)
 }
 
-// Connected checks that the vertices are connected as expected.
+// checkConnected checks that the vertices are connected as expected.
 //
 //         A--B
 //         |
 //   C--D--E
-func Connected(t *testing.T, g UnipartiteGraphStore) {
+func checkConnected(t *testing.T, g UnipartiteGraphStore) {
 
 	g.Clear()
 
@@ -237,15 +237,28 @@ func Connected(t *testing.T, g UnipartiteGraphStore) {
 	}
 }
 
-func TestInMemory(t *testing.T) {
-	g := NewInMemoryUnipartiteGraphStore()
+func TestUnipartiteGraphStore(t *testing.T) {
 
-	SelfConnection(t, g)
-	SimpleGraph1(t, g)
-	SimpleGraph2(t, g)
+	// Make the in-memory unipartite graph store
+	inMemory := NewInMemoryUnipartiteGraphStore()
 
-	Connected(t, g)
+	// Make the Pebble unipartite graph store
+	pebbleGraphStore := newUnipartitePebbleStore(t)
+	defer cleanUpUnipartitePebbleStore(t, pebbleGraphStore)
 
-	g2 := NewInMemoryUnipartiteGraphStore()
-	EqualGraphs(t, g, g2)
+	graphStores := []UnipartiteGraphStore{
+		inMemory,
+		pebbleGraphStore,
+	}
+
+	for _, gs := range graphStores {
+
+		checkSelfConnection(t, gs)
+		simpleGraph1(t, gs)
+		simpleGraph2(t, gs)
+		checkConnected(t, gs)
+
+		g2 := NewInMemoryUnipartiteGraphStore()
+		equalGraphs(t, gs, g2)
+	}
 }

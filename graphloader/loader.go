@@ -14,30 +14,34 @@ const componentName = "graphLoader"
 
 // A GraphStoreLoaderFromCsv loads a bipartite graph store from entity, document and link CSV files.
 type GraphStoreLoaderFromCsv struct {
-	graphStore    graphstore.BipartiteGraphStore
-	entityFiles   []EntitiesCsvFile
-	documentFiles []DocumentsCsvFile
-	linkFiles     []LinksCsvFile
+	graphStore         graphstore.BipartiteGraphStore
+	entityFiles        []EntitiesCsvFile
+	documentFiles      []DocumentsCsvFile
+	linkFiles          []LinksCsvFile
+	ignoreInvalidLinks bool // Ignore links that cannot be created, e.g. due to missing entity or document
 }
 
-// NewGraphStoreLoaderFromCsv constructs a graph store loader.
+// NewGraphStoreLoaderFromCsv constructs a graph store loader that reads CSV files.
 func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 	entityFiles []EntitiesCsvFile,
 	documentFiles []DocumentsCsvFile,
-	linkFiles []LinksCsvFile) *GraphStoreLoaderFromCsv {
+	linkFiles []LinksCsvFile,
+	ignoreInvalidLinks bool) *GraphStoreLoaderFromCsv {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str("numberOfEntityFiles", strconv.Itoa(len(entityFiles))).
 		Str("numberOfDocumentFiles", strconv.Itoa(len(documentFiles))).
 		Str("numberOfLinksFiles", strconv.Itoa(len(linkFiles))).
+		Str("ignoreInvalidLinks", strconv.FormatBool(ignoreInvalidLinks)).
 		Msg("Creating a bipartite graph store loader")
 
 	return &GraphStoreLoaderFromCsv{
-		graphStore:    graphStore,
-		entityFiles:   entityFiles,
-		documentFiles: documentFiles,
-		linkFiles:     linkFiles,
+		graphStore:         graphStore,
+		entityFiles:        entityFiles,
+		documentFiles:      documentFiles,
+		linkFiles:          linkFiles,
+		ignoreInvalidLinks: ignoreInvalidLinks,
 	}
 }
 
@@ -158,8 +162,23 @@ func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) erro
 			return err
 		}
 
-		if err := loader.graphStore.AddLink(link); err != nil {
-			return err
+		// Try to add the link
+		err = loader.graphStore.AddLink(link)
+
+		// If there is an error, handle it if required
+		if err != nil {
+			if !loader.ignoreInvalidLinks {
+				return err
+			} else {
+				if err != graphstore.ErrEntityNotFound && err != graphstore.ErrDocumentNotFound {
+					return err
+				}
+
+				logging.Logger.Info().
+					Str(logging.ComponentField, componentName).
+					Str("filepath", file.Path).
+					Err(err).Msg("Gracefully handling error with link")
+			}
 		}
 	}
 

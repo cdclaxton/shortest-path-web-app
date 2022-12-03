@@ -25,18 +25,8 @@
         ],
         "documentsFiles": [
             {
-                "path": "documents-A.csv",
+                "path": "documents.csv",
                 "documentType": "Doc-A",
-                "delimiter": ",",
-                "documentIdField": "document ID",
-                "fieldToAttribute": {
-                    "title": "Title",
-                    "date": "Date"
-                }
-            },
-            {
-                "path": "documents-B.csv",
-                "documentType": "Doc-B",
                 "delimiter": ",",
                 "documentIdField": "document ID",
                 "fieldToAttribute": {
@@ -61,5 +51,5 @@
     "unipartiteGraphConfig": {
         "type": "memory"
     },
-    "ignoreInvalidLinks": false
+    "ignoreInvalidLinks": true
 }

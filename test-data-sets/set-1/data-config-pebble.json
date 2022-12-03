@@ -64,5 +64,6 @@
         "type": "pebble",
         "folder": "./working/unipartitePebble/",
         "deleteFilesInFolder": true
-    }
+    },
+    "ignoreInvalidLinks": false
 }
