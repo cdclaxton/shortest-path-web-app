@@ -201,21 +201,32 @@ func (loader *GraphStoreLoaderFromCsv) loadLinks() error {
 // Load the graph store from the CSV files.
 func (loader *GraphStoreLoaderFromCsv) Load() error {
 
-	// Load the entities
-	err := loader.loadEntities()
-	if err != nil {
-		return err
+	// Loading of entities and documents can be performed concurrently
+	errEntitiesChan := make(chan error)
+	errDocumentsChan := make(chan error)
+
+	go func() {
+		errEntitiesChan <- loader.loadEntities()
+	}()
+
+	go func() {
+		errDocumentsChan <- loader.loadDocuments()
+	}()
+
+	// Return the first error
+	errEntities := <-errEntitiesChan
+	errDocuments := <-errDocumentsChan
+
+	if errEntities != nil {
+		return errEntities
 	}
 
-	// Load the documents
-	err = loader.loadDocuments()
-	if err != nil {
-		return err
+	if errDocuments != nil {
+		return errDocuments
 	}
 
 	// Load the links
-	err = loader.loadLinks()
-	return err
+	return loader.loadLinks()
 }
 
 // findIndicesOfFields returns a mapping of the field name to index.
