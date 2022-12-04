@@ -306,7 +306,7 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 		Str(loggingGUIDField, guid).
 		Msg("Job successfully submitted")
 
-	redirectUrl := fmt.Sprintf("../job/%v", guid)
+	redirectUrl := fmt.Sprintf("/job/%v", guid)
 	http.Redirect(w, req, redirectUrl, http.StatusFound)
 }
 

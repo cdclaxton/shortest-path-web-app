@@ -19,7 +19,7 @@ var (
 	ErrChartBuilderIsNil  = errors.New("chartbuilder is nil")
 	ErrJobNotFound        = errors.New("job not found")
 	ErrJobConfIsNil       = errors.New("job configuration is nil")
-	ErrFolderDoesNotExist = errors.New("folder doesn't exist")
+	ErrFolderDoesNotExist = errors.New("i2 chart folder doesn't exist")
 	ErrInvalidGuid        = errors.New("invalid GUID")
 )
 
