@@ -1,9 +1,11 @@
 echo "Running Shortest Path App in demo mode (Pebble backend)"
 
+# Paths referenced in the data-config.json file
 OUTPUT_FOLDER=./working/i2/
 BIPARTITE_FOLDER=./working/bipartitePebble
 UNIPARTITE_FOLDER=./working/unipartitePebble
 
+# Make a folder if it doesn't exist or remove its contents if it does.
 makeOrCleanFolder () {
 
     # Preconditions
@@ -25,7 +27,7 @@ makeOrCleanFolder () {
     fi
 }
 
-# Make the output folder if it doesn't exist or clean it if it does
+# Make the folders if they don't exist or clean them if they do
 makeOrCleanFolder ${OUTPUT_FOLDER} "i2 chart"
 makeOrCleanFolder ${BIPARTITE_FOLDER} "Bipartite graph"
 makeOrCleanFolder ${UNIPARTITE_FOLDER} "Unipartite graph"

@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+
+# This Dockerfile builds an image containing a configured Apache HTTPD service.
+# To access the web-app, navigate to http://192.168.99.100/shortestpath/
+
+FROM httpd:2.4.54-alpine
+
+# Install a dependency for mod_proxy
+RUN apk update && apk add libxml2
+
+# Copy the config
+COPY ./proxy/proxy-html.conf /usr/local/apache2/conf/extra/proxy-html.conf
+COPY ./proxy/httpd.conf /usr/local/apache2/conf/httpd.conf 
+
+EXPOSE 80

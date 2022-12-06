@@ -306,12 +306,24 @@ The in-built placeholders concerning documents are:
 The `attributeNotKnown` field in the JSON configuration is the placeholder text for when an
 attribute of an entity is not provided in the input CSV data.
 
+## Running behind an Apache HTTPD reverse proxy
+
+The `proxy` folder contains configuration files for running the web-app behind an Apache HTTPD
+reverse proxy. To build and run Docker images for a configured Apache proxy and the web-app, run:
+
+```bash
+docker-compose -f docker-compose-httpd.yml build
+docker-compose -f docker-compose-httpd.yml run
+```
+
+Then navigate to http://192.168.99.100/shortestpath/ to test the web-app.
+
 ## Enhancements
 
 ### Pebble
 
 During initial testing with a large volume of data it was found that the ingest time was very high,
-prohibitively so. The Pebble backend was found to be the cause, and so a benchmark test was written
+prohibitively so. The Pebble backend was found to be a cause, and so a benchmark test was written
 in the `graphstore` package. The benchmark can be run with:
 
 `go test -run=Bench -bench=. -benchtime=10x`
@@ -325,3 +337,9 @@ without synchronisation. The results were:
 | NoSync          | 258,309,370    |
 
 Therefore, turning synchronisation off yielded a 97 times speed up.
+
+### Concurrency
+
+The ingest of data is concurrent and so the entities and documents are read in in parallel.
+Processing the links between entities and documents requires those to be present first, so the
+reading of links happens after the entities and documents have been successfully ingested.
