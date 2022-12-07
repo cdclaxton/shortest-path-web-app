@@ -1,7 +1,6 @@
 ## Dataset 0
 
-The files in this folder form a simple, but complete data set for testing the graph
-store loader
+The files in this folder form a simple graph, but one of the records is invalid.
 
 The graph structure is:
 

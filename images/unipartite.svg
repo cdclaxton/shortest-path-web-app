@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="188.14925mm"
+   height="140.92915mm"
+   viewBox="0 0 188.14925 140.92916"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="unipartite.svg"
+   inkscape:export-filename="C:\Users\cdcla\OneDrive\Technical\Learning\Golang\go\src\github.com\cdclaxton\shortest-path-web-app\images\bipartite.png"
+   inkscape:export-xdpi="200"
+   inkscape:export-ydpi="200">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.73579365"
+     inkscape:cx="468.66516"
+     inkscape:cy="245.37911"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     showguides="true"
+     fit-margin-top="2"
+     fit-margin-left="2"
+     fit-margin-right="2"
+     fit-margin-bottom="2">
+    <inkscape:grid
+       type="xygrid"
+       id="grid833"
+       originx="35.770877"
+       originy="-65.451885" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(35.770875,-65.451884)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0"
+       id="rect1922"
+       width="188.14233"
+       height="140.9252"
+       x="-35.766357"
+       y="65.454056" />
+    <g
+       id="g1084"
+       transform="translate(3.9687503,-6.6145837)">
+      <ellipse
+         style="fill:#f9f3e1;fill-opacity:1;stroke:#000000;stroke-width:0.999998;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="path944"
+         cx="30.332594"
+         cy="84.585617"
+         rx="8.3641148"
+         ry="10.019151" />
+      <path
+         style="fill:#6c9593;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 21.166666,89.958332 c 0,0 0.519718,2.07887 2.645834,3.968751 2.645833,2.645834 6.614583,2.645834 6.614583,2.645834 0,0 4.40961,-0.574495 6.614584,-2.645834 1.71195,-1.922882 2.645833,-3.968751 2.645833,-3.968751 h 1.322916 l 3.96875,1.322917 6.614584,6.614584 -6.614583,5.291667 -3.96875,-5.291667 V 103.1875 H 18.520833 V 97.895833 L 14.552083,103.1875 9.2604167,97.895833 15.875,91.28125 19.84375,89.958333 Z"
+         id="path946"
+         sodipodi:nodetypes="cccccccccccccccccc" />
+    </g>
+    <g
+       id="g1080"
+       transform="translate(5.2916667,29.104163)">
+      <path
+         style="fill:#f9f3e1;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 15.875,124.35417 v 22.48958 H 62.177083 V 134.9375 l -17.197917,-5.29167 v -7.9375 H 47.625 l -17.197917,-7.9375 -17.197916,7.9375 H 15.875 v 2.64584"
+         id="path948"
+         sodipodi:nodetypes="ccccccccccc" />
+      <path
+         style="fill:#e3e6ea;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 47.625,136.26042 11.906249,-1e-5 v 10.58334 H 47.625 Z"
+         id="path950"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#fefdfd;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 18.520833,136.26041 v 5.29167 h 6.614583 v -5.29167 z"
+         id="path952" />
+      <path
+         style="fill:#fefdfd;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 27.78125,145.52084 v -9.26042 h 6.614583 v 10.58334 H 27.78125 Z"
+         id="path954"
+         sodipodi:nodetypes="cccccc" />
+      <path
+         style="fill:#fefdfd;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 37.041667,136.26042 v 5.29167 h 6.614583 v -5.29167 z"
+         id="path952-0" />
+      <path
+         style="fill:#fefdfd;fill-opacity:1;stroke:#000000;stroke-width:0.999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 18.520834,124.35416 v 5.29167 h 10.583333 v -5.29167 z"
+         id="path952-6" />
+      <path
+         style="fill:#fefdfd;fill-opacity:1;stroke:#000000;stroke-width:0.999999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 31.75,124.35417 v 5.29167 h 10.583333 v -5.29167 z"
+         id="path952-6-1" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 48.947918,138.90625 h 9.260418"
+         id="path1030" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 48.947917,141.55208 h 9.260418"
+         id="path1030-2" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="m 48.947917,144.19792 h 9.260418"
+         id="path1030-7" />
+    </g>
+    <g
+       id="g1084-3"
+       transform="translate(93.927084,-6.614582)">
+      <ellipse
+         style="fill:#f9f3e1;fill-opacity:1;stroke:#000000;stroke-width:0.999998;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="path944-0"
+         cx="30.332594"
+         cy="84.585617"
+         rx="8.3641148"
+         ry="10.019151" />
+      <path
+         style="fill:#6c9593;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 21.166666,89.958332 c 0,0 0.519718,2.07887 2.645834,3.968751 2.645833,2.645834 6.614583,2.645834 6.614583,2.645834 0,0 4.40961,-0.574495 6.614584,-2.645834 1.71195,-1.922882 2.645833,-3.968751 2.645833,-3.968751 h 1.322916 l 3.96875,1.322917 6.614584,6.614584 -6.614583,5.291667 -3.96875,-5.291667 V 103.1875 H 18.520833 V 97.895833 L 14.552083,103.1875 9.2604167,97.895833 15.875,91.28125 19.84375,89.958333 Z"
+         id="path946-1"
+         sodipodi:nodetypes="cccccccccccccccccc" />
+    </g>
+    <g
+       id="g1084-3-5"
+       transform="translate(93.927084,72.760416)">
+      <ellipse
+         style="fill:#f9f3e1;fill-opacity:1;stroke:#000000;stroke-width:0.999998;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="path944-0-5"
+         cx="30.332594"
+         cy="84.585617"
+         rx="8.3641148"
+         ry="10.019151" />
+      <path
+         style="fill:#6c9593;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="m 21.166666,89.958332 c 0,0 0.519718,2.07887 2.645834,3.968751 2.645833,2.645834 6.614583,2.645834 6.614583,2.645834 0,0 4.40961,-0.574495 6.614584,-2.645834 1.71195,-1.922882 2.645833,-3.968751 2.645833,-3.968751 h 1.322916 l 3.96875,1.322917 6.614584,6.614584 -6.614583,5.291667 -3.96875,-5.291667 V 103.1875 H 18.520833 V 97.895833 L 14.552083,103.1875 9.2604167,97.895833 15.875,91.28125 19.84375,89.958333 Z"
+         id="path946-1-3"
+         sodipodi:nodetypes="cccccccccccccccccc" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:4.93889px;line-height:1.25;font-family:Cambria;-inkscape-font-specification:Cambria;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="-33.850456"
+       y="74.706154"
+       id="text1342"><tspan
+         sodipodi:role="line"
+         id="tspan1340"
+         x="-33.850456"
+         y="74.706154"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583">Entity e-1</tspan><tspan
+         sodipodi:role="line"
+         x="-33.850456"
+         y="80.904671"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1344">Type: Person</tspan><tspan
+         sodipodi:role="line"
+         x="-33.850456"
+         y="87.103188"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1346">Name: Bob Smith</tspan><tspan
+         sodipodi:role="line"
+         x="-33.850456"
+         y="93.301704"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1348">DOB: 03/04/1981</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.93889px;line-height:1.25;font-family:Cambria;-inkscape-font-specification:Cambria;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="103.61566"
+       y="106.44236"
+       id="text1342-4"><tspan
+         sodipodi:role="line"
+         id="tspan1340-1"
+         x="103.61566"
+         y="106.44236"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583">Entity e-2</tspan><tspan
+         sodipodi:role="line"
+         x="103.61566"
+         y="112.64088"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1344-1">Type: Person</tspan><tspan
+         sodipodi:role="line"
+         x="103.61566"
+         y="118.83939"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1346-2">Name: Sally Jones</tspan><tspan
+         sodipodi:role="line"
+         x="103.61566"
+         y="125.03791"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1348-9">DOB: 21/11/1986</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.93889px;line-height:1.25;font-family:Cambria;-inkscape-font-specification:Cambria;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="17.210855"
+       y="185.30318"
+       id="text1342-7"><tspan
+         sodipodi:role="line"
+         id="tspan1340-2"
+         x="17.210855"
+         y="185.30318"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583">Entity e-3</tspan><tspan
+         sodipodi:role="line"
+         x="17.210855"
+         y="191.50169"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1344-3">Type: Address</tspan><tspan
+         sodipodi:role="line"
+         x="17.210855"
+         y="197.70021"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1346-7">First line: 31 Field Drive</tspan><tspan
+         sodipodi:role="line"
+         x="17.210855"
+         y="203.89873"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1348-91">Postcode: EH36 5PB</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.93889px;line-height:1.25;font-family:Cambria;-inkscape-font-specification:Cambria;letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
+       x="99.817444"
+       y="185.30318"
+       id="text1342-4-2"><tspan
+         sodipodi:role="line"
+         id="tspan1340-1-6"
+         x="99.817444"
+         y="185.30318"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583">Entity e-4</tspan><tspan
+         sodipodi:role="line"
+         x="99.817444"
+         y="191.50169"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1344-1-0">Type: Person</tspan><tspan
+         sodipodi:role="line"
+         x="99.817444"
+         y="197.70021"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1346-2-2">Name: Samuel Taylor</tspan><tspan
+         sodipodi:role="line"
+         x="99.817444"
+         y="203.89873"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93889px;font-family:'Century Gothic';-inkscape-font-specification:'Century Gothic';stroke-width:0.264583"
+         id="tspan1348-9-7">DOB: 31/12/1990</tspan></text>
+    <path
+       style="fill:#b3b3b3;stroke:#808080;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 34.395833,103.1875 v 29.10417"
+       id="path1678-9-7-7"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#b3b3b3;stroke:#808080;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 99.218741,82.020833 H 59.53125"
+       id="path1678-9-7-7-3-3"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#b3b3b3;stroke:#808080;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 97.895833,158.75 h -23.8125"
+       id="path1678-9-7-7-3-3-6"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>

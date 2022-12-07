@@ -1,6 +1,6 @@
 ## Dataset 0
 
-The files in this folder form a simple data set for testing the web-app that contains errors.
+The files in this folder form a simple data set for testing the web-app.
 
 The graph structure is:
 

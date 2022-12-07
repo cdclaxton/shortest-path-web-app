@@ -4,7 +4,7 @@
 
 This Golang project contains the backend server and frontend web-app to find all paths between a
 user-defined set of vertices in an undirected network. The number of hops from one entity to another
-is configurable, as is the entities of interest. If one or more paths exist, then the an Excel file
+is configurable, as are the entities of interest. If one or more paths exist, then the an Excel file
 is returned that can be imported into a network visualisation tool, such as i2 Analyst Notebook, or
 used for analysis (e.g. in Python).
 
@@ -12,6 +12,14 @@ The underlying network is assumed to be a bipartite graph, specifically linking 
 documents. The code collapses the bipartite graph to a unipartite graph for search efficiency
 reasons. For example, a pair of authors could write a number of papers together, but the
 connectivity of the authors is more important than the papers themselves.
+
+A simple bipartite graph is shown below.
+
+![](./images/bipartite.png)
+
+The bipartite graph is internally converted to the simple unipartite shown below.
+
+![](./images/unipartite.png)
 
 The web-app uses an in-built Pebble key-value store and so no other database is required.
 
