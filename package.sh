@@ -10,6 +10,7 @@
 # Location for the folder for populating the output zip file
 folder=/c/Users/cdcla/Downloads/shortest-path
 
+# Name of the Zip file to create
 output_file=shortest-path.zip
 
 # --------------------------------------------------------------------------------------------------
@@ -18,10 +19,10 @@ output_file=shortest-path.zip
 
 # If the folder doesn't exist, then make it
 if [ ! -d $folder ]; then
-    echo Making output folder $folder
+    echo "Making output folder ${folder}"
     mkdir $folder
 else
-    echo Output folder $folder found
+    echo "Output folder ${folder} found"
 fi
 
 # Build the Docker image
@@ -57,7 +58,7 @@ else
     echo "Scripts folder $scripts_folder found"
 fi
 
-# Copy the scripts to the folder
+# Copy the scripts to the output folder
 scripts=( ./scripts/nr6_data_config_generator.py )
 
 for file in "${scripts[@]}"; do
@@ -68,6 +69,9 @@ for file in "${scripts[@]}"; do
         exit 1
     fi
 done;
+
+# Copy the images to the folder
+cp -r ./images $folder
 
 # Zip up the folder
 echo "Zipping package ..."
