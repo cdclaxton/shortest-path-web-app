@@ -6,10 +6,6 @@
 
 FROM golang:1.19-buster AS build
 
-# RUN apk update
-# RUN apk upgrade
-# RUN apk add gcc
-
 # Create a working directory inside the image
 WORKDIR /app
 
@@ -37,5 +33,8 @@ WORKDIR /
 # Copy the built executable from the first stage image
 COPY --from=build /app/web-app .
 
+# Port on which the application runs
+EXPOSE 8090
+
 # Set the executable to run when the container runs
-ENTRYPOINT [ "./web-app", "-data=/data/data-config.json", "-i2=/data/i2-config.json", "-folder=/data/chartFolder"]
+ENTRYPOINT [ "./web-app", "-data=/data/data-config.json", "-i2=/data/i2-config.json", "-folder=/data/chartFolder", "-message=/data/message.html"]

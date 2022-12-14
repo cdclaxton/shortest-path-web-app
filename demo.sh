@@ -12,4 +12,4 @@ else
 fi
 
 # Run the web-app
-./web-app -data=./test-data-sets/set-1/data-config.json -i2=./test-data-sets/set-1/i2-config.json -folder=${OUTPUT_FOLDER}
+./web-app -data=./test-data-sets/set-1/data-config.json -i2=./test-data-sets/set-1/i2-config.json -folder=${OUTPUT_FOLDER} -message=./test-data-sets/set-1/message.html

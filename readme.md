@@ -233,16 +233,6 @@ Pebble's data is stored in the location specified in the `folder` field. The fol
 prior to ingesting the data. The backend will clear the folder if the `deleteFilesInFolder` field is
 set to `true`.
 
-## Build the Docker image
-
-The `Dockerfile` in this project builds a minimal image in two stages. To build the image and run
-with simple test data:
-
-```bash
-docker compose build
-docker compose up
-```
-
 ## i2 chart configuration
 
 The JSON configuration for the i2 chart generator should be stored in a file called
@@ -314,6 +304,27 @@ The in-built placeholders concerning documents are:
 The `attributeNotKnown` field in the JSON configuration is the placeholder text for when an
 attribute of an entity is not provided in the input CSV data.
 
+## Message file
+
+The application can present a simple HTML message on the index page. The intention of this is
+provide the users with a quick summary of the network, e.g. when it was last updated or what
+data is present. The file (typically called `message.html`) does not need to be a full HTML file.
+For example, it could be as simple as:
+
+```html
+<p><b>Demo dataset</b> containing four entities</p>
+```
+
+## Build the Docker image
+
+The `Dockerfile` in this project builds a minimal image in two stages. To build the image and run
+with simple test data:
+
+```bash
+docker compose build
+docker compose up
+```
+
 ## Running behind an Apache HTTPD reverse proxy
 
 The `proxy` folder contains configuration files for running the web-app behind an Apache HTTPD
@@ -321,7 +332,7 @@ reverse proxy. To build and run Docker images for a configured Apache proxy and 
 
 ```bash
 docker-compose -f docker-compose-httpd.yml build
-docker-compose -f docker-compose-httpd.yml run
+docker-compose -f docker-compose-httpd.yml up
 ```
 
 Then navigate to http://192.168.99.100/shortestpath/ to test the web-app.

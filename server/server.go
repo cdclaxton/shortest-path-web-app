@@ -36,6 +36,7 @@ const (
 
 // Locations of the HTML templates
 const (
+	indexTemplateFile         = "templates/index.html"          // Index (landing) page
 	errorTemplateFile         = "templates/error.html"          // For a system error
 	inputProblemTemplateFile  = "templates/input-problem.html"  // For a data error
 	jobNotFoundTemplateFile   = "templates/job-not-found.html"  // For when a job cannot be found
@@ -48,6 +49,7 @@ const (
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
 	runner                *JobRunner        // Job runner
+	indexPage             string            // Parsed index page
 	errorTemplate         *raymond.Template // Template if a system error occurs
 	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
 	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
@@ -79,13 +81,35 @@ func readTemplate(filepath string) (*raymond.Template, error) {
 	return raymond.Parse(templateString)
 }
 
+// makeIndexPage given a template file and a static message.
+func makeIndexPage(templateFile string, message string) (string, error) {
+
+	// Read the template file
+	template, err := readTemplate(templateFile)
+	if err != nil {
+		return "", err
+	}
+
+	page := template.MustExec(map[string]string{
+		"message": message,
+	})
+
+	return page, nil
+}
+
 // NewJobServer given the job runner for executing jobs. It will return an error if any of the
 // required HTML templates cannot be located.
-func NewJobServer(runner *JobRunner) (*JobServer, error) {
+func NewJobServer(runner *JobRunner, indexMessage string) (*JobServer, error) {
 
 	// Preconditions
 	if runner == nil {
 		return nil, errors.New("job runner is nil")
+	}
+
+	// Read the index template and create a cached version of the page
+	indexPage, err := makeIndexPage(indexTemplateFile, indexMessage)
+	if err != nil {
+		return nil, err
 	}
 
 	// Read the templates
@@ -127,6 +151,7 @@ func NewJobServer(runner *JobRunner) (*JobServer, error) {
 	// Return the constructed job server
 	return &JobServer{
 		runner:                runner,
+		indexPage:             indexPage,
 		errorTemplate:         errorTemplate,
 		inputProblemTemplate:  inputProblemTemplate,
 		jobNotFoundTemplate:   jobNotFoundTemplate,
@@ -487,6 +512,29 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 	io.Copy(w, file)
 }
 
+type rootHandler struct {
+	indexPage  string
+	fileServer http.Handler
+}
+
+func NewRootHandler(indexPage string, fileServer http.Handler) rootHandler {
+	return rootHandler{
+		indexPage:  indexPage,
+		fileServer: fileServer,
+	}
+}
+
+func (rh rootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// If the root path is requested, then return the index.html page
+	if r.URL.Path == "/" {
+		fmt.Fprint(w, rh.indexPage)
+		return
+	}
+
+	rh.fileServer.ServeHTTP(w, r)
+}
+
 func (j *JobServer) Start() {
 
 	// Uploading job configuration
@@ -503,7 +551,11 @@ func (j *JobServer) Start() {
 	if err != nil {
 		logging.Logger.Fatal().Msg("failed to get sub-directory of static")
 	}
-	http.Handle("/", http.FileServer(http.FS(sub)))
+
+	//http.Handle("/", http.FileServer(http.FS(sub)))
+
+	fs := http.FileServer(http.FS(sub))
+	http.Handle("/", NewRootHandler(j.indexPage, fs))
 
 	// Run the server
 	http.ListenAndServe(":8090", nil)

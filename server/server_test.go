@@ -398,7 +398,7 @@ func makeJobServer(t *testing.T) *JobServer {
 	runner := makeJobRunner(t)
 
 	// Make a Job server that is correctly configured
-	server, err := NewJobServer(runner)
+	server, err := NewJobServer(runner, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 

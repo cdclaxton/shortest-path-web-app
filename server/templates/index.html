@@ -25,26 +25,18 @@
         </div>
     </header>
 
-    <div class="govuk-width-container ">
+    <div class="govuk-width-container">
         <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
+
+            <!-- Header -->
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <h1 class="govuk-heading-xl">Configuration</h1>
+                    <h1 class="govuk-heading-xl">Find shortest paths</h1>
+                </div>
+            </div>
 
-                    <!-- Helpful note for user -->
-                    <div class="govuk-body">
-                        <p>This tool finds all shortest paths between entities.
-                            It returns an Excel file that can be imported into i2 Analyst Notebook.</p>
-                        <p>Entity IDs can be separated by any combination of newlines, spaces, commas, semicolons or tabs.</p>
-                        <p>A grouping of entity IDs is called a dataset and its name is passed through to the Excel file.</p>
-                    </div>
-
-                    <div class="govuk-inset-text">
-                        <p>If one dataset is submitted, paths between all pairs of entities in that
-                        dataset are computed.</p>
-                        <p>If two or more datasets are submitted, paths between an entity in
-                        one dataset and an entity in another dataset are computed.</p>
-                    </div>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
 
                     <!-- File upload form -->
                     <div class="govuk-form-group">
@@ -53,10 +45,10 @@
                             <fieldset class="govuk-fieldset">
                                 <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
                                     <h1 class="govuk-fieldset__heading">
-                                      Number of hops
+                                    Number of hops
                                     </h1>
-                                  </legend>
-                                  <div class="govuk-form-group">
+                                </legend>
+                                <div class="govuk-form-group">
                                     <label class="govuk-label" for="datasetName1">
                                         Maximum number of hops from one entity to another
                                     </label>                                       
@@ -75,7 +67,7 @@
                             <fieldset class="govuk-fieldset">
                                 <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
                                     <h1 class="govuk-fieldset__heading">
-                                      Dataset 1
+                                    Dataset 1
                                     </h1>
                                 </legend>
                                 <div class="govuk-form-group">
@@ -145,7 +137,42 @@
                     </div>
 
                 </div>
+                <div class="govuk-grid-column-one-third">
+
+                    <!-- Message -->
+                    <div class="govuk-inset-text">
+                        <p>{{{ message }}}</p>
+                    </div>
+
+                    <!-- Instructions -->
+                    <details class="govuk-details" data-module="govuk-details">
+                        <summary class="govuk-details__summary">
+                          <span class="govuk-details__summary-text">
+                            Instructions
+                          </span>
+                        </summary>
+                        <div class="govuk-details__text">
+                          
+                            <!-- Helpful note for user -->
+                            <div class="govuk-body">
+                                <p>This tool finds all shortest paths between entities.
+                                    It returns an Excel file that can be imported into i2 Analyst Notebook.</p>
+                                <p>Entity IDs can be separated by any combination of newlines, spaces, commas, semicolons or tabs.</p>
+                                <p>A grouping of entity IDs is called a dataset and its name is passed through to the Excel file.</p>
+                            </div>
+
+                            <div class="govuk-body">
+                                <p>If one dataset is submitted, paths between all pairs of entities in that
+                                dataset are computed.</p>
+                                <p>If two or more datasets are submitted, paths between an entity in
+                                one dataset and an entity in another dataset are computed.</p>
+                            </div>                            
+                        </div>
+                    </details>                    
+
+                </div>
             </div>
+
         </main>
     </div>
 

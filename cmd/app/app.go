@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"io"
+	"os"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
@@ -13,6 +15,23 @@ import (
 // Component name used in logging
 const componentName = "application"
 
+// readMessage from a file that gets displayed on the index page.
+func readMessage(filepath string) (string, error) {
+
+	file, err := os.Open(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	b, err := io.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
 func main() {
 
 	logging.Logger.Info().
@@ -23,6 +42,7 @@ func main() {
 	dataConfigPath := flag.String("data", "data-config.json", "Path to the config.json file")
 	i2ConfigPath := flag.String("i2", "i2-config.json", "Path to the i2 config.json file")
 	chartFolder := flag.String("folder", "./chartFolder", "Folder for storing generated charts")
+	messagePath := flag.String("message", "message.html", "Path to message to show on index page")
 
 	flag.Parse()
 
@@ -40,6 +60,20 @@ func main() {
 		Str(logging.ComponentField, componentName).
 		Str("folder", *chartFolder).
 		Msg("i2 chart folder")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", *messagePath).
+		Msg("index page message path")
+
+	// Load the message
+	msg, err := readMessage(*messagePath)
+	if err != nil {
+		logging.Logger.Fatal().
+			Str(logging.ComponentField, componentName).
+			Err(err).
+			Msg("Failed to read message file")
+	}
 
 	// Create the bipartite and unipartite graphs
 	builder, err := graphbuilder.NewGraphBuilderFromJson(*dataConfigPath)
@@ -81,7 +115,7 @@ func main() {
 	}
 
 	// Create the job server
-	jobServer, err := server.NewJobServer(runner)
+	jobServer, err := server.NewJobServer(runner, msg)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).
