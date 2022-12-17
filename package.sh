@@ -48,30 +48,21 @@ fi
 echo "Copying readme ..."
 cp readme.md $folder
 
-# Create a scripts folder
-scripts_folder=$folder/scripts
-
-if [ ! -d $scripts_folder ]; then
-    echo "Making scripts folder $scripts_folder"
-    mkdir $scripts_folder
-else
-    echo "Scripts folder $scripts_folder found"
-fi
-
-# Copy the scripts to the output folder
-scripts=( ./scripts/nr6_data_config_generator.py )
-
-for file in "${scripts[@]}"; do
-    echo "Copying $file"
-    cp $file $scripts_folder
-    if [ $? -ne 0 ]; then
-        echo "Failed to copy file $file"
-        exit 1
-    fi
-done;
+# Copy the scripts
+echo "Copying scripts ..."
+cp -r ./scripts $folder
 
 # Copy the images to the folder
+echo "Copying images ..."
 cp -r ./images $folder
+
+# Copy the proxy config to the folder
+echo "Copying Apache HTTPD proxy config ..."
+cp -r ./proxy $folder
+
+# Copy the test datasets to the folder
+echo "Copying test datasets ..."
+cp - r ./test-data-sets $folder
 
 # Zip up the folder
 echo "Zipping package ..."
