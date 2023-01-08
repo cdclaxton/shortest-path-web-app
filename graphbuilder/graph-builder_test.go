@@ -340,6 +340,20 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, equal)
 
+		// Check the stats
+		expectedStats := GraphStats{
+			Bipartite: graphstore.BipartiteStats{
+				NumberOfEntities:              4,
+				NumberOfEntitiesWithDocuments: 4,
+				NumberOfDocuments:             4,
+				NumberOfDocumentsWithEntities: 4,
+			},
+			Unipartite: graphstore.UnipartiteStats{
+				NumberOfEntities: 4,
+			},
+		}
+		assert.Equal(t, expectedStats, graphBuilder.Stats)
+
 		// Destroy the graph databases
 		graphBuilder.Destroy()
 	}
@@ -369,4 +383,20 @@ func TestPrepareFolderForStorage(t *testing.T) {
 
 	// Delete the temp folder
 	assert.NoError(t, os.RemoveAll(tempFolder))
+}
+
+func BenchmarkBuildGraph(b *testing.B) {
+
+	configFilepath := "../test-data-sets/set-3/config.json"
+
+	for i := 0; i < b.N; i++ {
+
+		// Instantiate the graph builder
+		graphBuilder, err := NewGraphBuilderFromJson(configFilepath)
+
+		// Destroy the graph databases
+		if err == nil {
+			graphBuilder.Destroy()
+		}
+	}
 }

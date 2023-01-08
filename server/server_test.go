@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/stretchr/testify/assert"
 )
@@ -398,7 +399,7 @@ func makeJobServer(t *testing.T) *JobServer {
 	runner := makeJobRunner(t)
 
 	// Make a Job server that is correctly configured
-	server, err := NewJobServer(runner, "")
+	server, err := NewJobServer(runner, "", graphbuilder.GraphStats{})
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
 
@@ -698,4 +699,20 @@ func TestHandleJobInvalidJob(t *testing.T) {
 	server.handleJob(w, req)
 	assert.True(t, len(w.Body.String()) > 0)
 	assert.True(t, isJobNotFoundPage(w, "1234"))
+}
+
+func TestHandleStats(t *testing.T) {
+
+	// Make a valid job server
+	server := makeJobServer(t)
+	defer cleanUpJobRunner(t, server.runner)
+
+	// Request the job
+	req := httptest.NewRequest(http.MethodGet, "/stats/", nil)
+	w := httptest.NewRecorder()
+
+	server.handleStats(w, req)
+	assert.True(t, len(w.Body.String()) > 0)
+	fmt.Println(w.Body.String())
+	assert.True(t, strings.Contains(w.Body.String(), "Statistics"))
 }

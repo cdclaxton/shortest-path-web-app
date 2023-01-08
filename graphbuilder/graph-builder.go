@@ -2,6 +2,7 @@ package graphbuilder
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -239,10 +240,17 @@ func makePathsRelativeToConfig(configFilepath string, graphConfig *GraphConfig) 
 		graphConfig.Data.SkipEntitiesFile, configFilepath)
 }
 
+// GraphStats holds summary information about the bipartite and unipartite graphs.
+type GraphStats struct {
+	Bipartite  graphstore.BipartiteStats
+	Unipartite graphstore.UnipartiteStats
+}
+
 // GraphBuilder component to build the bipartite and unipartite graphs.
 type GraphBuilder struct {
 	Bipartite  graphstore.BipartiteGraphStore
 	Unipartite graphstore.UnipartiteGraphStore
+	Stats      GraphStats
 }
 
 func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
@@ -304,6 +312,16 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 
 	graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities)
 
+	// Calculate graph stats
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Calculating bipartite and unipartite graph stats")
+
+	err = builder.CalculateStats()
+	if err != nil {
+		return nil, err
+	}
+
 	return &builder, nil
 }
 
@@ -335,10 +353,42 @@ func (gb *GraphBuilder) Destroy() error {
 		Str(logging.ComponentField, componentName).
 		Msg("Destroying the unipartite and bipartite graphs")
 
+	if gb.Unipartite == nil {
+		return errors.New("unipartite graph is nil")
+	}
+
 	err := gb.Unipartite.Destroy()
 	if err != nil {
 		return err
 	}
 
+	if gb.Bipartite == nil {
+		return errors.New("bipartite graph is nil")
+	}
+
 	return gb.Bipartite.Destroy()
+}
+
+// CalculateStats for the bipartite and unipartite graphs.
+func (gb *GraphBuilder) CalculateStats() error {
+
+	// Bipartite graph stats
+	bipartiteStats, err := graphstore.CalcBipartiteStats(gb.Bipartite)
+	if err != nil {
+		return err
+	}
+
+	// Unipartite graph stats
+	unipartiteStats, err := graphstore.CalcUnipartiteStats(gb.Unipartite)
+	if err != nil {
+		return err
+	}
+
+	// Store the graph stats
+	gb.Stats = GraphStats{
+		Bipartite:  bipartiteStats,
+		Unipartite: unipartiteStats,
+	}
+
+	return nil
 }

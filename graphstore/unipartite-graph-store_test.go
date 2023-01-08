@@ -262,3 +262,48 @@ func TestUnipartiteGraphStore(t *testing.T) {
 		equalGraphs(t, gs, g2)
 	}
 }
+
+func TestCalcUnipartiteStats(t *testing.T) {
+
+	// Make the in-memory unipartite graph store
+	inMemory := NewInMemoryUnipartiteGraphStore()
+
+	// Make the Pebble unipartite graph store
+	pebbleGraphStore := newUnipartitePebbleStore(t)
+	defer cleanUpUnipartitePebbleStore(t, pebbleGraphStore)
+
+	graphStores := []UnipartiteGraphStore{
+		inMemory,
+		pebbleGraphStore,
+	}
+
+	for _, gs := range graphStores {
+
+		stats, err := CalcUnipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, UnipartiteStats{
+			NumberOfEntities: 0,
+		}, stats)
+
+		assert.NoError(t, gs.AddUndirected("e-1", "e-2"))
+		stats, err = CalcUnipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, UnipartiteStats{
+			NumberOfEntities: 2,
+		}, stats)
+
+		assert.NoError(t, gs.AddEntity("e-3"))
+		stats, err = CalcUnipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, UnipartiteStats{
+			NumberOfEntities: 3,
+		}, stats)
+
+		assert.NoError(t, gs.AddUndirected("e-3", "e-4"))
+		stats, err = CalcUnipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, UnipartiteStats{
+			NumberOfEntities: 4,
+		}, stats)
+	}
+}

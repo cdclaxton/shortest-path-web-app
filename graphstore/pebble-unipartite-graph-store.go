@@ -315,3 +315,19 @@ func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.
 
 	return dsts, nil
 }
+
+func (p *PebbleUnipartiteGraphStore) NumberEntities() (int, error) {
+
+	numEntities := 0
+
+	iter := p.db.NewIter(nil)
+	for iter.First(); iter.Valid(); iter.Next() {
+		numEntities += 1
+	}
+
+	if err := iter.Close(); err != nil {
+		return numEntities, err
+	}
+
+	return numEntities, nil
+}

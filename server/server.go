@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/aymerick/raymond"
+	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
@@ -44,19 +45,22 @@ const (
 	jobFailedTemplateFile     = "templates/job-failed.html"     // For a failed job
 	jobNoResultsTemplateFile  = "templates/job-no-results.html" // For a complete job
 	jobResultsTemplateFile    = "templates/job-results.html"    // For a complete job
+	statsTemplateFile         = "templates/stats.html"          // Statistics
 )
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
-	runner                *JobRunner        // Job runner
-	indexPage             string            // Parsed index page
-	errorTemplate         *raymond.Template // Template if a system error occurs
-	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
-	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
-	processingJobTemplate *raymond.Template // Template whilst the job is processing
-	jobFailedTemplate     *raymond.Template // Template for a failed job
-	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
-	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
+	runner                *JobRunner              // Job runner
+	indexPage             string                  // Parsed index page
+	errorTemplate         *raymond.Template       // Template if a system error occurs
+	inputProblemTemplate  *raymond.Template       // Template if there is a problem with the user input
+	jobNotFoundTemplate   *raymond.Template       // Template if the job couldn't be found
+	processingJobTemplate *raymond.Template       // Template whilst the job is processing
+	jobFailedTemplate     *raymond.Template       // Template for a failed job
+	jobNoResultsTemplate  *raymond.Template       // Template if the job completed and there are no results
+	jobResultsTemplate    *raymond.Template       // Template if the job completed and there are results
+	statsTemplate         *raymond.Template       // Template for statistics
+	stats                 graphbuilder.GraphStats // Graph stats
 }
 
 //go:embed templates/*
@@ -99,7 +103,7 @@ func makeIndexPage(templateFile string, message string) (string, error) {
 
 // NewJobServer given the job runner for executing jobs. It will return an error if any of the
 // required HTML templates cannot be located.
-func NewJobServer(runner *JobRunner, indexMessage string) (*JobServer, error) {
+func NewJobServer(runner *JobRunner, indexMessage string, stats graphbuilder.GraphStats) (*JobServer, error) {
 
 	// Preconditions
 	if runner == nil {
@@ -148,6 +152,11 @@ func NewJobServer(runner *JobRunner, indexMessage string) (*JobServer, error) {
 		return nil, err
 	}
 
+	statsTemplate, err := readTemplate(statsTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
 	// Return the constructed job server
 	return &JobServer{
 		runner:                runner,
@@ -159,6 +168,8 @@ func NewJobServer(runner *JobRunner, indexMessage string) (*JobServer, error) {
 		jobFailedTemplate:     jobFailedTemplate,
 		jobNoResultsTemplate:  jobNoResultsTemplate,
 		jobResultsTemplate:    jobResultsTemplate,
+		statsTemplate:         statsTemplate,
+		stats:                 stats,
 	}, nil
 }
 
@@ -512,6 +523,23 @@ func (j *JobServer) handleDownload(w http.ResponseWriter, req *http.Request) {
 	io.Copy(w, file)
 }
 
+func (j *JobServer) handleStats(w http.ResponseWriter, req *http.Request) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Received request at /stats")
+
+	page := j.statsTemplate.MustExec(map[string]string{
+		"numberOfEntities":              strconv.Itoa(j.stats.Bipartite.NumberOfEntities),
+		"numberOfEntitiesWithDocuments": strconv.Itoa(j.stats.Bipartite.NumberOfEntitiesWithDocuments),
+		"numberOfDocuments":             strconv.Itoa(j.stats.Bipartite.NumberOfDocuments),
+		"numberOfDocumentsWithEntities": strconv.Itoa(j.stats.Bipartite.NumberOfDocumentsWithEntities),
+		"numberOfEntitiesInUnipartite":  strconv.Itoa(j.stats.Unipartite.NumberOfEntities),
+	})
+	fmt.Fprint(w, page)
+	return
+}
+
 type rootHandler struct {
 	indexPage  string
 	fileServer http.Handler
@@ -545,6 +573,9 @@ func (j *JobServer) Start() {
 
 	// Download results
 	http.HandleFunc("/download/", j.handleDownload)
+
+	// Stats
+	http.HandleFunc("/stats/", j.handleStats)
 
 	// Static content
 	sub, err := fs.Sub(staticFS, "static")

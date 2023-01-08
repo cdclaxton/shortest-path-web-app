@@ -168,3 +168,11 @@ func (graph *InMemoryUnipartiteGraphStore) HasEntity(id string) (bool, error) {
 	_, found := graph.vertices[id]
 	return found, nil
 }
+
+// NumberEntities in the store.
+func (graph *InMemoryUnipartiteGraphStore) NumberEntities() (int, error) {
+
+	// The graph is always used in undirected mode, so it's valid to just
+	// count the number of source entities
+	return len(graph.vertices), nil
+}

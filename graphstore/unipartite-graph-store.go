@@ -23,6 +23,7 @@ type UnipartiteGraphStore interface {
 	EntityIds() (*set.Set[string], error)                 // All entity IDs in the graph
 	EntityIdsAdjacentTo(string) (*set.Set[string], error) // Entity IDs adjacent to a given entity ID
 	HasEntity(string) (bool, error)                       // Does the store contain the entity?
+	NumberEntities() (int, error)                         // Number of entities in the store
 }
 
 // BuildFromEdgeList builds the graph from an undirected edge list.
@@ -96,4 +97,20 @@ func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore
 	}
 
 	return true, nil
+}
+
+type UnipartiteStats struct {
+	NumberOfEntities int // Number of entities in the unipartite store
+}
+
+func CalcUnipartiteStats(ug UnipartiteGraphStore) (UnipartiteStats, error) {
+
+	numEntities, err := ug.NumberEntities()
+	if err != nil {
+		return UnipartiteStats{}, err
+	}
+
+	return UnipartiteStats{
+		NumberOfEntities: numEntities,
+	}, nil
 }

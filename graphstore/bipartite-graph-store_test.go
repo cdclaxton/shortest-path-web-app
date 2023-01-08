@@ -60,7 +60,7 @@ func addSingleEntity(t *testing.T, store BipartiteGraphStore) {
 
 	// Try to get an entity that shouldn't exist
 	retrieved, err = store.GetEntity("unknown")
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, retrieved)
 }
 
@@ -231,7 +231,6 @@ func TestInMemoryGraphStore(t *testing.T) {
 
 	for _, gs := range graphStores {
 
-		gs = NewInMemoryBipartiteGraphStore()
 		addSingleEntity(t, gs)
 
 		gs.Clear()
@@ -253,4 +252,81 @@ func TestInMemoryGraphStore(t *testing.T) {
 		entityIterator(t, gs)
 	}
 
+}
+
+func TestCalcBipartiteStats(t *testing.T) {
+
+	// Make the in-memory graph store
+	inMemoryGraphStore := NewInMemoryBipartiteGraphStore()
+
+	// Make the Pebble graph store
+	pebbleGraphStore := newBipartitePebbleStore(t)
+	defer cleanUpBipartitePebbleStore(t, pebbleGraphStore)
+
+	graphStores := []BipartiteGraphStore{
+		inMemoryGraphStore,
+		pebbleGraphStore,
+	}
+
+	for _, gs := range graphStores {
+
+		entities := buildEntities(t)
+		documents := buildDocuments(t)
+
+		// Empty bipartite store
+		stats, err := CalcBipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, BipartiteStats{
+			NumberOfEntities:              0,
+			NumberOfEntitiesWithDocuments: 0,
+			NumberOfDocuments:             0,
+			NumberOfDocumentsWithEntities: 0,
+		}, stats)
+
+		// Add an entity with no associated documents
+		assert.NoError(t, gs.AddEntity(entities[0]))
+		stats, err = CalcBipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, BipartiteStats{
+			NumberOfEntities:              1,
+			NumberOfEntitiesWithDocuments: 0,
+			NumberOfDocuments:             0,
+			NumberOfDocumentsWithEntities: 0,
+		}, stats)
+
+		// Add a document with no associated entities
+		assert.NoError(t, gs.AddDocument(documents[0]))
+		stats, err = CalcBipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, BipartiteStats{
+			NumberOfEntities:              1,
+			NumberOfEntitiesWithDocuments: 0,
+			NumberOfDocuments:             1,
+			NumberOfDocumentsWithEntities: 0,
+		}, stats)
+
+		// Add an entity with a document
+		entities[1].AddDocument("d-1")
+		assert.NoError(t, gs.AddEntity(entities[1]))
+		stats, err = CalcBipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, BipartiteStats{
+			NumberOfEntities:              2,
+			NumberOfEntitiesWithDocuments: 1,
+			NumberOfDocuments:             1,
+			NumberOfDocumentsWithEntities: 0,
+		}, stats)
+
+		// Add a document with an entity
+		documents[1].AddEntity("e-1")
+		assert.NoError(t, gs.AddDocument(documents[1]))
+		stats, err = CalcBipartiteStats(gs)
+		assert.NoError(t, err)
+		assert.Equal(t, BipartiteStats{
+			NumberOfEntities:              2,
+			NumberOfEntitiesWithDocuments: 1,
+			NumberOfDocuments:             2,
+			NumberOfDocumentsWithEntities: 1,
+		}, stats)
+	}
 }

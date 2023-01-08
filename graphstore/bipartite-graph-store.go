@@ -266,3 +266,100 @@ func AllEntities(iter EntityIdIterator) (*set.Set[string], error) {
 
 	return ids, nil
 }
+
+type BipartiteStats struct {
+	NumberOfEntities              int
+	NumberOfEntitiesWithDocuments int
+	NumberOfDocuments             int
+	NumberOfDocumentsWithEntities int
+}
+
+func CalcBipartiteStats(bg BipartiteGraphStore) (BipartiteStats, error) {
+
+	numEntities, numEntitiesWithDocuments, err := calcBipartiteEntityStats(bg)
+	if err != nil {
+		return BipartiteStats{}, err
+	}
+
+	numDocuments, numDocumentsWithEntities, err := calcBipartiteDocumentStats(bg)
+	if err != nil {
+		return BipartiteStats{}, err
+	}
+
+	return BipartiteStats{
+		NumberOfEntities:              numEntities,
+		NumberOfEntitiesWithDocuments: numEntitiesWithDocuments,
+		NumberOfDocuments:             numDocuments,
+		NumberOfDocumentsWithEntities: numDocumentsWithEntities,
+	}, nil
+}
+
+func calcBipartiteEntityStats(bg BipartiteGraphStore) (int, int, error) {
+
+	numberEntities := 0
+	numberEntitiesWithDocuments := 0
+
+	// Iterate through the entities
+	entityIdIter, err := bg.NewEntityIdIterator()
+	if err != nil {
+		return -1, -1, err
+	}
+
+	for entityIdIter.hasNext() {
+
+		// Get the next entity ID
+		entityId, err := entityIdIter.nextEntityId()
+		if err != nil {
+			return -1, -1, err
+		}
+
+		numberEntities += 1
+
+		// Get the entity from the store
+		entity, err := bg.GetEntity(entityId)
+		if err != nil {
+			return -1, -1, err
+		}
+
+		if entity.LinkedDocumentIds.Len() > 0 {
+			numberEntitiesWithDocuments += 1
+		}
+	}
+
+	return numberEntities, numberEntitiesWithDocuments, nil
+}
+
+func calcBipartiteDocumentStats(bg BipartiteGraphStore) (int, int, error) {
+
+	numberDocuments := 0
+	numberOfDocumentsWithEntities := 0
+
+	// Iterate through the documents
+	documentIdIter, err := bg.NewDocumentIdIterator()
+	if err != nil {
+		return -1, -1, err
+	}
+
+	for documentIdIter.hasNext() {
+
+		// Get the next document ID
+		documentId, err := documentIdIter.nextDocumentId()
+		if err != nil {
+			return -1, -1, err
+		}
+
+		numberDocuments += 1
+
+		// Get the document from the store
+		document, err := bg.GetDocument(documentId)
+		if err != nil {
+			return -1, -1, err
+		}
+
+		if document.LinkedEntityIds.Len() > 0 {
+			numberOfDocumentsWithEntities += 1
+		}
+	}
+
+	return numberDocuments, numberOfDocumentsWithEntities, nil
+}

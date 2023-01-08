@@ -59,7 +59,7 @@ func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) (*Entity, e
 	if found {
 		return &entity, nil
 	}
-	return nil, nil
+	return nil, ErrEntityNotFound
 }
 
 // GetDocument given its ID.

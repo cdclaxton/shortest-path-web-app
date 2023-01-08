@@ -115,7 +115,7 @@ func main() {
 	}
 
 	// Create the job server
-	jobServer, err := server.NewJobServer(runner, msg)
+	jobServer, err := server.NewJobServer(runner, msg, builder.Stats)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).

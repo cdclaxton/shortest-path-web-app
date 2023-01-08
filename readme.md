@@ -337,6 +337,11 @@ docker-compose -f docker-compose-httpd.yml up
 
 Then navigate to http://192.168.99.100/shortestpath/ to test the web-app.
 
+## Statistics endpoint
+
+The `/stats` endpoint returns an HTML page with high level statistics about the bipartite and
+unipartite graphs.
+
 ## Enhancements
 
 ### Pebble
@@ -345,7 +350,10 @@ During initial testing with a large volume of data it was found that the ingest 
 prohibitively so. The Pebble backend was found to be a cause, and so a benchmark test was written
 in the `graphstore` package. The benchmark can be run with:
 
-`go test -run=Bench -bench=. -benchtime=10x`
+```bash
+cd graphstore
+go test -run=Bench -bench=. -benchtime=10x
+```
 
 Tests where 10,000 entities were added to the bipartite graph Pebble backend were performed with and
 without synchronisation. The results were:
@@ -362,3 +370,8 @@ Therefore, turning synchronisation off yielded a 97 times speed up.
 The ingest of data is concurrent and so the entities and documents are read in in parallel.
 Processing the links between entities and documents requires those to be present first, so the
 reading of links happens after the entities and documents have been successfully ingested.
+
+```bash
+cd graphbuilder
+go test -run=Bench -bench=. -count 1
+```
