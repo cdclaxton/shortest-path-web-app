@@ -62,7 +62,7 @@ cp -r ./proxy $folder
 
 # Copy the test datasets to the folder
 echo "Copying test datasets ..."
-cp - r ./test-data-sets $folder
+cp -r ./test-data-sets $folder
 
 # Zip up the folder
 echo "Zipping package ..."
