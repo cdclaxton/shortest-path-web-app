@@ -30,11 +30,52 @@
                     <div class="govuk-grid-column-two-thirds">
                         <h1 class="govuk-heading-xl">Results</h1>
           
+                        <div class="govuk-panel govuk-panel--confirmation">
+                            <h1 class="govuk-panel__title">
+                                Processing complete</b>
+                            </h1>
+                            <div class="govuk-panel__body">
+                                <a href="../download/{{guid}}">Download Excel file</a>
+                            </div>
+                        </div>       
+                        
                         <!-- Helpful note for user -->
                         <div class="govuk-body">
-                            <p>Processing complete for job <b>{{ guid }}</b>.</p>
-                            <a href="../download/{{guid}}">Download Excel file</a>
-                        </div>
+                            <p>Job: <b>{{ guid }}</b>.</p>
+                        </div>                        
+
+                        <!-- Table of entity search results -->
+                        <table class="govuk-table">
+                            <caption class="govuk-table__caption govuk-table__caption--m">Entities</caption>
+                            <thead class="govuk-table__head">
+                                <tr class="govuk-table__row">
+                                  <th scope="col" class="govuk-table__header">Entity ID</th>
+                                  <th scope="col" class="govuk-table__header">In bipartite graph</th>
+                                  <th scope="col" class="govuk-table__header">In unipartite graph</th>
+                                </tr>
+                            </thead>                            
+                            <tbody class="govuk-table__body">
+                              {{#each entityResults}}
+                              <tr class="govuk-table__row">
+                                <td class="govuk-table__cell">{{ EntityId }}</td>
+                                <td class="govuk-table__cell">
+                                    {{#if InUnipartite}}
+                                        {{ InUnipartite }}
+                                    {{else}}
+                                        <font color="#d4351c">{{ InUnipartite }}</font>
+                                    {{/if}}
+                                </td>
+                                <td class="govuk-table__cell">
+                                    {{#if InBipartite}}
+                                        {{ InBipartite }}
+                                    {{else}}
+                                        <font color="#d4351c">{{ InBipartite }}</font>
+                                    {{/if}}                                    
+                                </td>
+                              </tr>
+                              {{/each}}
+                            </tbody>
+                        </table>
 
                     </div>
                 </div>

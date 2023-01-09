@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/google/uuid"
 )
 
@@ -122,6 +123,7 @@ type Job struct {
 	ResultFile    string            // Location of the result file for download
 	Message       string            // Message to present to the user
 	Error         error             // Error (if one occurs during processing of the job)
+	EntityResults map[string]search.EntitySearchResult
 }
 
 // GenerateGuid generates a GUID for the job identifier.

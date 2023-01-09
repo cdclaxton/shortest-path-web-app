@@ -12,6 +12,7 @@ import (
 
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/job"
+	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -715,4 +716,57 @@ func TestHandleStats(t *testing.T) {
 	assert.True(t, len(w.Body.String()) > 0)
 	fmt.Println(w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "Statistics"))
+}
+
+func TestPrepareEntitySearchResults(t *testing.T) {
+
+	testCases := []struct {
+		results  map[string]search.EntitySearchResult
+		expected []EntitySearchResultsDisplay
+	}{
+		{
+			results: map[string]search.EntitySearchResult{
+				"e-1": {
+					InUnipartite: true,
+					InBipartite:  false,
+				},
+			},
+			expected: []EntitySearchResultsDisplay{
+				{
+					EntityId:     "e-1",
+					InUnipartite: true,
+					InBipartite:  false,
+				},
+			},
+		},
+		{
+			results: map[string]search.EntitySearchResult{
+				"e-1": {
+					InUnipartite: true,
+					InBipartite:  false,
+				},
+				"e-2": {
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+			},
+			expected: []EntitySearchResultsDisplay{
+				{
+					EntityId:     "e-1",
+					InUnipartite: true,
+					InBipartite:  false,
+				},
+				{
+					EntityId:     "e-2",
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual := prepareEntitySearchResults(testCase.results)
+		assert.Equal(t, testCase.expected, actual)
+	}
 }

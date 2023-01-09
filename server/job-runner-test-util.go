@@ -9,6 +9,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
+	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,6 +24,9 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	// Build and load the graphs
 	builder, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
 	assert.NoError(t, err)
+
+	// Entity search engine
+	searchEngine, err := search.NewEntitySearch(builder.Bipartite, builder.Unipartite)
 
 	// Instantiate the i2 chart builder
 	chartBuilder, err := i2chart.NewI2ChartBuilder(i2ConfigFilepath)
@@ -42,7 +46,7 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	assert.False(t, os.IsNotExist(err))
 
 	// Make the job runner
-	runner, err := NewJobRunner(pathFinder, chartBuilder, tempFolder)
+	runner, err := NewJobRunner(pathFinder, chartBuilder, tempFolder, searchEngine)
 	assert.NoError(t, err)
 
 	return runner

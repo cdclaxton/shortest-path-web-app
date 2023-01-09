@@ -9,6 +9,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
+	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/cdclaxton/shortest-path-web-app/server"
 )
 
@@ -105,8 +106,17 @@ func main() {
 			Msg("Failed to create path finder")
 	}
 
+	// Create the search engine
+	searchEngine, err := search.NewEntitySearch(builder.Bipartite, builder.Unipartite)
+	if err != nil {
+		logging.Logger.Fatal().
+			Str(logging.ComponentField, componentName).
+			Err(err).
+			Msg("Failed to create search engine")
+	}
+
 	// Create the job runner
-	runner, err := server.NewJobRunner(pathFinder, chartBuilder, *chartFolder)
+	runner, err := server.NewJobRunner(pathFinder, chartBuilder, *chartFolder, searchEngine)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).

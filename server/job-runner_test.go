@@ -7,6 +7,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/job"
+	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,6 +16,7 @@ func TestNewJobRunner(t *testing.T) {
 	// Make simple PathFinder and ChartBuilder structs
 	pathFinder := bfs.PathFinder{}
 	chartBuilder := &i2chart.I2ChartBuilder{}
+	searchEngine := search.EntitySearch{}
 
 	// Make a folder
 	folder, err := os.MkdirTemp("", "test-job-runner")
@@ -25,17 +27,17 @@ func TestNewJobRunner(t *testing.T) {
 	nonExistentTempFolder := folder + "-A"
 
 	// Job runner with a nil Pathfinder
-	runner, err := NewJobRunner(nil, chartBuilder, folder)
+	runner, err := NewJobRunner(nil, chartBuilder, folder, &searchEngine)
 	assert.Error(t, err)
 	assert.Nil(t, runner)
 
 	// Job runner with a nil Chartbuilder
-	runner, err = NewJobRunner(&pathFinder, nil, folder)
+	runner, err = NewJobRunner(&pathFinder, nil, folder, &searchEngine)
 	assert.Error(t, err)
 	assert.Nil(t, runner)
 
 	// Job runner with a folder that doesn't exist
-	runner, err = NewJobRunner(&pathFinder, chartBuilder, nonExistentTempFolder)
+	runner, err = NewJobRunner(&pathFinder, chartBuilder, nonExistentTempFolder, &searchEngine)
 	assert.Error(t, err)
 	assert.Nil(t, runner)
 }

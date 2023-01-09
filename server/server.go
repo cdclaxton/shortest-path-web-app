@@ -17,6 +17,8 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
+	"github.com/cdclaxton/shortest-path-web-app/search"
+	"golang.org/x/exp/maps"
 )
 
 // Component name used in logging
@@ -50,17 +52,19 @@ const (
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
-	runner                *JobRunner              // Job runner
-	indexPage             string                  // Parsed index page
-	errorTemplate         *raymond.Template       // Template if a system error occurs
-	inputProblemTemplate  *raymond.Template       // Template if there is a problem with the user input
-	jobNotFoundTemplate   *raymond.Template       // Template if the job couldn't be found
-	processingJobTemplate *raymond.Template       // Template whilst the job is processing
-	jobFailedTemplate     *raymond.Template       // Template for a failed job
-	jobNoResultsTemplate  *raymond.Template       // Template if the job completed and there are no results
-	jobResultsTemplate    *raymond.Template       // Template if the job completed and there are results
-	statsTemplate         *raymond.Template       // Template for statistics
-	stats                 graphbuilder.GraphStats // Graph stats
+	runner *JobRunner // Job runner
+
+	indexPage             string            // Parsed index page
+	errorTemplate         *raymond.Template // Template if a system error occurs
+	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
+	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
+	processingJobTemplate *raymond.Template // Template whilst the job is processing
+	jobFailedTemplate     *raymond.Template // Template for a failed job
+	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
+	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
+	statsTemplate         *raymond.Template // Template for statistics
+
+	stats graphbuilder.GraphStats // Graph stats
 }
 
 //go:embed templates/*
@@ -207,8 +211,12 @@ func splitEntityIDs(text string) []string {
 	// Retain entity IDs that pass basic validation
 	entityIds := []string{}
 	for idx := range potentialEntityIds {
-		if len(potentialEntityIds[idx]) > 0 {
-			entityIds = append(entityIds, potentialEntityIds[idx])
+
+		// Strip any whitespace
+		cleaned := strings.TrimSpace(potentialEntityIds[idx])
+
+		if len(cleaned) > 0 {
+			entityIds = append(entityIds, cleaned)
 		}
 	}
 
@@ -346,6 +354,35 @@ func (j *JobServer) handleUpload(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, redirectUrl, http.StatusFound)
 }
 
+// EntitySearchResultsDisplay holds data that is presented as an entities table.
+type EntitySearchResultsDisplay struct {
+	EntityId     string
+	InUnipartite bool
+	InBipartite  bool
+}
+
+// prepareEntitySearchResults for display in HTML.
+func prepareEntitySearchResults(entityResults map[string]search.EntitySearchResult) []EntitySearchResultsDisplay {
+
+	display := []EntitySearchResultsDisplay{}
+
+	// Get a sorted list of entity IDs
+	entityIds := maps.Keys(entityResults)
+	sort.Strings(entityIds)
+
+	for _, entityId := range entityIds {
+		result := entityResults[entityId]
+
+		display = append(display, EntitySearchResultsDisplay{
+			EntityId:     entityId,
+			InUnipartite: result.InUnipartite,
+			InBipartite:  result.InBipartite,
+		})
+	}
+
+	return display
+}
+
 func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 
 	// Extract the guid
@@ -409,16 +446,18 @@ func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
 
 	} else if j1.Progress.State == job.CompleteNoResults {
 
-		page := j.jobNoResultsTemplate.MustExec(map[string]string{
-			"guid": guid,
+		page := j.jobNoResultsTemplate.MustExec(map[string]interface{}{
+			"guid":          guid,
+			"entityResults": prepareEntitySearchResults(j1.EntityResults),
 		})
 		fmt.Fprint(w, page)
 		return
 
 	} else if j1.Progress.State == job.CompleteResults {
 
-		page := j.jobResultsTemplate.MustExec(map[string]string{
-			"guid": guid,
+		page := j.jobResultsTemplate.MustExec(map[string]interface{}{
+			"guid":          guid,
+			"entityResults": prepareEntitySearchResults(j1.EntityResults),
 		})
 		fmt.Fprint(w, page)
 		return

@@ -12,6 +12,8 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
+	"github.com/cdclaxton/shortest-path-web-app/search"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -21,6 +23,7 @@ var (
 	ErrJobConfIsNil       = errors.New("job configuration is nil")
 	ErrFolderDoesNotExist = errors.New("i2 chart folder doesn't exist")
 	ErrInvalidGuid        = errors.New("invalid GUID")
+	ErrSearchEngineIsNil  = errors.New("search engine is nil")
 )
 
 // GUID returned on failure (instead of an empty string)
@@ -40,11 +43,13 @@ type JobRunner struct {
 
 	numberJobsExecuting     int          // Number of jobs being executed
 	numberJobsExecutingLock sync.RWMutex // Mutex for the numberJobsExecuting
+
+	searchEngine *search.EntitySearch
 }
 
 // NewJobRunner instantiates a new JobRunner struct.
 func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuilder,
-	folder string) (*JobRunner, error) {
+	folder string, searchEngine *search.EntitySearch) (*JobRunner, error) {
 
 	// Preconditions
 	if pathFinder == nil {
@@ -59,6 +64,10 @@ func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuild
 		return nil, ErrFolderDoesNotExist
 	}
 
+	if searchEngine == nil {
+		return nil, ErrSearchEngineIsNil
+	}
+
 	// Return a constructed job runner
 	return &JobRunner{
 		pathFinder:              pathFinder,
@@ -68,6 +77,7 @@ func NewJobRunner(pathFinder *bfs.PathFinder, chartBuilder *i2chart.I2ChartBuild
 		jobsLock:                sync.RWMutex{},
 		numberJobsExecuting:     0,
 		numberJobsExecutingLock: sync.RWMutex{},
+		searchEngine:            searchEngine,
 	}, nil
 }
 
@@ -216,6 +226,24 @@ func makeExcelFilepath(folder string, guid string) string {
 	return path.Join(folder, fmt.Sprintf("%v.xlsx", guid))
 }
 
+func (j *JobRunner) entitySearch(j1 *job.Job) error {
+
+	j1.EntityResults = map[string]search.EntitySearchResult{}
+
+	for _, entitySet := range j1.Configuration.EntitySets {
+
+		// Search for the entities in the entity set
+		resultsForEntitySet, err := j.searchEngine.Search(entitySet.EntityIds)
+		if err != nil {
+			return err
+		}
+
+		maps.Copy(j1.EntityResults, resultsForEntitySet)
+	}
+
+	return nil
+}
+
 // executeJob given the GUID of the job to execute.
 func (j *JobRunner) executeJob(guid string) {
 
@@ -234,6 +262,13 @@ func (j *JobRunner) executeJob(guid string) {
 
 	// Find the paths between entities
 	conns, err := j.pathFinder.FindPaths(job.Configuration.EntitySets, job.Configuration.MaxNumberHops)
+	if err != nil {
+		j.setJobToFailed(job, err)
+		return
+	}
+
+	// Search for the entities in the graph stores to provide diagnostic information
+	err = j.entitySearch(job)
 	if err != nil {
 		j.setJobToFailed(job, err)
 		return
