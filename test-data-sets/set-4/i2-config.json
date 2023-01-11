@@ -1,0 +1,31 @@
+{
+    "columns": [
+        "icon",
+        "id",
+        "label",
+        "entitySets",
+        "description"
+    ],
+    "entities": {
+        "Individual": {
+            "icon": "Person",
+            "id": "<ID>",
+            "label": "<label> [<ENTITY-SET-NAMES>]",
+            "entitySets": "<ENTITY-SET-NAMES>",
+            "description": "Link: http://network-display/<ID>"
+        },
+        "Address": {
+            "icon": "Location",
+            "id": "<ID>",
+            "label": "<label> [<ENTITY-SET-NAMES>]",
+            "entitySets": "<ENTITY-SET-NAMES>",
+            "description": "Link: http://network-display/<ID>"
+        }
+    },
+    "links": {
+        "label": "<NUM-DOCS> docs (<DOCUMENT-TYPES>; <DOCUMENT-DATE-RANGE>)",
+        "dateAttribute": "date",
+        "dateFormat": "02/01/2006"
+    },
+    "attributeNotKnown": "Unknown"
+}

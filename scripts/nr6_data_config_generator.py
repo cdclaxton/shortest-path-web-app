@@ -23,18 +23,6 @@
 
 import json
 
-{
-    "path": "person.csv",
-    "entityType": "Person",
-    "delimiter": ",",
-    "entityIdField": "entity ID",
-    "fieldToAttribute": {
-            "forename": "Forename",
-            "surname": "Surname",
-            "date of birth": "DOB"
-    }
-},
-
 
 def build_entity_files(prefix, entity_types):
     """Build the config for CSV files containing entities."""
@@ -89,7 +77,7 @@ def build_link_files(prefix, entity_types):
     } for tpe in entity_types]
 
 
-def build_config(prefix, doc_types, entity_types, skip_entities_filename):
+def build_config(prefix, doc_types, entity_types, skip_entities_filename, dockerised):
     """Build data config for the shortest path web-app."""
 
     # Preconditions
@@ -100,6 +88,7 @@ def build_config(prefix, doc_types, entity_types, skip_entities_filename):
         entity_types) == dict, f"Expected a dict, got {type(entity_types)}"
     assert type(
         skip_entities_filename) == str, f"Expected a str, got {type(prefix)}"
+    assert type(dockerised) == bool, f"Expected a bool, got {type(dockerised)}"
 
     # Build the config
     entity_config = build_entity_files(prefix, entity_types)
@@ -111,6 +100,13 @@ def build_config(prefix, doc_types, entity_types, skip_entities_filename):
     links_config = build_link_files(prefix, list(entity_types.keys()))
     assert type(links_config) == list
 
+    if dockerised:
+        bipartiteFolder = "/pebble/bipartite"
+        unipartiteFolder = "/pebble/unipartite"
+    else:
+        bipartiteFolder = "./working/bipartitePebble/"
+        unipartiteFolder = "./working/unipartitePebble/"
+
     return {
         "graphData": {
             "entitiesFiles": entity_config,
@@ -120,12 +116,12 @@ def build_config(prefix, doc_types, entity_types, skip_entities_filename):
         },
         "bipartiteGraphConfig": {
             "type": "pebble",
-            "folder": "/pebble/bipartite",
+            "folder": bipartiteFolder,
             "deleteFilesInFolder": True
         },
         "unipartiteGraphConfig": {
             "type": "pebble",
-            "folder": "/pebble/unipartite",
+            "folder": unipartiteFolder,
             "deleteFilesInFolder": True
         }
     }
@@ -134,14 +130,15 @@ def build_config(prefix, doc_types, entity_types, skip_entities_filename):
 if __name__ == '__main__':
 
     prefix = "nr6"
-    doc_types = {"A": "Doc A", "B": "Doc B"}
-    entity_types = {"ACC": "Account", "ADR": "Address"}
+    doc_types = {"A_01": "Doc A", "B_02": "Doc B"}
+    entity_types = {"ADR": "Address", "IND": "Individual"}
     skip_entities_filename = "skip_entities.txt"
+    dockerised = False
 
-    output_filepath = "./data-config.json"
+    output_filepath = "./test-data-sets/set-4/data-config.json"
 
     config = build_config(prefix, doc_types, entity_types,
-                          skip_entities_filename)
+                          skip_entities_filename, dockerised)
 
     print(f"Writing config to {output_filepath}")
     with open(output_filepath, 'w') as fp:

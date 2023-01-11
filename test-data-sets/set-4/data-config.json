@@ -1,0 +1,71 @@
+{
+    "graphData": {
+        "entitiesFiles": [
+            {
+                "path": "nr6_entities_adr_labels.csv",
+                "entityType": "Address",
+                "delimiter": ",",
+                "entityIdField": "entity_id",
+                "fieldToAttribute": {
+                    "label": "label"
+                }
+            },
+            {
+                "path": "nr6_entities_ind_labels.csv",
+                "entityType": "Individual",
+                "delimiter": ",",
+                "entityIdField": "entity_id",
+                "fieldToAttribute": {
+                    "label": "label"
+                }
+            }
+        ],
+        "documentsFiles": [
+            {
+                "path": "nr6_doc_a_01.csv",
+                "documentType": "Doc A",
+                "delimiter": "|",
+                "documentIdField": "document_id",
+                "fieldToAttribute": {
+                    "document_label": "label",
+                    "document_date": "date"
+                }
+            },
+            {
+                "path": "nr6_doc_b_02.csv",
+                "documentType": "Doc B",
+                "delimiter": "|",
+                "documentIdField": "document_id",
+                "fieldToAttribute": {
+                    "document_label": "label",
+                    "document_date": "date"
+                }
+            }
+        ],
+        "linksFiles": [
+            {
+                "path": "nr6_entities_adr.csv",
+                "entityIdField": "entity_id",
+                "documentIdField": "document_id",
+                "delimiter": ","
+            },
+            {
+                "path": "nr6_entities_ind.csv",
+                "entityIdField": "entity_id",
+                "documentIdField": "document_id",
+                "delimiter": ","
+            }
+        ],
+        "skipEntitiesFile": "skip_entities.txt"
+    },
+    "bipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "./working/bipartitePebble/",
+        "deleteFilesInFolder": true
+    },
+    "unipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "./working/unipartitePebble/",
+        "deleteFilesInFolder": true
+    }
+}
