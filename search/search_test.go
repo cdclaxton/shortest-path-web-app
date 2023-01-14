@@ -78,6 +78,32 @@ func TestSearch(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Similar entity IDs
+			entityIds: []string{"e-1", "e-1 ", "e-11", "e-10", "e-"},
+			expectedResults: map[string]EntitySearchResult{
+				"e-1": {
+					InUnipartite: true,
+					InBipartite:  true,
+				},
+				"e-1 ": {
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+				"e-11": {
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+				"e-10": {
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+				"e-": {
+					InUnipartite: false,
+					InBipartite:  false,
+				},
+			},
+		},
 	}
 
 	for _, backend := range backends {

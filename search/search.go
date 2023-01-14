@@ -52,7 +52,7 @@ func (es *EntitySearch) Search(entityIds []string) (map[string]EntitySearchResul
 	for _, entityId := range entityIds {
 
 		// Try to find the entity in the bipartite graph
-		entityInBipartite := false
+		var entityInBipartite bool
 		_, err := es.Bipartite.GetEntity(entityId)
 		if err == graphstore.ErrEntityNotFound {
 			entityInBipartite = false
