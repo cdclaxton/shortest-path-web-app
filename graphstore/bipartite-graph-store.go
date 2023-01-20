@@ -33,6 +33,7 @@ type BipartiteGraphStore interface {
 	GetDocument(string) (*Document, error)              // Get a document given its document ID
 	HasDocument(*Document) (bool, error)                // Does the graph store contain the document?
 	HasEntity(*Entity) (bool, error)                    // Does the graph store contain the entity?
+	HasEntityWithId(string) (bool, error)               // Does the graph contain the entity with the given ID?
 	NewDocumentIdIterator() (DocumentIdIterator, error) // Get a document ID iterator
 	NewEntityIdIterator() (EntityIdIterator, error)     // Get an entity ID iterator
 	NumberOfEntities() (int, error)                     // Number of entities in the store

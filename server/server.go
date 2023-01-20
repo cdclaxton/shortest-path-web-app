@@ -48,6 +48,7 @@ const (
 	jobNoResultsTemplateFile  = "templates/job-no-results.html" // For a complete job
 	jobResultsTemplateFile    = "templates/job-results.html"    // For a complete job
 	statsTemplateFile         = "templates/stats.html"          // Statistics
+	entityTemplateFile        = "templates/entity.html"         // Entity search
 )
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
@@ -63,6 +64,7 @@ type JobServer struct {
 	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
 	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
 	statsTemplate         *raymond.Template // Template for statistics
+	entityTemplate        *raymond.Template // Template for entity search
 
 	stats graphbuilder.GraphStats // Graph stats
 }
@@ -161,6 +163,11 @@ func NewJobServer(runner *JobRunner, indexMessage string, stats graphbuilder.Gra
 		return nil, err
 	}
 
+	entityTemplate, err := readTemplate(entityTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
 	// Return the constructed job server
 	return &JobServer{
 		runner:                runner,
@@ -173,6 +180,7 @@ func NewJobServer(runner *JobRunner, indexMessage string, stats graphbuilder.Gra
 		jobNoResultsTemplate:  jobNoResultsTemplate,
 		jobResultsTemplate:    jobResultsTemplate,
 		statsTemplate:         statsTemplate,
+		entityTemplate:        entityTemplate,
 		stats:                 stats,
 	}, nil
 }
@@ -381,6 +389,26 @@ func prepareEntitySearchResults(entityResults map[string]search.EntitySearchResu
 	}
 
 	return display
+}
+
+func (j *JobServer) handleEntity(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the entity ID
+	entityId := strings.TrimPrefix(req.URL.Path, "/entity/")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("entityID", entityId).
+		Msg("Received request at /entity")
+
+	// Try to get the entity from the entity search engine
+	entity := j.runner.searchEngine.GetEntity(entityId)
+
+	page := j.entityTemplate.MustExec(map[string]interface{}{
+		"entity": entity,
+	})
+
+	fmt.Fprint(w, page)
 }
 
 func (j *JobServer) handleJob(w http.ResponseWriter, req *http.Request) {
@@ -609,6 +637,9 @@ func (j *JobServer) Start() {
 
 	// Job status
 	http.HandleFunc("/job/", j.handleJob)
+
+	// Entity search
+	http.HandleFunc("/entity/", j.handleEntity)
 
 	// Download results
 	http.HandleFunc("/download/", j.handleDownload)

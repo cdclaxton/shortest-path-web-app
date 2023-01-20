@@ -174,6 +174,19 @@ func (store *InMemoryBipartiteGraphStore) HasEntity(entity *Entity) (bool, error
 	return entity.Equal(retrieved), nil
 }
 
+func (store *InMemoryBipartiteGraphStore) HasEntityWithId(entityId string) (bool, error) {
+
+	// Try to retrieve the entity from the graph store
+	retrieved, err := store.GetEntity(entityId)
+	if err == ErrEntityNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return retrieved != nil, nil
+}
+
 // An InMemoryDocumentIterator walks through all of the IDs of the documents held
 // within the bipartite graph store. Note that the order of the document IDs is not
 // guaranteed to be same on different runs.

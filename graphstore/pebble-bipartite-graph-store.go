@@ -273,6 +273,18 @@ func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 	return ent.Equal(entity), nil
 }
 
+func (p *PebbleBipartiteGraphStore) HasEntityWithId(entityId string) (bool, error) {
+
+	entity, err := p.GetEntity(entityId)
+	if err == ErrEntityNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return entity != nil, nil
+}
+
 // AddDocument to the Pebble store.
 func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
 

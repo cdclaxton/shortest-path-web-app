@@ -38,6 +38,14 @@ func addSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, nEntities)
 
+	exists, err := store.HasEntityWithId("e-1")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
+	exists, err = store.HasEntityWithId("e-2")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
 	nDocuments, err := store.NumberOfDocuments()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, nDocuments)
@@ -53,6 +61,14 @@ func addSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, nDocuments)
 
+	exists, err = store.HasEntityWithId("e-1")
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	exists, err = store.HasEntityWithId("e-2")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
 	// Try to get the entity from the store that should exist
 	retrieved, err := store.GetEntity(entities[0].Id)
 	assert.NoError(t, err)
@@ -62,6 +78,17 @@ func addSingleEntity(t *testing.T, store BipartiteGraphStore) {
 	retrieved, err = store.GetEntity("unknown")
 	assert.Error(t, err)
 	assert.Nil(t, retrieved)
+
+	// Add another entity
+	assert.NoError(t, store.AddEntity(entities[1]))
+
+	exists, err = store.HasEntityWithId("e-1")
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	exists, err = store.HasEntityWithId("e-2")
+	assert.NoError(t, err)
+	assert.True(t, exists)
 }
 
 func addSingleDocument(t *testing.T, store BipartiteGraphStore) {
