@@ -23,6 +23,25 @@ func TestAddSingleElement(t *testing.T) {
 	assert.False(t, s.Has(1))
 }
 
+func TestRemoveElement(t *testing.T) {
+	s := NewPopulatedSet(2, 3, 4)
+
+	// Remove an element that exists
+	s.Remove(2)
+	expected := NewPopulatedSet(3, 4)
+	assert.True(t, s.Equal(expected))
+
+	// Try to remove an element that doesn't exist
+	s.Remove(10)
+	expected = NewPopulatedSet(3, 4)
+	assert.True(t, s.Equal(expected))
+
+	// Remove another element
+	s.Remove(4)
+	expected = NewPopulatedSet(3)
+	assert.True(t, s.Equal(expected))
+}
+
 func TestEqual(t *testing.T) {
 	s1 := NewSet[int]()
 	s1.AddAll([]int{1, 2})

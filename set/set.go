@@ -37,6 +37,10 @@ func (s *Set[T]) AddAll(elements []T) {
 	}
 }
 
+func (s *Set[T]) Remove(element T) {
+	delete(s.Values, element)
+}
+
 // Has the set got a specific element?
 func (s *Set[T]) Has(element T) bool {
 	return s.Values[element]
