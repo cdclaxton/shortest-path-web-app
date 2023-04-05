@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphloader"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
@@ -280,10 +281,16 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		config.Data.LinksFiles,
 		config.IgnoreInvalidLinks)
 
+	startTime := time.Now()
 	err = bipartiteLoader.Load()
 	if err != nil {
 		return nil, err
 	}
+	loadTimeTaken := time.Now().Sub(startTime)
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("timeTaken", loadTimeTaken.String()).
+		Msg("Time taken to load the bipartite graph")
 
 	// Read the entities to skip
 	logging.Logger.Info().
