@@ -1,0 +1,71 @@
+{
+    "graphData": {
+        "entitiesFiles": [
+            {
+                "path": "entities-0.csv",
+                "entityType": "Person",
+                "delimiter": ",",
+                "entityIdField": "ID",
+                "fieldToAttribute": {
+                    "label": "label"
+                }
+            },
+            {
+                "path": "entities-1.csv",
+                "entityType": "Person",
+                "delimiter": ",",
+                "entityIdField": "ID",
+                "fieldToAttribute": {
+                    "label": "label"
+                }
+            }
+        ],
+        "documentsFiles": [
+            {
+                "path": "documents-0.csv",
+                "documentType": "Type-A",
+                "delimiter": ",",
+                "documentIdField": "ID",
+                "fieldToAttribute": {
+                    "label": "label",
+                    "date": "date"
+                }
+            },
+            {
+                "path": "documents-1.csv",
+                "documentType": "Type-A",
+                "delimiter": ",",
+                "documentIdField": "ID",
+                "fieldToAttribute": {
+                    "label": "label",
+                    "date": "date"
+                }
+            }
+        ],
+        "linksFiles": [
+            {
+                "path": "links-0.csv",
+                "entityIdField": "entity ID",
+                "documentIdField": "document ID",
+                "delimiter": ","
+            },
+            {
+                "path": "links-1.csv",
+                "entityIdField": "entity ID",
+                "documentIdField": "document ID",
+                "delimiter": ","
+            }
+        ],
+        "skipEntitiesFile": "skip_entities.txt"
+    },
+    "bipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "<TEMP>",
+        "deleteFilesInFolder": true
+    },
+    "unipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "<TEMP>",
+        "deleteFilesInFolder": true
+    }
+}
