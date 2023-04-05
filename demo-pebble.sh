@@ -5,6 +5,9 @@ OUTPUT_FOLDER=./working/i2/
 BIPARTITE_FOLDER=./working/bipartitePebble
 UNIPARTITE_FOLDER=./working/unipartitePebble
 
+# Dataset within ./test-data-sets/ to use
+SET=set-3
+
 # Make a folder if it doesn't exist or remove its contents if it does.
 makeOrCleanFolder () {
 
@@ -33,4 +36,4 @@ makeOrCleanFolder ${BIPARTITE_FOLDER} "Bipartite graph"
 makeOrCleanFolder ${UNIPARTITE_FOLDER} "Unipartite graph"
 
 # Run the web-app
-./web-app -data=./test-data-sets/set-1/data-config-pebble.json -i2=./test-data-sets/set-1/i2-config.json -folder=${OUTPUT_FOLDER}
+./web-app -data=./test-data-sets/$SET/data-config.json -i2=./test-data-sets/$SET/i2-config.json -folder=${OUTPUT_FOLDER} -message=./test-data-sets/$SET/message.html
