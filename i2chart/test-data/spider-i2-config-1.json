@@ -1,0 +1,15 @@
+{
+    "entities": {
+        "Person": {
+            "icon": "Anonymous",
+            "label": "<Full Name>"
+        },
+        "Address": {
+            "icon": "House",
+            "label": "<Address>"
+        }
+    },
+    "unknownEntityTypeIcon": "UNKNOWN-1",
+    "unknownEntityTypeLabel": "UNKNOWN-2",
+    "missingAttribute": "UNKNOWN-3"
+}
