@@ -225,3 +225,38 @@ func TestExecute(t *testing.T) {
 		}
 	}
 }
+
+func TestHasAtLeastOneConnection(t *testing.T) {
+
+	subgraph1 := graphstore.NewInMemoryUnipartiteGraphStore()
+	subgraph1.AddEntity("e-1")
+	subgraph1.AddEntity("e-2")
+
+	subgraph2 := graphstore.NewInMemoryUnipartiteGraphStore()
+	subgraph2.AddDirected("e-1", "e-2")
+	subgraph2.AddEntity("e-3")
+
+	testCases := []struct {
+		results  *SpiderResults
+		expected bool
+	}{
+		{
+			results: &SpiderResults{
+				Subgraph: *subgraph1,
+			},
+			expected: false,
+		},
+		{
+			results: &SpiderResults{
+				Subgraph: *subgraph2,
+			},
+			expected: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		actual, err := testCase.results.HasAtLeastOneConnection()
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.expected, actual)
+	}
+}

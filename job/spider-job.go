@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
+	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
 var (
@@ -14,8 +15,8 @@ var (
 
 // SpiderJobConfiguration holds the data for running spidering.
 type SpiderJobConfiguration struct {
-	NumberSteps  int      // Number of steps from the seed entities
-	SeedEntities []string // Seed entities
+	NumberSteps  int              // Number of steps from the seed entities
+	SeedEntities *set.Set[string] // Seed entities
 }
 
 // isValid returns an error if the spider job configuration is invalid.
@@ -27,11 +28,11 @@ func (s *SpiderJobConfiguration) isValid() error {
 	}
 
 	// Check there are seed entities and that each entity ID is valid
-	if len(s.SeedEntities) == 0 {
+	if s.SeedEntities.Len() == 0 {
 		return ErrNoSeedEntities
 	}
 
-	for _, entityId := range s.SeedEntities {
+	for _, entityId := range s.SeedEntities.ToSlice() {
 		err := graphstore.ValidateEntityId(entityId)
 		if err != nil {
 			return err
@@ -43,7 +44,7 @@ func (s *SpiderJobConfiguration) isValid() error {
 
 // NewSpiderJobConfiguration constructs a new spider job configuration and ensures
 // the data is valid.
-func NewSpiderJobConfiguration(numberSteps int, seedEntities []string) (
+func NewSpiderJobConfiguration(numberSteps int, seedEntities *set.Set[string]) (
 	*SpiderJobConfiguration, error) {
 
 	conf := SpiderJobConfiguration{
@@ -63,7 +64,7 @@ type SpiderJob struct {
 	GUID          string                  // Unique ID for the job
 	Configuration *SpiderJobConfiguration // Configuration
 	Progress      JobProgress             // Progress of the job
-	ResultsFile   string                  // Location of the result file for download
+	ResultFile    string                  // Location of the result file for download
 	Message       string                  // Message to present to the user
 	Error         error                   // Error (if one occurs during processing of the job)
 }
@@ -85,4 +86,9 @@ func NewSpiderJob(conf *SpiderJobConfiguration) (SpiderJob, error) {
 		Configuration: conf,
 		Progress:      NewJobProgress(),
 	}, nil
+}
+
+// HasValidGuid returns true if the GUID is deemed valid.
+func (j *SpiderJob) HasValidGuid() bool {
+	return len(j.GUID) == 36
 }

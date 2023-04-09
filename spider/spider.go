@@ -47,6 +47,27 @@ func NewSpiderResults(numberSteps int, seedEntities *set.Set[string]) *SpiderRes
 	return &results
 }
 
+// HasAtLeastOneConnection returns true if at least two entities are connected.
+func (s *SpiderResults) HasAtLeastOneConnection() (bool, error) {
+	ids, err := s.Subgraph.EntityIds()
+	if err != nil {
+		return false, err
+	}
+
+	for _, id := range ids.ToSlice() {
+		adj, err := s.Subgraph.EntityIdsAdjacentTo(id)
+		if err != nil {
+			return false, err
+		}
+
+		if adj.Len() > 0 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // Equal returns true if the SpiderResults are equal.
 func (s *SpiderResults) Equal(s2 *SpiderResults) (bool, error) {
 

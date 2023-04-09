@@ -3,49 +3,50 @@ package job
 import (
 	"testing"
 
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSpiderJobConfiguration(t *testing.T) {
 	testCases := []struct {
 		numberSteps   int
-		seedEntities  []string
+		seedEntities  *set.Set[string]
 		expected      *SpiderJobConfiguration
 		errorExpected bool
 	}{
 		{
 			numberSteps:   -1,
-			seedEntities:  []string{"e-1"},
+			seedEntities:  set.NewPopulatedSet("e-1"),
 			expected:      nil,
 			errorExpected: true,
 		},
 		{
 			numberSteps:  0,
-			seedEntities: []string{"e-1"},
+			seedEntities: set.NewPopulatedSet("e-1"),
 			expected: &SpiderJobConfiguration{
 				NumberSteps:  0,
-				SeedEntities: []string{"e-1"},
+				SeedEntities: set.NewPopulatedSet("e-1"),
 			},
 			errorExpected: false,
 		},
 		{
 			numberSteps:  0,
-			seedEntities: []string{"e-1", "e-2"},
+			seedEntities: set.NewPopulatedSet("e-1", "e-2"),
 			expected: &SpiderJobConfiguration{
 				NumberSteps:  0,
-				SeedEntities: []string{"e-1", "e-2"},
+				SeedEntities: set.NewPopulatedSet("e-1", "e-2"),
 			},
 			errorExpected: false,
 		},
 		{
 			numberSteps:   0,
-			seedEntities:  []string{"e-1", ""},
+			seedEntities:  set.NewPopulatedSet("e-1", ""),
 			expected:      nil,
 			errorExpected: true,
 		},
 		{
 			numberSteps:   0,
-			seedEntities:  []string{"e-1", " "},
+			seedEntities:  set.NewPopulatedSet("e-1", " "),
 			expected:      nil,
 			errorExpected: true,
 		},
@@ -74,7 +75,7 @@ func TestNewSpiderJob(t *testing.T) {
 			// Invalid config
 			conf: &SpiderJobConfiguration{
 				NumberSteps:  -1,
-				SeedEntities: []string{"e-1"},
+				SeedEntities: set.NewPopulatedSet("e-1"),
 			},
 			errorExpected: true,
 		},
@@ -82,14 +83,14 @@ func TestNewSpiderJob(t *testing.T) {
 			// Invalid config
 			conf: &SpiderJobConfiguration{
 				NumberSteps:  1,
-				SeedEntities: []string{"e-1", ""},
+				SeedEntities: set.NewPopulatedSet("e-1", ""),
 			},
 			errorExpected: true,
 		},
 		{
 			conf: &SpiderJobConfiguration{
 				NumberSteps:  1,
-				SeedEntities: []string{"e-1", "e-2"},
+				SeedEntities: set.NewPopulatedSet("e-1", "e-2"),
 			},
 			errorExpected: false,
 		},
