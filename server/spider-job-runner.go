@@ -17,6 +17,8 @@ var (
 	ErrSpiderChartBuilderIsNil = errors.New("spider chart builder is nil")
 )
 
+const noPathsMessageFromSpidering = "Sorry, no paths could be found by spidering from the seed entities provided."
+
 // A SpiderJobRunner is responsible for spidering and generating an Excel file for i2.
 type SpiderJobRunner struct {
 	spider       *spider.Spider              // Spider engine
@@ -193,7 +195,7 @@ func (j *SpiderJobRunner) setJobToCompleteNoResults(j1 *job.SpiderJob) {
 
 	j1.Progress.EndTime = time.Now()
 	j1.Progress.State = job.CompleteNoResults
-	j1.Message = noPathsMessage
+	j1.Message = noPathsMessageFromSpidering
 
 	j.finishedExecutingJob(j1.GUID)
 }

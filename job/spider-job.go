@@ -10,6 +10,7 @@ import (
 var (
 	ErrInvalidNumberSteps = errors.New("invalid number of steps")
 	ErrNoSeedEntities     = errors.New("no seed entities")
+	ErrSeedEntitiesIsNil  = errors.New("seed entities is nil")
 	ErrConfigIsNil        = errors.New("spider config is nil")
 )
 
@@ -25,6 +26,10 @@ func (s *SpiderJobConfiguration) isValid() error {
 	// Check the number of steps
 	if s.NumberSteps < 0 {
 		return ErrInvalidNumberSteps
+	}
+
+	if s.SeedEntities == nil {
+		return ErrSeedEntitiesIsNil
 	}
 
 	// Check there are seed entities and that each entity ID is valid
