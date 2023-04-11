@@ -94,7 +94,7 @@ func NewSpider(graph graphstore.UnipartiteGraphStore) (*Spider, error) {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Msg("Creating a new path finder")
+		Msg("Creating a new spider engine")
 
 	if graph == nil {
 		return nil, ErrUnipartiteIsNil

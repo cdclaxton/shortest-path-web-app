@@ -18,6 +18,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/job"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/search"
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"golang.org/x/exp/maps"
 )
 
@@ -35,36 +36,64 @@ const (
 	NumberHopsInputName      = "numberHops"      // Name of select box for number of hops
 	DatasetNameInputName     = "datasetName"     // Prefix of the name of the text box for the dataset name
 	DatasetEntitiesInputName = "datasetEntities" // Prefix of the name of the text box containing entity IDs
+	MinimumNumberSteps       = 0                 // Minimum number of steps for spidering
+	MaximumNumberSteps       = 3                 // Maximum number of steps for spidering
+	NumberStepsInputName     = "numberSteps"     // Name of select box for number of steps for spidering
+	SeedEntitiesInputName    = "seedEntities"    // Name of the textbox containing the seed entities
 )
 
 // Locations of the HTML templates
 const (
-	indexTemplateFile         = "templates/index.html"          // Index (landing) page
-	errorTemplateFile         = "templates/error.html"          // For a system error
-	inputProblemTemplateFile  = "templates/input-problem.html"  // For a data error
-	jobNotFoundTemplateFile   = "templates/job-not-found.html"  // For when a job cannot be found
-	processingJobTemplateFile = "templates/processing-job.html" // For during processing
-	jobFailedTemplateFile     = "templates/job-failed.html"     // For a failed job
-	jobNoResultsTemplateFile  = "templates/job-no-results.html" // For a complete job
-	jobResultsTemplateFile    = "templates/job-results.html"    // For a complete job
-	statsTemplateFile         = "templates/stats.html"          // Statistics
-	entityTemplateFile        = "templates/entity.html"         // Entity search
+	indexTemplateFile               = "templates/index.html"                 // Index (landing) page
+	errorTemplateFile               = "templates/error.html"                 // For a system error
+	inputProblemTemplateFile        = "templates/input-problem.html"         // For a data error
+	jobNotFoundTemplateFile         = "templates/job-not-found.html"         // For when a job cannot be found
+	processingJobTemplateFile       = "templates/processing-job.html"        // For during processing
+	jobFailedTemplateFile           = "templates/job-failed.html"            // For a failed job
+	jobNoResultsTemplateFile        = "templates/job-no-results.html"        // For a complete job
+	jobResultsTemplateFile          = "templates/job-results.html"           // For a complete job
+	statsTemplateFile               = "templates/stats.html"                 // Statistics
+	entityTemplateFile              = "templates/entity.html"                // Entity search
+	spiderIndexTemplateFile         = "templates/index-spider.html"          // Index page for spidering
+	spiderInputProblemTemplateFile  = "templates/input-problem-spider.html"  // For a data error
+	spiderJobNotFoundTemplateFile   = "templates/spider-job-not-found.html"  // For when a spider job cannot be found
+	spiderErrorTemplateFile         = "templates/spider-error.html"          // For when a spider job has failed
+	spiderProcessingJobTemplateFile = "templates/spider-processing-job.html" // For when a spider job is processing
+	spiderJobFailedTemplateFile     = "templates/spider-job-failed.html"
+	spiderJobNoResultsTemplateFile  = "templates/spider-job-no-results.html"
+	spiderJobResultsTemplateFile    = "templates/spider-job-results.html"
+)
+
+// Errors that can occur with user-defined datasets
+var (
+	ErrDatasetNoName     = errors.New("dataset has no name")
+	ErrDatasetNoEntities = errors.New("dataset has no entity IDs")
+	ErrNoSeedEntities    = errors.New("no seed entities")
 )
 
 // A JobServer is responsible for providing the HTTP endpoints for running jobs.
 type JobServer struct {
-	runner *JobRunner // Job runner
+	runner       *JobRunner       // Shortest path job runner
+	spiderRunner *SpiderJobRunner // Spider job runner
 
-	indexPage             string            // Parsed index page
-	errorTemplate         *raymond.Template // Template if a system error occurs
-	inputProblemTemplate  *raymond.Template // Template if there is a problem with the user input
-	jobNotFoundTemplate   *raymond.Template // Template if the job couldn't be found
-	processingJobTemplate *raymond.Template // Template whilst the job is processing
-	jobFailedTemplate     *raymond.Template // Template for a failed job
-	jobNoResultsTemplate  *raymond.Template // Template if the job completed and there are no results
-	jobResultsTemplate    *raymond.Template // Template if the job completed and there are results
-	statsTemplate         *raymond.Template // Template for statistics
-	entityTemplate        *raymond.Template // Template for entity search
+	indexPage                   string            // Parsed index page
+	errorTemplate               *raymond.Template // Template if a system error occurs
+	inputProblemTemplate        *raymond.Template // Template if there is a problem with the user input
+	jobNotFoundTemplate         *raymond.Template // Template if the job couldn't be found
+	processingJobTemplate       *raymond.Template // Template whilst the job is processing
+	jobFailedTemplate           *raymond.Template // Template for a failed job
+	jobNoResultsTemplate        *raymond.Template // Template if the job completed and there are no results
+	jobResultsTemplate          *raymond.Template // Template if the job completed and there are results
+	statsTemplate               *raymond.Template // Template for statistics
+	entityTemplate              *raymond.Template // Template for entity search
+	spiderIndexPage             string            // Parsed the index page for spidering
+	spiderInputProblemTemplate  *raymond.Template // Template if there is a problem with the user input for spidering
+	spiderJobNotFoundTemplate   *raymond.Template
+	spiderErrorTemplate         *raymond.Template
+	spiderProcessingJobTemplate *raymond.Template
+	spiderJobFailedTemplate     *raymond.Template
+	spiderJobNoResultsTemplate  *raymond.Template
+	spiderJobResultsTemplate    *raymond.Template
 
 	stats graphbuilder.GraphStats // Graph stats
 }
@@ -109,11 +138,15 @@ func makeIndexPage(templateFile string, message string) (string, error) {
 
 // NewJobServer given the job runner for executing jobs. It will return an error if any of the
 // required HTML templates cannot be located.
-func NewJobServer(runner *JobRunner, indexMessage string, stats graphbuilder.GraphStats) (*JobServer, error) {
+func NewJobServer(runner *JobRunner, spiderRunner *SpiderJobRunner, indexMessage string,
+	stats graphbuilder.GraphStats) (*JobServer, error) {
 
-	// Preconditions
 	if runner == nil {
 		return nil, errors.New("job runner is nil")
+	}
+
+	if spiderRunner == nil {
+		return nil, errors.New("spider job runner is nil")
 	}
 
 	// Read the index template and create a cached version of the page
@@ -168,20 +201,70 @@ func NewJobServer(runner *JobRunner, indexMessage string, stats graphbuilder.Gra
 		return nil, err
 	}
 
+	// Read the index template and create a cached version of the page
+	spiderIndexPage, err := makeIndexPage(spiderIndexTemplateFile, indexMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderInputProblemTemplate, err := readTemplate(spiderInputProblemTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderJobNotFoundTemplate, err := readTemplate(spiderJobNotFoundTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderErrorTemplate, err := readTemplate(spiderErrorTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderProcessingJobTemplate, err := readTemplate(spiderProcessingJobTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderJobFailedTemplate, err := readTemplate(spiderJobFailedTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderJobNoResultsTemplate, err := readTemplate(spiderJobNoResultsTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
+	spiderJobResultsTemplate, err := readTemplate(spiderJobResultsTemplateFile)
+	if err != nil {
+		return nil, err
+	}
+
 	// Return the constructed job server
 	return &JobServer{
-		runner:                runner,
-		indexPage:             indexPage,
-		errorTemplate:         errorTemplate,
-		inputProblemTemplate:  inputProblemTemplate,
-		jobNotFoundTemplate:   jobNotFoundTemplate,
-		processingJobTemplate: processingJobTemplate,
-		jobFailedTemplate:     jobFailedTemplate,
-		jobNoResultsTemplate:  jobNoResultsTemplate,
-		jobResultsTemplate:    jobResultsTemplate,
-		statsTemplate:         statsTemplate,
-		entityTemplate:        entityTemplate,
-		stats:                 stats,
+		runner:                      runner,
+		spiderRunner:                spiderRunner,
+		indexPage:                   indexPage,
+		errorTemplate:               errorTemplate,
+		inputProblemTemplate:        inputProblemTemplate,
+		jobNotFoundTemplate:         jobNotFoundTemplate,
+		processingJobTemplate:       processingJobTemplate,
+		jobFailedTemplate:           jobFailedTemplate,
+		jobNoResultsTemplate:        jobNoResultsTemplate,
+		jobResultsTemplate:          jobResultsTemplate,
+		statsTemplate:               statsTemplate,
+		entityTemplate:              entityTemplate,
+		spiderIndexPage:             spiderIndexPage,
+		spiderInputProblemTemplate:  spiderInputProblemTemplate,
+		spiderJobNotFoundTemplate:   spiderJobNotFoundTemplate,
+		spiderErrorTemplate:         spiderErrorTemplate,
+		spiderProcessingJobTemplate: spiderProcessingJobTemplate,
+		spiderJobFailedTemplate:     spiderJobFailedTemplate,
+		spiderJobNoResultsTemplate:  spiderJobNoResultsTemplate,
+		spiderJobResultsTemplate:    spiderJobResultsTemplate,
+		stats:                       stats,
 	}, nil
 }
 
@@ -230,12 +313,6 @@ func splitEntityIDs(text string) []string {
 
 	return entityIds
 }
-
-// Errors that can occur with user-defined datasets
-var (
-	ErrDatasetNoName     = errors.New("dataset has no name")
-	ErrDatasetNoEntities = errors.New("dataset has no entity IDs")
-)
 
 // parseEntitySet from the HTTP POST form data.
 func parseEntitySet(req *http.Request, index int) (*job.EntitySet, error) {
@@ -630,7 +707,270 @@ func (rh rootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rh.fileServer.ServeHTTP(w, r)
 }
 
+// spider returns the index page for spidering.
+func (j *JobServer) spider(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, j.spiderIndexPage)
+}
+
+// parseNumberOfSteps in the HTTP POST form data.
+func parseNumberOfSteps(req *http.Request) (int, error) {
+
+	// Read the number of steps from the form
+	numberSteps := req.FormValue(NumberStepsInputName)
+
+	if len(numberSteps) == 0 {
+		return 0, errors.New("number of steps is blank")
+	}
+
+	// Convert the string version of the number of steps to an integer
+	value, err := strconv.Atoi(numberSteps)
+	if err != nil {
+		return 0, fmt.Errorf("invalid number of steps: %v", value)
+	}
+
+	// Validate the number of steps
+	if value < MinimumNumberSteps || value > MaximumNumberSteps {
+		return 0, fmt.Errorf("invalid number of steps: %v", value)
+	}
+
+	return value, nil
+}
+
+// parseSeedEntities extracts and parses the seed entities from the HTTP request.
+func parseSeedEntities(req *http.Request) (*set.Set[string], error) {
+
+	if req == nil {
+		return nil, fmt.Errorf("HTTP request is nil")
+	}
+
+	// Extract the entity IDs from the form
+	allEntityIds := req.FormValue(SeedEntitiesInputName)
+	entityIds := splitEntityIDs(allEntityIds)
+
+	// Determine if the seed entities pass a minimum validity test
+	if len(entityIds) == 0 {
+		return nil, ErrNoSeedEntities
+	}
+
+	// Return a set of the entity IDs
+	return set.NewPopulatedSet(entityIds...), nil
+}
+
+// extractSpiderJobConfigurationFromForm extracts, parses and validates the configuration for a job.
+// If the job would not be valid, return an error message that should be meaningful to the user.
+func extractSpiderJobConfigurationFromForm(req *http.Request) (
+	*job.SpiderJobConfiguration, error) {
+
+	if req == nil {
+		return nil, fmt.Errorf("HTTP request is nil")
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, fmt.Errorf("unable to parse form: %v", err)
+	}
+
+	// Parse the number of steps
+	numberSteps, err := parseNumberOfSteps(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid number of steps: %v", err)
+	}
+
+	// Extract the seed entity IDs
+	seedEntities, err := parseSeedEntities(req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse seed entity IDs: %v", err)
+	}
+
+	return &job.SpiderJobConfiguration{
+		NumberSteps:  numberSteps,
+		SeedEntities: seedEntities,
+	}, nil
+}
+
+func (j *JobServer) spiderUpload(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the data from the form
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Handling spider form upload")
+
+	spiderJobConf, err := extractSpiderJobConfigurationFromForm(req)
+
+	// If there was an input configuration error, then show the error on a dedicated page
+	// and return a 400 error
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		page := j.spiderInputProblemTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	// Launch the job and if it fails return a 500 error code
+	guid, err := j.spiderRunner.Submit(spiderJobConf)
+	if err != nil {
+
+		w.WriteHeader(http.StatusInternalServerError)
+
+		page := j.errorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Spider job successfully submitted")
+
+	redirectUrl := fmt.Sprintf("/spider-job/%v", guid)
+	http.Redirect(w, req, redirectUrl, http.StatusFound)
+}
+
+func (j *JobServer) spiderHandleJob(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the guid
+	guid := strings.TrimPrefix(req.URL.Path, "/spider-job/")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Received request at /spider-job")
+
+	// Check if the spider job is finished
+	finished, err := j.spiderRunner.IsJobFinished(guid)
+	if err == ErrJobNotFound {
+		page := j.spiderJobNotFoundTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	if err != nil {
+		page := j.spiderErrorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Str("finished", strconv.FormatBool(finished)).
+		Msg("Spider job completion state")
+
+	if !finished {
+		page := j.spiderProcessingJobTemplate.MustExec(map[string]string{
+			"guid": guid,
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	// If execution reaches this point, then the job is finished
+	// Get the job
+	j1, err := j.spiderRunner.GetJob(guid)
+	if err != nil {
+		page := j.spiderErrorTemplate.MustExec(map[string]string{
+			"reason": err.Error(),
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	if j1.Progress.State == job.Failed {
+
+		page := j.spiderJobFailedTemplate.MustExec(map[string]string{
+			"reason": j1.Error.Error(),
+		})
+		fmt.Fprint(w, page)
+		return
+
+	} else if j1.Progress.State == job.CompleteNoResults {
+
+		page := j.spiderJobNoResultsTemplate.MustExec(map[string]interface{}{
+			"guid": guid,
+		})
+		fmt.Fprint(w, page)
+		return
+
+	} else if j1.Progress.State == job.CompleteResults {
+
+		page := j.spiderJobResultsTemplate.MustExec(map[string]interface{}{
+			"guid": guid,
+		})
+		fmt.Fprint(w, page)
+		return
+	}
+
+	fmt.Fprintf(w, "Something has gone terribly wrong if you can read this")
+}
+
+func (j *JobServer) spiderHandleDownload(w http.ResponseWriter, req *http.Request) {
+
+	// Extract the guid
+	guid := strings.TrimPrefix(req.URL.Path, "/spider-download/")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str(loggingGUIDField, guid).
+		Msg("Received request at /spider-download")
+
+	j1, err := j.spiderRunner.GetJob(guid)
+	if err != nil {
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str(loggingGUIDField, guid).
+			Msg("Spider job not found")
+
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// If the job isn't complete and has results then return an error code
+	if j1.Progress.State != job.CompleteResults {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	file, err := os.Open(j1.ResultFile)
+	defer file.Close()
+
+	if err != nil {
+
+		logging.Logger.Error().
+			Str(logging.ComponentField, componentName).
+			Str(loggingGUIDField, guid).
+			Msg("Failed to read Excel file for spider job")
+
+		page := j.spiderJobFailedTemplate.MustExec(map[string]string{
+			"reason": fmt.Sprintf("Failed to read Excel file for spider job %v", guid),
+		})
+
+		fmt.Fprint(w, page)
+		return
+	}
+
+	// Make the filename
+	filename := "spider-matcher-results.xlsx"
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%v", filename))
+	w.Header().Set("Content-Type", req.Header.Get("Content-Type"))
+	io.Copy(w, file)
+}
+
 func (j *JobServer) Start() {
+
+	// Spidering
+	http.HandleFunc("/spider", j.spider)
+	http.HandleFunc("/spider-upload", j.spiderUpload)
+	http.HandleFunc("/spider-job/", j.spiderHandleJob)
+	http.HandleFunc("/spider-download/", j.spiderHandleDownload)
 
 	// Uploading job configuration
 	http.HandleFunc("/upload", j.handleUpload)
@@ -652,8 +992,6 @@ func (j *JobServer) Start() {
 	if err != nil {
 		logging.Logger.Fatal().Msg("failed to get sub-directory of static")
 	}
-
-	//http.Handle("/", http.FileServer(http.FS(sub)))
 
 	fs := http.FileServer(http.FS(sub))
 	http.Handle("/", NewRootHandler(j.indexPage, fs))

@@ -20,6 +20,16 @@ type SpiderJobConfiguration struct {
 	SeedEntities *set.Set[string] // Seed entities
 }
 
+func (s *SpiderJobConfiguration) Equal(s2 *SpiderJobConfiguration) bool {
+
+	if s2 == nil {
+		return false
+	}
+
+	return s.SeedEntities.Equal(s2.SeedEntities) &&
+		s.NumberSteps == s2.NumberSteps
+}
+
 // isValid returns an error if the spider job configuration is invalid.
 func (s *SpiderJobConfiguration) isValid() error {
 

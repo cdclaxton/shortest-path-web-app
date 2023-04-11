@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html class="govuk-template no-js">
+
+<head>
+    <meta charset="utf-8">
+    <title>Spider Matcher</title>
+    <link rel="stylesheet" href="/govuk-frontend-4.3.1.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0c0c">
+</head>
+
+<body class="govuk-template__body">
+
+    <header class="govuk-header app-header" role="banner" data-module="govuk-header">
+        <div class="govuk-header__container govuk-header__container--full-width">
+            <div class="govuk-header__logo">
+                <a href="/" class="govuk-header__link govuk-header__link--homepage">
+                    <span class="govuk-header__logotype-text">
+                        Spider Matcher
+                    </span>
+                    </span>
+                </a>
+                <strong class="govuk-tag">Alpha</strong>
+            </div>
+        </div>
+    </header>
+
+    <div class="govuk-width-container">
+        <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
+
+            <!-- Header -->
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <h1 class="govuk-heading-xl">Run spidering</h1>
+                </div>
+            </div>
+
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+
+                    <!-- File upload form -->
+                    <div class="govuk-form-group">
+                        <form action="spider-upload" method="post">
+
+                            <!-- Number of hops -->
+                            <fieldset class="govuk-fieldset">
+                                <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                                    <h1 class="govuk-fieldset__heading">
+                                    Number of steps
+                                    </h1>
+                                </legend>
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="datasetName1">
+                                        Number of steps to walk out from each seed entity
+                                    </label>                                       
+                                    <select name="numberSteps" class="govuk-select" id="numberSteps">
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>   
+                                </div>                                  
+                            </fieldset>
+
+                            <div class="govuk-!-padding-bottom-5"></div>
+
+                            <fieldset class="govuk-fieldset">
+                                <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
+                                    <h1 class="govuk-fieldset__heading">
+                                    Seed entities
+                                    </h1>
+                                </legend>
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="seedEntities">
+                                        Entity IDs
+                                    </label>                                     
+                                    <textarea id="seedEntities" class="govuk-textarea" name="seedEntities" rows="4"
+                                    placeholder=""></textarea>
+                                </div> 
+                                                                      
+                            </fieldset>
+
+                            <input type="submit" class="govuk-button" data-module="govuk-button" />
+                        </form>
+                    </div>
+
+                </div>
+                <div class="govuk-grid-column-one-third">
+
+                    <!-- Message -->
+                    <div class="govuk-inset-text">
+                        <p>{{{ message }}}</p>
+                    </div>
+
+                    <!-- Instructions -->
+                    <details class="govuk-details" data-module="govuk-details">
+                        <summary class="govuk-details__summary">
+                          <span class="govuk-details__summary-text">
+                            Instructions
+                          </span>
+                        </summary>
+                        <div class="govuk-details__text">
+                          
+                            <!-- Helpful note for user -->
+                            <div class="govuk-body">
+                                <p>Entity IDs can be separated by any combination of newlines, spaces, commas, semicolons or tabs.</p>
+                                <p>This tool creates an Excel file that can be imported into i2.</p>
+                            </div>                            
+                        </div>
+                    </details>                    
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+</body>
+
+</html>

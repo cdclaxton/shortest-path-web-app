@@ -3,7 +3,6 @@ package i2chart
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -156,7 +155,6 @@ func makeEntityForI2(bipartite graphstore.BipartiteGraphStore, entityId string,
 	if !found {
 		entityLabel = config.UnknownEntityTypeLabel
 	} else {
-		fmt.Println(entity.Attributes)
 		entityLabel, err = Substitute(entityTypeConfig.Label, entity.Attributes,
 			config.MissingAttribute)
 		if err != nil {

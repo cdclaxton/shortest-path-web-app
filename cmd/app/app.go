@@ -11,6 +11,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/search"
 	"github.com/cdclaxton/shortest-path-web-app/server"
+	"github.com/cdclaxton/shortest-path-web-app/spider"
 )
 
 // Component name used in logging
@@ -42,6 +43,7 @@ func main() {
 	// Get the config path and the i2 config path
 	dataConfigPath := flag.String("data", "data-config.json", "Path to the config.json file")
 	i2ConfigPath := flag.String("i2", "i2-config.json", "Path to the i2 config.json file")
+	i2SpiderConfigPath := flag.String("i2spider", "i2-spider-config.json", "Path to the i2 spider config.json file")
 	chartFolder := flag.String("folder", "./chartFolder", "Folder for storing generated charts")
 	messagePath := flag.String("message", "message.html", "Path to message to show on index page")
 
@@ -56,6 +58,11 @@ func main() {
 		Str(logging.ComponentField, componentName).
 		Str("filepath", *i2ConfigPath).
 		Msg("i2 config filepath")
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("filepath", *i2ConfigPath).
+		Msg("i2 spider config filepath")
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
@@ -94,8 +101,18 @@ func main() {
 			Msg("Failed to create chart builder")
 	}
 
-	// Set the bipartite graph in the i2 chart builder
+	// Create the i2 spider chart builder
+	spiderChartBuilder, err := i2chart.NewSpiderChartBuilder(*i2SpiderConfigPath)
+	if err != nil {
+		logging.Logger.Fatal().
+			Str(logging.ComponentField, componentName).
+			Err(err).
+			Msg("Failed to create spider chart builder")
+	}
+
+	// Set the bipartite graph in the i2 chart builders
 	chartBuilder.SetBipartite(builder.Bipartite)
+	spiderChartBuilder.SetBipartite(builder.Bipartite)
 
 	// Instantiate the path finder
 	pathFinder, err := bfs.NewPathFinder(builder.Unipartite)
@@ -104,6 +121,15 @@ func main() {
 			Str(logging.ComponentField, componentName).
 			Err(err).
 			Msg("Failed to create path finder")
+	}
+
+	// Instantiate the spider matcher
+	spider, err := spider.NewSpider(builder.Unipartite)
+	if err != nil {
+		logging.Logger.Fatal().
+			Str(logging.ComponentField, componentName).
+			Err(err).
+			Msg("Failed to create spider engine")
 	}
 
 	// Create the search engine
@@ -124,8 +150,17 @@ func main() {
 			Msg("Failed to create job runner")
 	}
 
+	// Create the spider job runner
+	spiderJobRunner, err := server.NewSpiderJobRunner(spider, spiderChartBuilder, *chartFolder)
+	if err != nil {
+		logging.Logger.Fatal().
+			Str(logging.ComponentField, componentName).
+			Err(err).
+			Msg("Failed to create spider job runner")
+	}
+
 	// Create the job server
-	jobServer, err := server.NewJobServer(runner, msg, builder.Stats)
+	jobServer, err := server.NewJobServer(runner, spiderJobRunner, msg, builder.Stats)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).

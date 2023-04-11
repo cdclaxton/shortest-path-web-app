@@ -88,7 +88,7 @@ func checkJob(t *testing.T, j1 *job.Job,
 }
 
 func TestSubmitJob(t *testing.T) {
-	runner := makeJobRunner(t)
+	runner, _ := makeJobRunner(t)
 	defer cleanUpJobRunner(t, runner)
 
 	// Try to get a job that doesn't exist

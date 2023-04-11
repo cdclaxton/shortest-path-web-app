@@ -10,16 +10,18 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
 	"github.com/cdclaxton/shortest-path-web-app/i2chart"
 	"github.com/cdclaxton/shortest-path-web-app/search"
+	"github.com/cdclaxton/shortest-path-web-app/spider"
 	"github.com/stretchr/testify/assert"
 )
 
 // makeJobRunner for testing purposes that is configured to be able to run
 // jobs successfully. Ensure cleanUpJobRunner() is called after testing is complete.
-func makeJobRunner(t *testing.T) *JobRunner {
+func makeJobRunner(t *testing.T) (*JobRunner, *SpiderJobRunner) {
 
 	folder := "../test-data-sets/set-1/"
 	dataConfigFilepath := path.Join(folder, "data-config.json")
 	i2ConfigFilepath := path.Join(folder, "i2-config.json")
+	spiderI2ConfigFilepath := path.Join(folder, "i2-spider-config.json")
 
 	// Build and load the graphs
 	builder, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
@@ -49,7 +51,17 @@ func makeJobRunner(t *testing.T) *JobRunner {
 	runner, err := NewJobRunner(pathFinder, chartBuilder, tempFolder, searchEngine)
 	assert.NoError(t, err)
 
-	return runner
+	// Make a spider job runner
+	spider, err := spider.NewSpider(builder.Unipartite)
+	assert.NoError(t, err)
+
+	spiderChartBuilder, err := i2chart.NewSpiderChartBuilder(spiderI2ConfigFilepath)
+	assert.NoError(t, err)
+	spiderChartBuilder.SetBipartite(builder.Bipartite)
+
+	spiderJobRunner, err := NewSpiderJobRunner(spider, spiderChartBuilder, tempFolder)
+
+	return runner, spiderJobRunner
 }
 
 // cleanUpJobRunner removes the runner folder.

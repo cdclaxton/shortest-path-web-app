@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html class="govuk-template no-js">
+    <head>
+        <meta charset="utf-8">
+        <title>Spider Matcher</title>
+        <link rel="stylesheet" href="/govuk-frontend-4.3.1.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#0b0c0c">
+    </head>
+
+    <body class="govuk-template__body">
+
+        <header class="govuk-header app-header" role="banner" data-module="govuk-header">
+            <div class="govuk-header__container govuk-header__container--full-width">
+              <div class="govuk-header__logo">
+                <a href="/" class="govuk-header__link govuk-header__link--homepage">
+                    <span class="govuk-header__logotype-text">
+                        Spider Matcher
+                    </span>
+                  </span>
+                </a>
+                  <strong class="govuk-tag">Alpha</strong>
+              </div>
+            </div>
+        </header>
+
+        <div class="govuk-width-container ">
+            <main class="govuk-main-wrapper govuk-main-wrapper--auto-spacing" id="main-content" role="main">
+                <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-two-thirds">
+                        <h1 class="govuk-heading-xl">Spider job failed</h1>
+          
+                        <!-- Helpful note for user -->
+                        <div class="govuk-body">
+                            <p>Unfortunately, the spider job failed.</p>
+                            <p>Error message: {{ reason }}</p>
+                        </div>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </body>
+</html>

@@ -15,4 +15,4 @@ else
 fi
 
 # Run the web-app
-./web-app -data=./test-data-sets/$SET/data-config.json -i2=./test-data-sets/$SET/i2-config.json -folder=${OUTPUT_FOLDER} -message=./test-data-sets/$SET/message.html
+./web-app -data=./test-data-sets/$SET/data-config.json -i2=./test-data-sets/$SET/i2-config.json -i2spider=./test-data-sets/$SET/i2-spider-config.json -folder=${OUTPUT_FOLDER} -message=./test-data-sets/$SET/message.html
