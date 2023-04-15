@@ -13,6 +13,9 @@ documents. The code collapses the bipartite graph to a unipartite graph for sear
 reasons. For example, a pair of authors could write a number of papers together, but the
 connectivity of the authors is more important than the papers themselves.
 
+The web-app also contains functionality to grow a network from a set of seed entities. The result is
+an Excel file that can also be imported into a visualisation tool.
+
 A simple bipartite graph is shown below.
 
 ![](./images/bipartite.png)
@@ -51,6 +54,8 @@ To generate an i2 chart, set:
 - `Maximum number of hops from one entity to another`: 2
 - `Dataset 1`: Test
 - `Entity IDs`: e-1, e-4
+
+To access functionality to grow a graph from a set of seed entities: http://localhost:8090/spider.
 
 ## Input data
 
@@ -324,6 +329,8 @@ with simple test data:
 docker compose build
 docker compose up
 ```
+
+The web-app can be accessed from http://192.168.99.100:8090
 
 ## Running behind an Apache HTTPD reverse proxy
 
