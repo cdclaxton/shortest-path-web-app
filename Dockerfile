@@ -37,4 +37,4 @@ COPY --from=build /app/web-app .
 EXPOSE 8090
 
 # Set the executable to run when the container runs
-ENTRYPOINT [ "./web-app", "-data=/data/data-config.json", "-i2=/data/i2-config.json", "-folder=/data/chartFolder", "-message=/data/message.html"]
+ENTRYPOINT [ "./web-app", "-data=/data/data-config.json", "-i2=/data/i2-config.json", "-i2spider=/data/i2-spider-config.json", "-folder=/data/chartFolder", "-message=/data/message.html"]
