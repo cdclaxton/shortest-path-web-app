@@ -74,7 +74,8 @@ func main() {
 		Str("filepath", *messagePath).
 		Msg("index page message path")
 
-	// Load the message
+	// Read the message to present on the frontend
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Reading message")
 	msg, err := readMessage(*messagePath)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -84,6 +85,7 @@ func main() {
 	}
 
 	// Create the bipartite and unipartite graphs
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Creating bipartite and unipartite graphs")
 	builder, err := graphbuilder.NewGraphBuilderFromJson(*dataConfigPath)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -93,6 +95,7 @@ func main() {
 	}
 
 	// Create the i2 chart builder
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making i2 chart builder")
 	chartBuilder, err := i2chart.NewI2ChartBuilder(*i2ConfigPath)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -102,6 +105,7 @@ func main() {
 	}
 
 	// Create the i2 spider chart builder
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making i2 spider chart builder")
 	spiderChartBuilder, err := i2chart.NewSpiderChartBuilder(*i2SpiderConfigPath)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -111,10 +115,12 @@ func main() {
 	}
 
 	// Set the bipartite graph in the i2 chart builders
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Setting bipartite graph in chart builders")
 	chartBuilder.SetBipartite(builder.Bipartite)
 	spiderChartBuilder.SetBipartite(builder.Bipartite)
 
 	// Instantiate the path finder
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Instantiating a path finder")
 	pathFinder, err := bfs.NewPathFinder(builder.Unipartite)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -124,6 +130,7 @@ func main() {
 	}
 
 	// Instantiate the spider matcher
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Instantiating a spider matcher")
 	spider, err := spider.NewSpider(builder.Unipartite)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -133,6 +140,7 @@ func main() {
 	}
 
 	// Create the search engine
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making entity search engine")
 	searchEngine, err := search.NewEntitySearch(builder.Bipartite, builder.Unipartite)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -142,6 +150,7 @@ func main() {
 	}
 
 	// Create the job runner
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making job runner")
 	runner, err := server.NewJobRunner(pathFinder, chartBuilder, *chartFolder, searchEngine)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -151,6 +160,7 @@ func main() {
 	}
 
 	// Create the spider job runner
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making spider job runner")
 	spiderJobRunner, err := server.NewSpiderJobRunner(spider, spiderChartBuilder, *chartFolder)
 	if err != nil {
 		logging.Logger.Fatal().
@@ -160,6 +170,7 @@ func main() {
 	}
 
 	// Create the job server
+	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making job server")
 	jobServer, err := server.NewJobServer(runner, spiderJobRunner, msg, builder.Stats)
 	if err != nil {
 		logging.Logger.Fatal().
