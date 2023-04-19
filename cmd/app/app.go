@@ -61,7 +61,7 @@ func main() {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("filepath", *i2ConfigPath).
+		Str("filepath", *i2SpiderConfigPath).
 		Msg("i2 spider config filepath")
 
 	logging.Logger.Info().
