@@ -38,7 +38,28 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 		return err
 	}
 
+	// Get the total number of documents to process
+	numberDocsProcessed := 0
+	totalDocs, err := bi.NumberOfDocuments()
+	if err != nil {
+		return err
+	}
+
 	for it.hasNext() {
+
+		numberDocsProcessed += 1
+
+		// Log progress
+		if numberDocsProcessed%10000 == 0 {
+			percentageComplete := (1.0 * float64(numberDocsProcessed)) / (float64(totalDocs) * 1.0) * 100.0
+
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("numberDocsRead", fmt.Sprint(numberDocsProcessed)).
+				Str("totalDocsToRead", fmt.Sprint(totalDocs)).
+				Str("percentageComplete", fmt.Sprint(percentageComplete)).
+				Msg("Building unipartite graph")
+		}
 
 		// Get the next document ID from the iterator
 		docId, err := it.nextDocumentId()
