@@ -317,7 +317,13 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		Str(logging.ComponentField, componentName).
 		Msg("Converting the bipartite graph to a unipartite graph")
 
+	startTime = time.Now()
 	graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities)
+	unipartiteTimeTaken := time.Now().Sub(startTime)
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("timeTaken", unipartiteTimeTaken.String()).
+		Msg("Time taken to perform bipartite to unipartite conversion")
 
 	// Calculate graph stats
 	logging.Logger.Info().
