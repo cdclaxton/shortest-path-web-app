@@ -61,5 +61,5 @@
     "unipartiteGraphConfig": {
         "type": "memory"
     },
-    "ignoreInvalidLinks": false
+    "ignoreInvalidLinks": true
 }

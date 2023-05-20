@@ -177,7 +177,10 @@ func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) erro
 				logging.Logger.Info().
 					Str(logging.ComponentField, componentName).
 					Str("filepath", file.Path).
-					Err(err).Msg("Gracefully handling error with link")
+					Str("entityId", link.EntityId).
+					Str("documentId", link.DocumentId).
+					Str("message", err.Error()).
+					Msg("Gracefully handling error with link")
 			}
 		}
 	}
