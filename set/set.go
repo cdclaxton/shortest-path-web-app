@@ -108,10 +108,12 @@ func (s *Set[T]) String() string {
 // due to the conversion. This could be improved by changing the implementation to
 // an iterator.
 func (s *Set[T]) ToSlice() []T {
-	ret := []T{}
+	ret := make([]T, len(s.Values), len(s.Values))
 
+	i := 0
 	for key := range s.Values {
-		ret = append(ret, key)
+		ret[i] = key
+		i += 1
 	}
 
 	return ret
