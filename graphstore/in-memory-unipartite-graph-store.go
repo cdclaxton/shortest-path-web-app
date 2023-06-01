@@ -2,12 +2,15 @@ package graphstore
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
 
+// InMemoryUnipartiteGraphStore is a thread-safe in-memory unipartite graph store.
 type InMemoryUnipartiteGraphStore struct {
+	mu       sync.RWMutex
 	vertices map[string]*set.Set[string]
 }
 
@@ -29,7 +32,9 @@ func (graph *InMemoryUnipartiteGraphStore) AddEntity(entity string) error {
 
 	// If the entity hasn't been seen before, add it to the graph
 	if found, _ := graph.HasEntity(entity); !found {
+		graph.mu.Lock()
 		graph.vertices[entity] = set.NewSet[string]()
+		graph.mu.Unlock()
 	}
 
 	return nil
@@ -57,8 +62,10 @@ func (graph *InMemoryUnipartiteGraphStore) AddDirected(src string, dst string) e
 	graph.AddEntity(src)
 
 	// Add the connection from the source to the destination
+	graph.mu.Lock()
 	x := graph.vertices[src]
 	x.Add(dst)
+	graph.mu.Unlock()
 
 	return nil
 }
@@ -86,7 +93,10 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 		Str(logging.ComponentField, componentName).
 		Msg("Clearing the in-memory unipartite graph store")
 
+	graph.mu.Lock()
 	graph.vertices = map[string]*set.Set[string]{}
+	graph.mu.Unlock()
+
 	return nil
 }
 
@@ -123,7 +133,11 @@ func (graph *InMemoryUnipartiteGraphStore) EdgeExists(entity1 string, entity2 st
 	}
 
 	// Both entities exist, so is there an edge between them?
-	return graph.vertices[entity1].Has(entity2), nil
+	graph.mu.RLock()
+	edgeExists := graph.vertices[entity1].Has(entity2)
+	graph.mu.RUnlock()
+
+	return edgeExists, nil
 }
 
 // EntityIdsAdjacentTo a given vertex with a given entity ID.
@@ -135,7 +149,9 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) 
 		return nil, err
 	}
 
+	graph.mu.RLock()
 	entityIds, found := graph.vertices[entityId]
+	graph.mu.RUnlock()
 
 	if !found {
 		return nil, fmt.Errorf("entity ID not found: %v", entityId)
@@ -149,9 +165,11 @@ func (graph *InMemoryUnipartiteGraphStore) EntityIds() (*set.Set[string], error)
 
 	ids := set.NewSet[string]()
 
+	graph.mu.RLock()
 	for id := range graph.vertices {
 		ids.Add(id)
 	}
+	graph.mu.RUnlock()
 
 	return ids, nil
 }
@@ -165,7 +183,10 @@ func (graph *InMemoryUnipartiteGraphStore) HasEntity(id string) (bool, error) {
 		return false, err
 	}
 
+	graph.mu.RLock()
 	_, found := graph.vertices[id]
+	graph.mu.RUnlock()
+
 	return found, nil
 }
 
@@ -174,5 +195,9 @@ func (graph *InMemoryUnipartiteGraphStore) NumberEntities() (int, error) {
 
 	// The graph is always used in undirected mode, so it's valid to just
 	// count the number of source entities
-	return len(graph.vertices), nil
+	graph.mu.RLock()
+	n := len(graph.vertices)
+	graph.mu.RUnlock()
+
+	return n, nil
 }

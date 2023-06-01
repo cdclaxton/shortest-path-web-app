@@ -1,10 +1,17 @@
 package graphstore
 
+import "sync"
+
+// InMemoryBipartiteGraphStore holds a bipartite graph of entities and documents in memory.
 type InMemoryBipartiteGraphStore struct {
-	entities  map[string]Entity   // Entity ID to Entity mapping
-	documents map[string]Document // Document ID to Document mapping
+	muEntities sync.RWMutex      // Mutex for the entities
+	entities   map[string]Entity // Entity ID to Entity mapping
+
+	muDocuments sync.RWMutex        // Mutex for the documents
+	documents   map[string]Document // Document ID to Document mapping
 }
 
+// NewInMemoryBipartiteGraphStore creates a new in-memory bipartite graph store.
 func NewInMemoryBipartiteGraphStore() *InMemoryBipartiteGraphStore {
 	return &InMemoryBipartiteGraphStore{
 		entities:  map[string]Entity{},
@@ -22,7 +29,10 @@ func (store *InMemoryBipartiteGraphStore) AddEntity(entity Entity) error {
 	}
 
 	// Store the entity against its entity ID
+	store.muEntities.Lock()
 	store.entities[entity.Id] = entity
+	store.muEntities.Unlock()
+
 	return nil
 }
 
@@ -36,7 +46,10 @@ func (store *InMemoryBipartiteGraphStore) AddDocument(document Document) error {
 	}
 
 	// Store the document against its ID
+	store.muDocuments.Lock()
 	store.documents[document.Id] = document
+	store.muDocuments.Unlock()
+
 	return nil
 }
 
@@ -54,7 +67,9 @@ func (store *InMemoryBipartiteGraphStore) GetEntity(entityId string) (*Entity, e
 		return nil, ErrEntityIdIsEmpty
 	}
 
+	store.muEntities.RLock()
 	entity, found := store.entities[entityId]
+	store.muEntities.RUnlock()
 
 	if found {
 		return &entity, nil
@@ -71,7 +86,9 @@ func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) (*Docum
 		return nil, ErrDocumentIdIsEmpty
 	}
 
+	store.muDocuments.RLock()
 	document, found := store.documents[documentId]
+	store.muDocuments.RUnlock()
 
 	if found {
 		return &document, nil
@@ -82,7 +99,7 @@ func (store *InMemoryBipartiteGraphStore) GetDocument(documentId string) (*Docum
 // AddLink from an entity to a document.
 func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 
-	// Preconditions
+	// Ensure the entity ID and document ID are valid
 	err := ValidateEntityId(link.EntityId)
 	if err != nil {
 		return ErrEntityIdIsEmpty
@@ -93,21 +110,21 @@ func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 		return ErrDocumentIdIsEmpty
 	}
 
-	// Get the entity from the store
-	entity, err := store.GetEntity(link.EntityId)
-	if err != nil {
-		return err
-	}
-	if entity == nil {
+	// Get locks
+	store.muEntities.Lock()
+	store.muDocuments.Lock()
+	defer store.muDocuments.Unlock()
+	defer store.muEntities.Unlock()
+
+	// Try to get the entity from the store
+	entity, found := store.entities[link.EntityId]
+	if !found {
 		return ErrEntityNotFound
 	}
 
-	// Get the document from the store
-	document, err := store.GetDocument(link.DocumentId)
-	if err != nil {
-		return err
-	}
-	if document == nil {
+	// Try to get the document from the store
+	document, found := store.documents[link.DocumentId]
+	if !found {
 		return ErrDocumentNotFound
 	}
 
@@ -120,19 +137,35 @@ func (store *InMemoryBipartiteGraphStore) AddLink(link Link) error {
 
 // NumberOfEntities in the graph store.
 func (store *InMemoryBipartiteGraphStore) NumberOfEntities() (int, error) {
-	return len(store.entities), nil
+
+	store.muEntities.RLock()
+	n := len(store.entities)
+	store.muEntities.RUnlock()
+
+	return n, nil
 }
 
 // NumberOfDocuments in the graph store.
 func (store *InMemoryBipartiteGraphStore) NumberOfDocuments() (int, error) {
-	return len(store.documents), nil
+
+	store.muDocuments.RLock()
+	n := len(store.documents)
+	store.muDocuments.RUnlock()
+
+	return n, nil
 }
 
 // Clear the store.
 func (store *InMemoryBipartiteGraphStore) Clear() error {
 
+	store.muEntities.Lock()
+	store.muDocuments.Lock()
+
 	store.entities = map[string]Entity{}
 	store.documents = map[string]Document{}
+
+	store.muDocuments.Unlock()
+	store.muEntities.Unlock()
 
 	return nil
 }
