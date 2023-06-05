@@ -65,5 +65,8 @@
         "folder": "/pebble/unipartite",
         "deleteFilesInFolder": true
     },
-    "ignoreInvalidLinks": false
+    "ignoreInvalidLinks": false,
+    "numEntityWorkers": 2,
+    "numDocumentWorkers": 2,
+    "numLinkWorkers": 2
 }
