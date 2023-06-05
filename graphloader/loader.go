@@ -1,16 +1,26 @@
 package graphloader
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 )
 
 const componentName = "graphLoader"
+
+var (
+	ErrInvalidNumberEntityWorkers   = errors.New("invalid number of entity file workers")
+	ErrInvalidNumberDocumentWorkers = errors.New("invalid number of document file workers")
+	ErrInvalidNumberLinkWorkers     = errors.New("invalid number of link file workers")
+	ErrEmptyDelimiter               = errors.New("empty delimiter")
+	ErrInvalidDelimiter             = errors.New("invalid delimiter")
+)
 
 // A GraphStoreLoaderFromCsv loads a bipartite graph store from entity, document and link CSV files.
 type GraphStoreLoaderFromCsv struct {
@@ -19,6 +29,9 @@ type GraphStoreLoaderFromCsv struct {
 	documentFiles      []DocumentsCsvFile
 	linkFiles          []LinksCsvFile
 	ignoreInvalidLinks bool // Ignore links that cannot be created, e.g. due to missing entity or document
+	numEntityWorkers   int  // Number of entity file workers
+	numDocumentWorkers int  // Number of document file workers
+	numLinkWorkers     int  // Number of link file workers
 }
 
 // NewGraphStoreLoaderFromCsv constructs a graph store loader that reads CSV files.
@@ -26,7 +39,8 @@ func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 	entityFiles []EntitiesCsvFile,
 	documentFiles []DocumentsCsvFile,
 	linkFiles []LinksCsvFile,
-	ignoreInvalidLinks bool) *GraphStoreLoaderFromCsv {
+	ignoreInvalidLinks bool,
+	numEntityWorkers int, numDocumentWorkers int, numLinkWorkers int) *GraphStoreLoaderFromCsv {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
@@ -34,6 +48,9 @@ func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 		Str("numberOfDocumentFiles", strconv.Itoa(len(documentFiles))).
 		Str("numberOfLinksFiles", strconv.Itoa(len(linkFiles))).
 		Str("ignoreInvalidLinks", strconv.FormatBool(ignoreInvalidLinks)).
+		Str("numberOfEntityWorkers", strconv.Itoa(numEntityWorkers)).
+		Str("numberOfDocumentWorkers", strconv.Itoa(numDocumentWorkers)).
+		Str("numberOfLinkWorkers", strconv.Itoa(numLinkWorkers)).
 		Msg("Creating a bipartite graph store loader")
 
 	return &GraphStoreLoaderFromCsv{
@@ -42,19 +59,132 @@ func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 		documentFiles:      documentFiles,
 		linkFiles:          linkFiles,
 		ignoreInvalidLinks: ignoreInvalidLinks,
+		numEntityWorkers:   numEntityWorkers,
+		numDocumentWorkers: numDocumentWorkers,
+		numLinkWorkers:     numLinkWorkers,
 	}
 }
 
-// loadEntitiesFromFile into the graph store from a CSV file.
-func (loader *GraphStoreLoaderFromCsv) loadEntitiesFromFile(file EntitiesCsvFile) error {
+// Load the bipartite graph store from CSV files.
+func (loader *GraphStoreLoaderFromCsv) Load() error {
 
-	logging.Logger.Info().
-		Str(logging.ComponentField, componentName).
-		Str("filepath", file.Path).
-		Msg("Reading entities CSV file")
+	// Check the number of workers
+	if loader.numEntityWorkers <= 0 {
+		return ErrInvalidNumberEntityWorkers
+	}
+
+	if loader.numDocumentWorkers <= 0 {
+		return ErrInvalidNumberDocumentWorkers
+	}
+
+	if loader.numLinkWorkers <= 0 {
+		return ErrInvalidNumberLinkWorkers
+	}
+
+	// Make a context that allows workers to detect that all jobs must cease
+	ctx := context.Background()
+	ctx, cancelCtx := context.WithCancel(ctx)
+
+	// Put the entity files to load on a channel
+	entityFilesChan := entityFilesChannel(loader.entityFiles)
+	close(entityFilesChan)
+
+	// Put the document files to load onto a channel
+	documentFilesChan := documentFilesChannel(loader.documentFiles)
+	close(documentFilesChan)
+
+	// Put the links files to load onto a channel
+	linkFileChan := linkFilesChannel(loader.linkFiles)
+	close(linkFileChan)
+
+	// Make a channel to hold errors from the goroutines. The worse case situation is that
+	// every worker fails simultaneously, so a buffered channel is required
+	errChan := make(chan error, loader.numEntityWorkers+loader.numDocumentWorkers+loader.numLinkWorkers)
+
+	var wg sync.WaitGroup
+
+	// Run the entity file loader workers
+	for i := 0; i < loader.numEntityWorkers; i++ {
+		wg.Add(1)
+		go entityWorker(ctx, cancelCtx, i, entityFilesChan, errChan, &wg, loader.graphStore)
+	}
+
+	// Run the document file loader workers
+	for i := 0; i < loader.numDocumentWorkers; i++ {
+		wg.Add(1)
+		go documentWorker(ctx, cancelCtx, i, documentFilesChan, errChan, &wg, loader.graphStore)
+	}
+
+	// Wait until all the entity and document workers have completed
+	wg.Wait()
+
+	// Extract the first error from the error channel
+	err := takeFirstErrorFromChannel(errChan)
+	if err != nil {
+		return err
+	}
+
+	// Run the link file loader workers
+	for i := 0; i < loader.numLinkWorkers; i++ {
+		wg.Add(1)
+		go linkWorker(ctx, cancelCtx, i, linkFileChan, errChan, &wg, loader.graphStore, loader.ignoreInvalidLinks)
+	}
+
+	// Wait until the link workers have completed
+	wg.Wait()
+
+	// Extract the first error from the error channel
+	return takeFirstErrorFromChannel(errChan)
+}
+
+// takeFirstErrorFromChannel returns the first error from the error channel.
+func takeFirstErrorFromChannel(errChan <-chan error) error {
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+// entityFilesChannel creates a populated, buffered channel of entity files.
+func entityFilesChannel(files []EntitiesCsvFile) chan EntitiesCsvFile {
+	c := make(chan EntitiesCsvFile, len(files))
+
+	for _, file := range files {
+		c <- file
+	}
+
+	return c
+}
+
+// documentFilesChannel creates a populated, buffered channel of document files.
+func documentFilesChannel(files []DocumentsCsvFile) chan DocumentsCsvFile {
+	c := make(chan DocumentsCsvFile, len(files))
+
+	for _, file := range files {
+		c <- file
+	}
+
+	return c
+}
+
+// linkFilesChannel creates a populated, buffered channel of links files.
+func linkFilesChannel(files []LinksCsvFile) chan LinksCsvFile {
+	c := make(chan LinksCsvFile, len(files))
+
+	for _, file := range files {
+		c <- file
+	}
+
+	return c
+}
+
+// loadEntitiesFromFile loads the entities in the CSV file into the bipartite graph store.
+func loadEntitiesFromFile(entityFile EntitiesCsvFile, graphStore graphstore.BipartiteGraphStore) error {
 
 	// Create an entities CSV file reader
-	reader := NewEntitiesCsvFileReader(file)
+	reader := NewEntitiesCsvFileReader(entityFile)
 
 	// Initialise the CSV reader
 	err := reader.Initialise()
@@ -70,7 +200,7 @@ func (loader *GraphStoreLoaderFromCsv) loadEntitiesFromFile(file EntitiesCsvFile
 			return err
 		}
 
-		if err := loader.graphStore.AddEntity(entity); err != nil {
+		if err := graphStore.AddEntity(entity); err != nil {
 			return err
 		}
 	}
@@ -78,29 +208,50 @@ func (loader *GraphStoreLoaderFromCsv) loadEntitiesFromFile(file EntitiesCsvFile
 	return reader.Close()
 }
 
-// loadEntities from each of the CSV files.
-func (loader *GraphStoreLoaderFromCsv) loadEntities() error {
+// entityWorker is a worker that receives entity file jobs to run.
+func entityWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int,
+	entityFilesChan <-chan EntitiesCsvFile, errChan chan<- error,
+	wg *sync.WaitGroup, graphStore graphstore.BipartiteGraphStore) {
 
-	for _, file := range loader.entityFiles {
-		err := loader.loadEntitiesFromFile(file)
+	defer wg.Done()
+
+	for entityFile := range entityFilesChan {
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("entity worker", strconv.Itoa(workerIdx)).
+			Str("filepath", entityFile.Path).
+			Msg("Entity file job received by worker")
+
+		// Check to see if the worker should prematurely end
+		select {
+		case <-ctx.Done():
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("entity worker", strconv.Itoa(workerIdx)).
+				Msg("Entity worker shutting down")
+			return
+		default:
+		}
+
+		err := loadEntitiesFromFile(entityFile, graphStore)
 		if err != nil {
-			return err
+			logging.Logger.Error().
+				Str(logging.ComponentField, componentName).
+				Str("entity worker", strconv.Itoa(workerIdx)).
+				Err(err).
+				Msg("Entity worker has encountered an error")
+			errChan <- err
+			cancelCtx()
 		}
 	}
-
-	return nil
 }
 
-// loadEntitiesFromFile into the graph store from a CSV file.
-func (loader *GraphStoreLoaderFromCsv) loadDocumentsFromFile(file DocumentsCsvFile) error {
-
-	logging.Logger.Info().
-		Str(logging.ComponentField, componentName).
-		Str("filepath", file.Path).
-		Msg("Reading documents CSV file")
+// loadDocumentsFromFile loads the documents in the CSV file into the bipartite graph store.
+func loadDocumentsFromFile(documentFile DocumentsCsvFile, graphStore graphstore.BipartiteGraphStore) error {
 
 	// Create a documents CSV file reader
-	reader := NewDocumentsCsvFileReader(file)
+	reader := NewDocumentsCsvFileReader(documentFile)
 
 	// Initialise the CSV reader
 	err := reader.Initialise()
@@ -116,7 +267,7 @@ func (loader *GraphStoreLoaderFromCsv) loadDocumentsFromFile(file DocumentsCsvFi
 			return err
 		}
 
-		if err := loader.graphStore.AddDocument(document); err != nil {
+		if err := graphStore.AddDocument(document); err != nil {
 			return err
 		}
 	}
@@ -124,29 +275,46 @@ func (loader *GraphStoreLoaderFromCsv) loadDocumentsFromFile(file DocumentsCsvFi
 	return reader.Close()
 }
 
-// loadDocuments from each of the CSV files.
-func (loader *GraphStoreLoaderFromCsv) loadDocuments() error {
+// documentWorker is a worker that receives document file jobs to run.
+func documentWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int,
+	documentFilesChan <-chan DocumentsCsvFile, errChan chan<- error,
+	wg *sync.WaitGroup, graphStore graphstore.BipartiteGraphStore) {
 
-	for _, file := range loader.documentFiles {
-		err := loader.loadDocumentsFromFile(file)
+	defer wg.Done()
+
+	for documentFile := range documentFilesChan {
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("document worker", strconv.Itoa(workerIdx)).
+			Str("filepath", documentFile.Path).
+			Msg("Document file job received by worker")
+
+		// Check to see if the worker should prematurely end
+		select {
+		case <-ctx.Done():
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("document worker", strconv.Itoa(workerIdx)).
+				Msg("Document worker shutting down")
+			return
+		default:
+		}
+
+		err := loadDocumentsFromFile(documentFile, graphStore)
 		if err != nil {
-			return err
+			errChan <- err
+			cancelCtx()
 		}
 	}
-
-	return nil
 }
 
-// loadLinksFromFile into the graph store from a CSV file.
-func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) error {
-
-	logging.Logger.Info().
-		Str(logging.ComponentField, componentName).
-		Str("filepath", file.Path).
-		Msg("Reading links CSV file")
+// loadLinksFromFile loads the links in the CSV file into the bipartite graph store.
+func loadLinksFromFile(linkFile LinksCsvFile, graphStore graphstore.BipartiteGraphStore,
+	ignoreInvalidLinks bool) error {
 
 	// Create a links CSV file reader
-	reader := NewLinksCsvFileReader(file)
+	reader := NewLinksCsvFileReader(linkFile)
 
 	// Initialise the CSV reader
 	err := reader.Initialise()
@@ -163,11 +331,11 @@ func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) erro
 		}
 
 		// Try to add the link
-		err = loader.graphStore.AddLink(link)
+		err = graphStore.AddLink(link)
 
 		// If there is an error, handle it if required
 		if err != nil {
-			if !loader.ignoreInvalidLinks {
+			if !ignoreInvalidLinks {
 				return err
 			} else {
 				if err != graphstore.ErrEntityNotFound && err != graphstore.ErrDocumentNotFound {
@@ -176,7 +344,7 @@ func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) erro
 
 				logging.Logger.Info().
 					Str(logging.ComponentField, componentName).
-					Str("filepath", file.Path).
+					Str("filepath", linkFile.Path).
 					Str("entityId", link.EntityId).
 					Str("documentId", link.DocumentId).
 					Str("message", err.Error()).
@@ -185,51 +353,42 @@ func (loader *GraphStoreLoaderFromCsv) loadLinksFromFile(file LinksCsvFile) erro
 		}
 	}
 
-	return reader.Close()
-}
-
-// loadLinks from each of the CSV files.
-func (loader *GraphStoreLoaderFromCsv) loadLinks() error {
-
-	for _, file := range loader.linkFiles {
-		err := loader.loadLinksFromFile(file)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
-// Load the graph store from the CSV files.
-func (loader *GraphStoreLoaderFromCsv) Load() error {
+// linkWorker is a worker that receives link file jobs to run.
+func linkWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int,
+	linkFilesChan <-chan LinksCsvFile, errChan chan<- error,
+	wg *sync.WaitGroup, graphStore graphstore.BipartiteGraphStore,
+	ignoreInvalidLinks bool) {
 
-	// Loading of entities and documents can be performed concurrently
-	errEntitiesChan := make(chan error)
-	errDocumentsChan := make(chan error)
+	defer wg.Done()
 
-	go func() {
-		errEntitiesChan <- loader.loadEntities()
-	}()
+	for linkFile := range linkFilesChan {
 
-	go func() {
-		errDocumentsChan <- loader.loadDocuments()
-	}()
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("link worker", strconv.Itoa(workerIdx)).
+			Str("filepath", linkFile.Path).
+			Msg("Link file job received by worker")
 
-	// Return the first error
-	errEntities := <-errEntitiesChan
-	errDocuments := <-errDocumentsChan
+		// Check to see if the worker should prematurely end
+		select {
+		case <-ctx.Done():
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("link worker", strconv.Itoa(workerIdx)).
+				Msg("Link worker shutting down")
+			return
+		default:
+		}
 
-	if errEntities != nil {
-		return errEntities
+		err := loadLinksFromFile(linkFile, graphStore, ignoreInvalidLinks)
+		if err != nil {
+			errChan <- err
+			cancelCtx()
+		}
 	}
-
-	if errDocuments != nil {
-		return errDocuments
-	}
-
-	// Load the links
-	return loader.loadLinks()
 }
 
 // findIndicesOfFields returns a mapping of the field name to index.
@@ -311,11 +470,6 @@ func extractAttributes(row []string, attributeToFieldIndex map[string]int) (
 
 	return attributes, nil
 }
-
-var (
-	ErrEmptyDelimiter   = errors.New("empty delimiter")
-	ErrInvalidDelimiter = errors.New("invalid delimiter")
-)
 
 // parseDelimiter to use when reading CSV files.
 func parseDelimiter(delimiter string) (rune, error) {

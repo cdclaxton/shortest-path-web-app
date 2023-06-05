@@ -67,5 +67,8 @@
         "type": "pebble",
         "folder": "<TEMP>",
         "deleteFilesInFolder": true
-    }
+    },
+    "numEntityWorkers": 2,
+    "numDocumentWorkers": 2,
+    "numLinkWorkers": 2
 }

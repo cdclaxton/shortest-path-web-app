@@ -245,7 +245,7 @@ func TestGraphStoreLoaderFromCsv(t *testing.T) {
 		},
 	}
 
-	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false)
+	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false, 1, 1, 2)
 
 	err := loader.Load()
 	assert.NoError(t, err)
@@ -417,11 +417,11 @@ func TestGraphStoreLoaderFromCsvWithInvalidData(t *testing.T) {
 	}
 
 	// Test loading with a missing entity
-	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false)
+	loader := NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, false, 2, 2, 2)
 	assert.Error(t, loader.Load())
 
 	// Test loading with a missing entity, but where link errors are ignored
-	loader = NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, true)
+	loader = NewGraphStoreLoaderFromCsv(g, entityFiles, documentFiles, linksFiles, true, 2, 2, 2)
 	assert.NoError(t, loader.Load())
 
 	// Check the entities

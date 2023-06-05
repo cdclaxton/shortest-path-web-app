@@ -63,5 +63,8 @@
     },
     "unipartiteGraphConfig": {
         "type": "memory"
-    }
+    },
+    "numEntityWorkers": 2,
+    "numDocumentWorkers": 2,
+    "numLinkWorkers": 2
 }
