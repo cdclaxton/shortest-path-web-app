@@ -171,6 +171,9 @@ type GraphConfig struct {
 	BipartiteConfig    BipartiteGraphConfig  `json:"bipartiteGraphConfig"`
 	UnipartiteConfig   UnipartiteGraphConfig `json:"unipartiteGraphConfig"`
 	IgnoreInvalidLinks bool                  `json:"ignoreInvalidLinks"`
+	NumEntityWorkers   int                   `json:"numEntityWorkers"`
+	NumDocumentWorkers int                   `json:"numDocumentWorkers"`
+	NumLinkWorkers     int                   `json:"numLinkWorkers"`
 }
 
 // readGraphConfig from a JSON file.
@@ -279,7 +282,8 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		config.Data.EntitiesFiles,
 		config.Data.DocumentsFiles,
 		config.Data.LinksFiles,
-		config.IgnoreInvalidLinks)
+		config.IgnoreInvalidLinks,
+		config.NumEntityWorkers, config.NumDocumentWorkers, config.NumLinkWorkers)
 
 	startTime := time.Now()
 	err = bipartiteLoader.Load()

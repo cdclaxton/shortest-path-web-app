@@ -61,5 +61,8 @@
     "unipartiteGraphConfig": {
         "type": "memory"
     },
-    "ignoreInvalidLinks": true
+    "ignoreInvalidLinks": true,
+    "numEntityWorkers": 2,
+    "numDocumentWorkers": 2,
+    "numLinkWorkers": 2
 }
