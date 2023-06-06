@@ -5,18 +5,43 @@
 // the function opens the database connection ready for reading. Once the database is no longer
 // needed (e.g. because the program using the database is closing down), the Close() method must be
 // called.
+//
+// To avoid a significant number of reads and writes during the load stage, the key-value pair
+// design is:
+//
+// <src entity ID>#<dst entity ID>
+//
+// The hash symbol was chosen because it is not a valid character in an entity ID. To store an
+// entity without a connection:
+//
+// <entity ID>#
 
 package graphstore
 
 import (
-	"bytes"
-	"encoding/gob"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
+)
+
+const (
+	nodePrefix       = "n"
+	edgePrefix       = "e"
+	separator        = "#"
+	separatorPlusOne = "$"
+)
+
+var (
+	ErrEmptyEntityId                    = errors.New("empty entity ID")
+	ErrEntityIdContainsIllegalCharacter = errors.New("entity ID contains illegal character")
+	ErrMalformedKey                     = errors.New("malformed unipartite key")
+	ErrUnexpectedEntityInKey            = errors.New("unexpected entity ID in key")
+	ErrSelfLoop                         = errors.New("self loop")
 )
 
 // A PebbleUnipartiteGraphStore is a Pebble-backed unipartite graph store.
@@ -49,167 +74,6 @@ func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, 
 // Close the Pebble store.
 func (p *PebbleUnipartiteGraphStore) Close() error {
 	return p.db.Close()
-}
-
-// entityIdToPebbleKey converts the entity ID to a Pebble key.
-func entityIdToPebbleKey(id string) []byte {
-	return []byte(id)
-}
-
-// pebbleKeyToEntityId converts a Pebble key to an entity ID.
-func pebbleKeyToEntityId(value []byte) string {
-	return string(value)
-}
-
-// entityIdsToPebbleValue converts a set of entity IDs to a Pebble value.
-func entityIdsToPebbleValue(s *set.Set[string]) ([]byte, error) {
-	var buffer bytes.Buffer
-	encoder := gob.NewEncoder(&buffer)
-
-	if err := encoder.Encode(s); err != nil {
-		return nil, err
-	}
-
-	return buffer.Bytes(), nil
-}
-
-// pebbleValueToEntityIds converts a Pebble value to a set of entity IDs.
-func pebbleValueToEntityIds(value []byte) (*set.Set[string], error) {
-	var buffer bytes.Buffer
-	buffer.Write(value)
-	decoder := gob.NewDecoder(&buffer)
-
-	var s set.Set[string]
-	if err := decoder.Decode(&s); err != nil {
-		return nil, err
-	}
-
-	return &s, nil
-}
-
-// dstEntityIds returns the destination entity IDs for a given source entity.
-func (p *PebbleUnipartiteGraphStore) dstEntityIds(src string) (*set.Set[string], bool, error) {
-
-	value, closer, err := p.db.Get(entityIdToPebbleKey(src))
-
-	if err == pebble.ErrNotFound {
-		return nil, false, nil
-	}
-
-	if err != nil {
-		return nil, false, err
-	}
-
-	if err2 := closer.Close(); err2 != nil {
-		return nil, false, err2
-	}
-
-	set, err := pebbleValueToEntityIds(value)
-
-	return set, true, err
-}
-
-// setSrcToDsts sets the source entity to destination entity connections.
-func (p *PebbleUnipartiteGraphStore) setSrcToDsts(src string, dsts *set.Set[string]) error {
-
-	key := entityIdToPebbleKey(src)
-
-	value, err := entityIdsToPebbleValue(dsts)
-	if err != nil {
-		return err
-	}
-
-	return p.db.Set(key, value, pebble.NoSync)
-}
-
-// HasEntity returns true if the entity ID is held within the backend.
-func (p *PebbleUnipartiteGraphStore) HasEntity(id string) (bool, error) {
-
-	_, found, err := p.dstEntityIds(id)
-	return found, err
-}
-
-// AddEntity to the unipartite graph store.
-func (p *PebbleUnipartiteGraphStore) AddEntity(id string) error {
-
-	// Preconditions
-	err := ValidateEntityId(id)
-	if err != nil {
-		return ErrEntityIdIsBlank
-	}
-
-	found, err := p.HasEntity(id)
-	if err != nil {
-		return err
-	}
-
-	// If the entity doesn't already exist in the backend, then add it
-	if !found {
-		return p.setSrcToDsts(id, set.NewSet[string]())
-	}
-
-	return nil
-}
-
-// AddDirected edge between the source (src) and destination (dst) vertices.
-func (p *PebbleUnipartiteGraphStore) AddDirected(src string, dst string) error {
-
-	// Preconditions
-	err := ValidateEntityId(src)
-	if err != nil {
-		return ErrEntityIdIsBlank
-	}
-
-	err = ValidateEntityId(dst)
-	if err != nil {
-		return ErrEntityIdIsBlank
-	}
-
-	if src == dst {
-		return fmt.Errorf("source and destination IDs are identical (%v)", src)
-	}
-
-	existingSet, found, err := p.dstEntityIds(src)
-
-	if err != nil {
-		return err
-	}
-
-	if found {
-		existingSet.Add(dst)
-	} else {
-		existingSet = set.NewPopulatedSet(dst)
-	}
-
-	return p.setSrcToDsts(src, existingSet)
-}
-
-// AddUndirected edge between two entities.
-func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error {
-
-	// Preconditions
-	err := ValidateEntityId(src)
-	if err != nil {
-		return ErrEntityIdIsBlank
-	}
-
-	err = ValidateEntityId(dst)
-	if err != nil {
-		return ErrEntityIdIsBlank
-	}
-
-	if src == dst {
-		return fmt.Errorf("source and destination IDs are identical (%v)", src)
-	}
-
-	// Add the src --> dst connection
-	err = p.AddDirected(src, dst)
-	if err != nil {
-		return err
-	}
-
-	// Add the src <-- dst connection
-	return p.AddDirected(dst, src)
 }
 
 // Clear down the graph.
@@ -251,83 +115,334 @@ func (p *PebbleUnipartiteGraphStore) Destroy() error {
 	return os.RemoveAll(p.folder)
 }
 
-// EntityIds of the source vertices in the graph.
-func (p *PebbleUnipartiteGraphStore) EntityIds() (*set.Set[string], error) {
+// validateEntityId validates the entity ID prior to storage.
+func validateEntityId(id string) error {
+
+	if len(id) == 0 {
+		return ErrEmptyEntityId
+	}
+
+	if strings.Contains(id, separator) {
+		return ErrEntityIdContainsIllegalCharacter
+	}
+
+	return nil
+}
+
+// edgeToPebbleKey returns the Pebble key for a directed edge between two entities.
+func edgeToPebbleKey(src string, dst string) ([]byte, error) {
+
+	if err := validateEntityId(src); err != nil {
+		return nil, err
+	}
+
+	if err := validateEntityId(dst); err != nil {
+		return nil, err
+	}
+
+	if src == dst {
+		return nil, ErrSelfLoop
+	}
+
+	return []byte(edgePrefix + separator + src + separator + dst), nil
+}
+
+// pebbleKeyToEdge returns the source and destination nodes for a key representing an edge.
+func pebbleKeyToEdge(key []byte) (string, string, error) {
+
+	parts := strings.Split(string(key), separator)
+
+	if len(parts) != 3 {
+		return "", "", fmt.Errorf("%w: %v", ErrMalformedKey, string(key))
+	}
+
+	if parts[0] != edgePrefix {
+		return "", "", fmt.Errorf("%w: %v is not an edge", ErrMalformedKey, string(key))
+	}
+
+	src := parts[1]
+	dst := parts[2]
+
+	if validateEntityId(src) != nil || validateEntityId(dst) != nil {
+		return "", "", fmt.Errorf("%w: %v is not a valid edge", ErrMalformedKey, string(key))
+	}
+
+	return src, dst, nil
+}
+
+// nodeToPebbleKey returns the Pebble key for a node.
+func nodeToPebbleKey(node string) ([]byte, error) {
+
+	if err := validateEntityId(node); err != nil {
+		return nil, err
+	}
+
+	return []byte(nodePrefix + separator + node), nil
+}
+
+// pebbleKeyToNode returns the node for a Pebble key.
+func pebbleKeyToNode(key []byte) (string, error) {
+
+	parts := strings.Split(string(key), separator)
+
+	if len(parts) != 2 {
+		return "", fmt.Errorf("%w: %v", ErrMalformedKey, string(key))
+	}
+
+	if parts[0] != nodePrefix {
+		return "", fmt.Errorf("%w: %v is not a node", ErrMalformedKey, string(key))
+	}
+
+	node := parts[1]
+	if err := validateEntityId(node); err != nil {
+		return "", err
+	}
+
+	return node, nil
+}
+
+// AddEntity to the unipartite graph store.
+func (p *PebbleUnipartiteGraphStore) AddEntity(id string) error {
+
+	key, err := nodeToPebbleKey(id)
+	if err != nil {
+		return err
+	}
+
+	return p.db.Set(key, nil, pebble.NoSync)
+}
+
+// AddDirected edge between the source (src) and destination (dst) vertices.
+func (p *PebbleUnipartiteGraphStore) AddDirected(src string, dst string) error {
+
+	key, err := edgeToPebbleKey(src, dst)
+	if err != nil {
+		return err
+	}
+
+	return p.db.Set(key, nil, pebble.NoSync)
+}
+
+// AddUndirected edge between two entities.
+func (p *PebbleUnipartiteGraphStore) AddUndirected(src string, dst string) error {
+
+	// Add the src --> dst connection
+	err := p.AddDirected(src, dst)
+	if err != nil {
+		return err
+	}
+
+	// Add the src <-- dst connection
+	return p.AddDirected(dst, src)
+}
+
+// EdgeExists returns true if the two entities are connected.
+func (p *PebbleUnipartiteGraphStore) EdgeExists(src string, dst string) (bool, error) {
+
+	key, err := edgeToPebbleKey(src, dst)
+	if err != nil {
+		return false, err
+	}
+
+	_, closer, err := p.db.Get(key)
+
+	if err == pebble.ErrNotFound {
+		return false, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if err2 := closer.Close(); err2 != nil {
+		return false, err2
+	}
+
+	return true, nil
+}
+
+// entityIdsOfNodes returns the entity IDs of nodes.
+func (p *PebbleUnipartiteGraphStore) entityIdsOfNodes() (*set.Set[string], error) {
 
 	entityIds := set.NewSet[string]()
 
-	iter := p.db.NewIter(nil)
-	for iter.First(); iter.Valid(); iter.Next() {
-		id := pebbleKeyToEntityId(iter.Key())
-		entityIds.Add(id)
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(nodePrefix + separator),
+		UpperBound: []byte(nodePrefix + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
+	var errDuringIteration error
+	for iter.First(); iter.Valid() && errDuringIteration == nil; iter.Next() {
+		var src string
+		src, errDuringIteration = pebbleKeyToNode(iter.Key())
+
+		if errDuringIteration == nil {
+			entityIds.Add(src)
+		}
 	}
 
 	if err := iter.Close(); err != nil {
 		return nil, err
+	}
+
+	if errDuringIteration != nil {
+		return nil, errDuringIteration
 	}
 
 	return entityIds, nil
 }
 
-// EdgeExists returns true if the two entities are connected.
-func (p *PebbleUnipartiteGraphStore) EdgeExists(entity1 string, entity2 string) (bool, error) {
+// entityIdsOfEdges returns the entity IDs of entities with edges.
+func (p *PebbleUnipartiteGraphStore) entityIdsOfEdges() (*set.Set[string], error) {
 
-	// Preconditions
-	err := ValidateEntityId(entity1)
-	if err != nil {
-		return false, ErrEntityIdIsBlank
+	entityIds := set.NewSet[string]()
+
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(edgePrefix + separator),
+		UpperBound: []byte(edgePrefix + separatorPlusOne),
 	}
 
-	err = ValidateEntityId(entity2)
-	if err != nil {
-		return false, ErrEntityIdIsBlank
+	iter := p.db.NewIter(iterOptions)
+	var errDuringIteration error
+	var src string
+	for iter.First(); iter.Valid() && errDuringIteration == nil; iter.Next() {
+		src, _, errDuringIteration = pebbleKeyToEdge(iter.Key())
+
+		if errDuringIteration == nil {
+			entityIds.Add(src)
+		}
 	}
 
-	dsts, found, err := p.dstEntityIds(entity1)
-	if err != nil {
-		return false, err
+	if err := iter.Close(); err != nil {
+		return nil, err
 	}
 
-	if !found {
-		return false, nil
+	if errDuringIteration != nil {
+		return nil, errDuringIteration
 	}
 
-	return dsts.Has(entity2), nil
+	return entityIds, nil
 }
 
-// EntityIdsAdjacentTo a given entity.
-func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(entityId string) (*set.Set[string], error) {
+// EntityIds of the source vertices in the graph.
+func (p *PebbleUnipartiteGraphStore) EntityIds() (*set.Set[string], error) {
 
-	// Preconditions
-	err := ValidateEntityId(entityId)
-	if err != nil {
-		return nil, ErrEntityIdIsBlank
-	}
-
-	dsts, found, err := p.dstEntityIds(entityId)
+	entityIds, err := p.entityIdsOfNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	if !found {
-		return nil, fmt.Errorf("entity ID not found: %v", entityId)
+	entityIds2, err := p.entityIdsOfEdges()
+	if err != nil {
+		return nil, err
 	}
 
-	return dsts, nil
+	return entityIds.Union(entityIds2), nil
 }
 
-func (p *PebbleUnipartiteGraphStore) NumberEntities() (int, error) {
+// EntityIdsAdjacentTo a given entity.
+func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(id string) (*set.Set[string], error) {
 
-	numEntities := 0
+	adjacentIds := set.NewSet[string]()
 
-	iter := p.db.NewIter(nil)
-	for iter.First(); iter.Valid(); iter.Next() {
-		numEntities += 1
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(edgePrefix + separator + id + separator),
+		UpperBound: []byte(edgePrefix + separator + id + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
+	var errDuringIteration error
+	for iter.First(); iter.Valid() && errDuringIteration == nil; iter.Next() {
+		var src, dst string
+		src, dst, errDuringIteration = pebbleKeyToEdge(iter.Key())
+
+		if errDuringIteration == nil {
+			if src != id {
+				errDuringIteration = ErrUnexpectedEntityInKey
+			} else {
+				adjacentIds.Add(dst)
+			}
+		}
 	}
 
 	if err := iter.Close(); err != nil {
-		return numEntities, err
+		return nil, err
 	}
 
-	return numEntities, nil
+	if errDuringIteration != nil {
+		return nil, errDuringIteration
+	}
+
+	if adjacentIds.Len() == 0 {
+		return nil, fmt.Errorf("%w: %s", ErrEntityNotFound, id)
+	}
+
+	return adjacentIds, nil
+}
+
+func (p *PebbleUnipartiteGraphStore) hasNode(id string) (bool, error) {
+
+	key, err := nodeToPebbleKey(id)
+	if err != nil {
+		return false, err
+	}
+
+	_, closer, err := p.db.Get(key)
+
+	if err != nil {
+		if err == pebble.ErrNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+
+	defer closer.Close()
+
+	return true, nil
+}
+
+func (p *PebbleUnipartiteGraphStore) hasEdgeWithSource(id string) (bool, error) {
+
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(edgePrefix + separator + id + separator),
+		UpperBound: []byte(edgePrefix + separator + id + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
+	found := iter.First()
+
+	if err := iter.Close(); err != nil {
+		return false, err
+	}
+
+	return found, nil
+}
+
+// HasEntity returns true if the entity ID is held within the backend.
+func (p *PebbleUnipartiteGraphStore) HasEntity(id string) (bool, error) {
+
+	// Check whether the entity exists on its own
+	found, err := p.hasNode(id)
+	if err != nil {
+		return false, err
+	}
+
+	if found {
+		return true, nil
+	}
+
+	// Check whether the entity exists as the source of an edge
+	return p.hasEdgeWithSource(id)
+}
+
+// NumberEntities in the unipartite graph.
+func (p *PebbleUnipartiteGraphStore) NumberEntities() (int, error) {
+
+	entityIds, err := p.EntityIds()
+	if err != nil {
+		return 0, err
+	}
+
+	return entityIds.Len(), nil
 }
