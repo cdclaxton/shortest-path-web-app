@@ -74,6 +74,22 @@ func (s *Set[T]) Difference(s2 *Set[T]) *Set[T] {
 	return diff
 }
 
+// Union of two sets.
+func (s *Set[T]) Union(s2 *Set[T]) *Set[T] {
+
+	union := NewSet[T]()
+
+	for key := range s.Values {
+		union.Add(key)
+	}
+
+	for key := range s2.Values {
+		union.Add(key)
+	}
+
+	return union
+}
+
 // Length (cardinality) of the set.
 func (s *Set[T]) Len() int {
 	return len(s.Values)

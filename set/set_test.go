@@ -121,3 +121,17 @@ func TestDifference(t *testing.T) {
 	assert.Equal(t, 0, s3.Difference(s1).Len())
 	assert.Equal(t, 0, s1.Difference(s3).Len())
 }
+
+func TestUnion(t *testing.T) {
+	s1 := NewPopulatedSet("A", "B")
+	s2 := NewPopulatedSet("B", "C", "D")
+	s3 := NewPopulatedSet("A", "B", "C", "D")
+
+	// Set union s1 + s2
+	expected1 := NewPopulatedSet("A", "B", "C", "D")
+	assert.True(t, expected1.Equal(s1.Union(s2)))
+
+	// Set union s1 + s3
+	expected2 := NewPopulatedSet("A", "B", "C", "D")
+	assert.True(t, expected2.Equal(s1.Union(s3)))
+}
