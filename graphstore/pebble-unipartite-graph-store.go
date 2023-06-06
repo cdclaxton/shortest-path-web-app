@@ -9,12 +9,12 @@
 // To avoid a significant number of reads and writes during the load stage, the key-value pair
 // design is:
 //
-// <src entity ID>#<dst entity ID>
+// e#<src entity ID>#<dst entity ID>
 //
 // The hash symbol was chosen because it is not a valid character in an entity ID. To store an
 // entity without a connection:
 //
-// <entity ID>#
+// n#<entity ID>
 
 package graphstore
 
