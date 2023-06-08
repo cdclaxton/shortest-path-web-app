@@ -3,7 +3,7 @@ echo "Running Shortest Path App in demo mode (in-memory)"
 OUTPUT_FOLDER=./working/i2/
 
 # Dataset within ./test-data-sets/ to use
-SET=set-1
+SET=set-2
 
 # Make the output folder if it doesn't exist or clean it if it does
 if [[ ! -d ${OUTPUT_FOLDER} ]]; then

@@ -238,6 +238,23 @@ Pebble's data is stored in the location specified in the `folder` field. The fol
 prior to ingesting the data. The backend will clear the folder if the `deleteFilesInFolder` field is
 set to `true`.
 
+If a link is defined in a links file where either the document or entity or both isn't present, the
+web-app will stop ingesting data. To ignore broken links, set:
+
+```json
+"ignoreInvalidLinks": true
+```
+
+Reading the entities, documents and links can be performed concurrently. The number of workers for
+each type of file can be set separately. The entity and document reading will be performed
+concurrently, followed by the links.
+
+```json
+"numEntityWorkers": 2,
+"numDocumentWorkers": 2,
+"numLinkWorkers": 2
+```
+
 ## i2 chart configuration
 
 The JSON configuration for the i2 chart generator should be stored in a file called

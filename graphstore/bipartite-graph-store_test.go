@@ -144,6 +144,10 @@ func addLink(t *testing.T, store BipartiteGraphStore) {
 
 	assert.True(t, e0.HasDocument(d0.Id))
 	assert.True(t, d0.HasEntity(e0.Id))
+
+	found, err := store.HasEntityWithId(e0.Id)
+	assert.NoError(t, err)
+	assert.True(t, found)
 }
 
 func addDuplicateEntity(t *testing.T, store BipartiteGraphStore) {
@@ -242,7 +246,7 @@ func entityIterator(t *testing.T, store BipartiteGraphStore) {
 	checkAllEntityIds(t, store, set.NewPopulatedSet("e-1", "e-2"))
 }
 
-func TestInMemoryGraphStore(t *testing.T) {
+func TestGraphStore(t *testing.T) {
 
 	// Make the in-memory graph store
 	inMemoryGraphStore := NewInMemoryBipartiteGraphStore()

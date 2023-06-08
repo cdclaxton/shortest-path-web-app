@@ -3,11 +3,19 @@
 //
 // Entities are stored as:
 //
-//   e#<Entity ID> --> serialised version of an Entity (using GOB)
+//   e#<entity ID> = <serialised entity>
 //
-// Similarly, documents are stored as:
+// Documents are stored as:
 //
-//   d#<Document ID> --> serialised version of a Document (using GOB)
+//   d#<document ID> = <serialised document>
+//
+// Entity-document links are stored as:
+//
+//   edl#<entity ID>#<document ID> = nil
+//
+// Document-entity links are stored as:
+//
+//   del#<document ID>#<entity ID> = nil
 
 package graphstore
 
@@ -17,15 +25,79 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
+	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
+)
+
+const (
+	entityPrefix             = "e"
+	documentPrefix           = "d"
+	entityDocumentLinkPrefix = "edl"
+	documentEntityLinkPrefix = "del"
+)
+
+var (
+	ErrMalformedEntityKey                 = errors.New("malformed entity key")
+	ErrMalformedDocumentKey               = errors.New("malformed document key")
+	ErrPebbleKeyIsNil                     = errors.New("pebble key is nil")
+	ErrPebbleValueIsNil                   = errors.New("pebble value is nil")
+	ErrEmptyDocumentId                    = errors.New("empty document ID")
+	ErrDocumentIdContainsIllegalCharacter = errors.New("document ID contains illegal character")
 )
 
 // A PebbleBipartiteGraphStore is a bipartite graph store backed by the Pebble key-value database.
 type PebbleBipartiteGraphStore struct {
 	folder string
 	db     *pebble.DB
+}
+
+type PebbleEntity struct {
+	Id         string
+	EntityType string
+	Attributes map[string]string
+}
+
+func EntityToPebbleEntity(e Entity) PebbleEntity {
+	return PebbleEntity{
+		Id:         e.Id,
+		EntityType: e.EntityType,
+		Attributes: e.Attributes,
+	}
+}
+
+func PebbleEntityToEntity(pebbleEntity PebbleEntity, documents *set.Set[string]) Entity {
+	return Entity{
+		Id:                pebbleEntity.Id,
+		EntityType:        pebbleEntity.EntityType,
+		Attributes:        pebbleEntity.Attributes,
+		LinkedDocumentIds: documents,
+	}
+}
+
+type PebbleDocument struct {
+	Id           string
+	DocumentType string
+	Attributes   map[string]string
+}
+
+func DocumentToPebbleDocument(d Document) PebbleDocument {
+	return PebbleDocument{
+		Id:           d.Id,
+		DocumentType: d.DocumentType,
+		Attributes:   d.Attributes,
+	}
+}
+
+func PebbleDocumentToDocument(pebbleDocument PebbleDocument, entities *set.Set[string]) Document {
+	return Document{
+		Id:              pebbleDocument.Id,
+		DocumentType:    pebbleDocument.DocumentType,
+		Attributes:      pebbleDocument.Attributes,
+		LinkedEntityIds: entities,
+	}
 }
 
 // NewPebbleBipartiteGraphStore given the dedicated folder where the Pebble files are to be held.
@@ -63,47 +135,39 @@ func (p *PebbleBipartiteGraphStore) Close() error {
 	return p.db.Close()
 }
 
-// Prefixes for the keys used by Pebble
-const (
-	entityKeyPrefix   = "e"
-	documentKeyPrefix = "d"
-)
+// entityIdToPebbleKey generates the Pebble key for an entity ID.
+func entityIdToPebbleKey(id string) ([]byte, error) {
 
-// bipartiteEntityIdToPebbleKey converts an entity ID to a Pebble key.
-func bipartiteEntityIdToPebbleKey(id string) []byte {
-	return []byte(entityKeyPrefix + id)
+	if err := validateEntityId(id); err != nil {
+		return nil, err
+	}
+
+	return []byte(entityPrefix + separator + id), nil
 }
 
-// pebbleKeyToBipartiteEntityId converts a Pebble key to an entity ID.
-func pebbleKeyToBipartiteEntityId(value []byte) (string, error) {
+// pebbleKeyToEntityId extracts the entity ID from the Pebble key.
+func pebbleKeyToEntityId(key []byte) (string, error) {
 
-	// Preconditions
-	if value == nil {
-		return "", errors.New("entity key is nil")
+	if key == nil {
+		return "", ErrPebbleKeyIsNil
 	}
 
-	keyString := string(value)
+	parts := strings.Split(string(key), separator)
 
-	if len(keyString) == 0 {
-		return "", errors.New("entity key has zero length")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("%w: %v", ErrMalformedEntityKey, string(key))
 	}
 
-	// Check the prefix
-	if string(keyString[0]) != entityKeyPrefix {
-		return "", fmt.Errorf("entity key %v has the wrong prefix", keyString)
+	entityId := parts[1]
+	if err := validateEntityId(entityId); err != nil {
+		return "", err
 	}
 
-	// Return the entity ID by removing the prefix
-	return keyString[1:], nil
+	return entityId, nil
 }
 
-// bipartiteEntityToPebbleValue converts an entity to a Pebble value.
-func bipartiteEntityToPebbleValue(entity *Entity) ([]byte, error) {
-
-	// Preconditions
-	if entity == nil {
-		return nil, errors.New("entity is nil")
-	}
+// entityToPebbleValue converts a Pebble entity to a value for the key-value store.
+func entityToPebbleValue(entity *PebbleEntity) ([]byte, error) {
 
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
@@ -115,19 +179,18 @@ func bipartiteEntityToPebbleValue(entity *Entity) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// pebbleValueToBipartiteEntity converts a Pebble value to an entity.
-func pebbleValueToBipartiteEntity(value []byte) (*Entity, error) {
+// pebbleValueToEntity converts a Pebble value to a Pebble entity.
+func pebbleValueToEntity(value []byte) (*PebbleEntity, error) {
 
-	// Preconditions
 	if value == nil {
-		return nil, errors.New("pebble value is nil")
+		return nil, ErrPebbleValueIsNil
 	}
 
 	var buffer bytes.Buffer
 	buffer.Write(value)
 	decoder := gob.NewDecoder(&buffer)
 
-	var entity Entity
+	var entity PebbleEntity
 	if err := decoder.Decode(&entity); err != nil {
 		return nil, err
 	}
@@ -135,41 +198,53 @@ func pebbleValueToBipartiteEntity(value []byte) (*Entity, error) {
 	return &entity, nil
 }
 
-// bipartiteDocumentIdToPebbleKey converts a document ID to a Pebble key.
-func bipartiteDocumentIdToPebbleKey(id string) []byte {
-	return []byte(documentKeyPrefix + id)
+// validateDocumentId validates the document ID prior to storage.
+func validateDocumentId(id string) error {
+
+	if len(id) == 0 {
+		return ErrEmptyDocumentId
+	}
+
+	if strings.Contains(id, separator) {
+		return ErrDocumentIdContainsIllegalCharacter
+	}
+
+	return nil
 }
 
-// pebbleKeyToBipartiteDocumentId converts a Pebble key to a document ID.
-func pebbleKeyToBipartiteDocumentId(value []byte) (string, error) {
+// documentIdToPebbleKey generates the Pebble key for an document ID.
+func documentIdToPebbleKey(id string) ([]byte, error) {
 
-	// Preconditions
-	if value == nil {
-		return "", errors.New("document key is nil")
+	if err := validateDocumentId(id); err != nil {
+		return nil, err
 	}
 
-	keyString := string(value)
-
-	if len(keyString) == 0 {
-		return "", errors.New("document key has zero length")
-	}
-
-	// Check the prefix
-	if string(keyString[0]) != documentKeyPrefix {
-		return "", fmt.Errorf("document key %v has the wrong prefix", keyString)
-	}
-
-	// Return the entity ID by removing the prefix
-	return keyString[1:], nil
+	return []byte(documentPrefix + separator + id), nil
 }
 
-// bipartiteDocumentToPebbleValue converts a document to a Pebble value.
-func bipartiteDocumentToPebbleValue(document *Document) ([]byte, error) {
+// pebbleKeyToDocumentId extracts the document ID from the Pebble key.
+func pebbleKeyToDocumentId(key []byte) (string, error) {
 
-	// Preconditions
-	if document == nil {
-		return nil, fmt.Errorf("Document is nil")
+	if key == nil {
+		return "", ErrPebbleKeyIsNil
 	}
+
+	parts := strings.Split(string(key), separator)
+
+	if len(parts) != 2 {
+		return "", fmt.Errorf("%w: %v", ErrMalformedDocumentKey, string(key))
+	}
+
+	documentId := parts[1]
+	if err := validateDocumentId(documentId); err != nil {
+		return "", err
+	}
+
+	return documentId, nil
+}
+
+// documentToPebbleValue returns the value for a Pebble document.
+func documentToPebbleValue(document *PebbleDocument) ([]byte, error) {
 
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
@@ -181,89 +256,386 @@ func bipartiteDocumentToPebbleValue(document *Document) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// pebbleValueToBipartiteDocument converts a Pebble value to a document.
-func pebbleValueToBipartiteDocument(value []byte) (*Document, error) {
+// pebbleValueToDocument returns a Pebble document held in a Pebble value.
+func pebbleValueToDocument(value []byte) (*PebbleDocument, error) {
 
-	// Preconditions
 	if value == nil {
-		return nil, errors.New("pebble value is nil")
+		return nil, ErrPebbleValueIsNil
 	}
 
 	var buffer bytes.Buffer
 	buffer.Write(value)
 	decoder := gob.NewDecoder(&buffer)
 
-	var document Document
-	if err := decoder.Decode(&document); err != nil {
+	var entity PebbleDocument
+	if err := decoder.Decode(&entity); err != nil {
 		return nil, err
 	}
 
-	return &document, nil
+	return &entity, nil
+}
+
+// entityDocumentLinkToPebbleKey returns the pebble key for an entity-document link.
+func entityDocumentLinkToPebbleKey(entityId string, documentId string) ([]byte, error) {
+
+	if err := validateEntityId(entityId); err != nil {
+		return nil, err
+	}
+
+	if err := validateDocumentId(documentId); err != nil {
+		return nil, err
+	}
+
+	return []byte(entityDocumentLinkPrefix + separator + entityId + separator + documentId), nil
+}
+
+// pebbleKeyToEntityDocumentLink returns the entity and document IDs for a Pebble key.
+func pebbleKeyToEntityDocumentLink(key []byte) (string, string, error) {
+
+	if key == nil {
+		return "", "", ErrPebbleKeyIsNil
+	}
+
+	parts := strings.Split(string(key), separator)
+
+	if len(parts) != 3 || parts[0] != entityDocumentLinkPrefix {
+		return "", "", fmt.Errorf("%w: %v", ErrMalformedDocumentKey, string(key))
+	}
+
+	entityId := parts[1]
+	documentId := parts[2]
+
+	if err := validateEntityId(entityId); err != nil {
+		return "", "", err
+	}
+
+	if err := validateDocumentId(documentId); err != nil {
+		return "", "", err
+	}
+
+	return entityId, documentId, nil
+}
+
+// documentEntityLinkToPebbleKey returns the Pebble key for a document-entity link.
+func documentEntityLinkToPebbleKey(documentId string, entityId string) ([]byte, error) {
+
+	if err := validateDocumentId(documentId); err != nil {
+		return nil, err
+	}
+
+	if err := validateEntityId(entityId); err != nil {
+		return nil, err
+	}
+
+	return []byte(documentEntityLinkPrefix + separator + documentId + separator + entityId), nil
+}
+
+// pebbleKeyToDocumentEntityLink converts a Pebble key to a document-entity link.
+func pebbleKeyToDocumentEntityLink(key []byte) (string, string, error) {
+
+	if key == nil {
+		return "", "", ErrPebbleKeyIsNil
+	}
+
+	parts := strings.Split(string(key), separator)
+
+	if len(parts) != 3 || parts[0] != documentEntityLinkPrefix {
+		return "", "", fmt.Errorf("%w: %v", ErrMalformedDocumentKey, string(key))
+	}
+
+	documentId := parts[1]
+	entityId := parts[2]
+
+	if err := validateDocumentId(documentId); err != nil {
+		return "", "", err
+	}
+
+	if err := validateEntityId(entityId); err != nil {
+		return "", "", err
+	}
+
+	return documentId, entityId, nil
+}
+
+func (p *PebbleBipartiteGraphStore) putEntityDocumentLink(entityId string, documentId string) error {
+
+	// Store the entity -> document link
+	key, err := entityDocumentLinkToPebbleKey(entityId, documentId)
+	if err != nil {
+		return err
+	}
+
+	return p.db.Set(key, nil, pebble.NoSync)
+}
+
+func (p *PebbleBipartiteGraphStore) putDocumentEntityLink(documentId string, entityId string) error {
+	// Store the entity <- document link
+	key, err := documentEntityLinkToPebbleKey(documentId, entityId)
+	if err != nil {
+		return err
+	}
+
+	return p.db.Set(key, nil, pebble.NoSync)
+}
+
+func (p *PebbleBipartiteGraphStore) putEntitiesForDocument(docId string, entities *set.Set[string]) error {
+
+	for _, entityId := range entities.ToSlice() {
+		if err := p.putDocumentEntityLink(docId, entityId); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *PebbleBipartiteGraphStore) getEntitiesForDocument(docId string) (*set.Set[string], error) {
+
+	entityIds := set.NewSet[string]()
+
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(documentEntityLinkPrefix + separator + docId + separator),
+		UpperBound: []byte(documentEntityLinkPrefix + separator + docId + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
+	var errDuringIteration error
+	for iter.First(); iter.Valid() && errDuringIteration == nil; iter.Next() {
+
+		retrievedDocId, entityId, err := pebbleKeyToDocumentEntityLink(iter.Key())
+
+		if err != nil {
+			errDuringIteration = err
+		} else if retrievedDocId != docId {
+			errDuringIteration = ErrMalformedKey
+		} else {
+			entityIds.Add(entityId)
+		}
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
+	if errDuringIteration != nil {
+		return nil, errDuringIteration
+	}
+
+	return entityIds, nil
+}
+
+func (p *PebbleBipartiteGraphStore) putDocumentsForEntity(entityId string, documents *set.Set[string]) error {
+
+	for _, docId := range documents.ToSlice() {
+		if err := p.putEntityDocumentLink(entityId, docId); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *PebbleBipartiteGraphStore) getDocumentsForEntity(entityId string) (*set.Set[string], error) {
+
+	documentIds := set.NewSet[string]()
+
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(entityDocumentLinkPrefix + separator + entityId + separator),
+		UpperBound: []byte(entityDocumentLinkPrefix + separator + entityId + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
+	var errDuringIteration error
+	for iter.First(); iter.Valid() && errDuringIteration == nil; iter.Next() {
+
+		retrievedEntityId, documentId, err := pebbleKeyToEntityDocumentLink(iter.Key())
+
+		if err != nil {
+			errDuringIteration = err
+		} else if retrievedEntityId != entityId {
+			errDuringIteration = ErrMalformedKey
+		} else {
+			documentIds.Add(documentId)
+		}
+	}
+
+	if err := iter.Close(); err != nil {
+		return nil, err
+	}
+
+	if errDuringIteration != nil {
+		return nil, errDuringIteration
+	}
+
+	return documentIds, nil
+}
+
+func (p *PebbleBipartiteGraphStore) putPebbleEntity(entity PebbleEntity) error {
+
+	// Make the key
+	key, err := entityIdToPebbleKey(entity.Id)
+	if err != nil {
+		return err
+	}
+
+	// Make the value
+	value, err := entityToPebbleValue(&entity)
+	if err != nil {
+		return err
+	}
+
+	// Store
+	return p.db.Set(key, value, pebble.NoSync)
 }
 
 // AddEntity to the Pebble store.
 func (p *PebbleBipartiteGraphStore) AddEntity(entity Entity) error {
 
-	// Preconditions
-	err := ValidateEntityId(entity.Id)
-	if err != nil {
-		return ErrEntityIdIsEmpty
+	// Convert the entity to a Pebble entity
+	pebbleEntity := EntityToPebbleEntity(entity)
+
+	// Store the Pebble entity
+	if err := p.putPebbleEntity(pebbleEntity); err != nil {
+		return err
 	}
 
-	// Pebble key for the entity
-	pebbleKey := bipartiteEntityIdToPebbleKey(entity.Id)
+	// Store the associated documents
+	return p.putDocumentsForEntity(entity.Id, entity.LinkedDocumentIds)
+}
 
-	// Pebble value for the entity
-	pebbleValue, err := bipartiteEntityToPebbleValue(&entity)
+func (p *PebbleBipartiteGraphStore) putPebbleDocument(document PebbleDocument) error {
+
+	// Make the key
+	key, err := documentIdToPebbleKey(document.Id)
 	if err != nil {
 		return err
 	}
 
-	return p.db.Set(pebbleKey, pebbleValue, pebble.NoSync)
+	// Make the value
+	value, err := documentToPebbleValue(&document)
+	if err != nil {
+		return err
+	}
+
+	// Store
+	return p.db.Set(key, value, pebble.NoSync)
+}
+
+// AddDocument to the Pebble store.
+func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
+
+	// Convert the document to a Pebble document
+	pebbleDocument := DocumentToPebbleDocument(document)
+
+	// Store the Pebble document
+	if err := p.putPebbleDocument(pebbleDocument); err != nil {
+		return err
+	}
+
+	// Store the associated entities
+	return p.putEntitiesForDocument(document.Id, document.LinkedEntityIds)
+}
+
+// AddLink between an entity and a document (by ID).
+func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
+
+	err := p.putEntityDocumentLink(link.EntityId, link.DocumentId)
+	if err != nil {
+		return err
+	}
+
+	return p.putDocumentEntityLink(link.DocumentId, link.EntityId)
 }
 
 // GetEntity given its ID from the Pebble store.
 func (p *PebbleBipartiteGraphStore) GetEntity(entityId string) (*Entity, error) {
 
-	// Preconditions
-	err := ValidateEntityId(entityId)
-	if err != nil {
-		return nil, ErrEntityIdIsEmpty
-	}
-
-	value, closer, err := p.db.Get(bipartiteEntityIdToPebbleKey(entityId))
-
-	if err == pebble.ErrNotFound {
-		return nil, ErrEntityNotFound
-	}
-
+	// Get the entity from the Pebble store
+	key, err := entityIdToPebbleKey(entityId)
 	if err != nil {
 		return nil, err
 	}
 
-	if err2 := closer.Close(); err2 != nil {
-		return nil, err2
+	value, closer, err := p.db.Get(key)
+	if err != nil {
+		if err == pebble.ErrNotFound {
+			return nil, ErrEntityNotFound
+		}
+		return nil, err
 	}
 
-	// Convert the Pebble value (bytes) to an Entity
-	return pebbleValueToBipartiteEntity(value)
+	defer closer.Close()
+
+	entity, err := pebbleValueToEntity(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the documents for the entity
+	docs, err := p.getDocumentsForEntity(entityId)
+	if err != nil {
+		return nil, err
+	}
+
+	ent := PebbleEntityToEntity(*entity, docs)
+
+	return &ent, nil
+}
+
+// GetDocument from the Pebble store given its ID.
+func (p *PebbleBipartiteGraphStore) GetDocument(documentId string) (*Document, error) {
+
+	// Get the document from the Pebble store
+	key, err := documentIdToPebbleKey(documentId)
+	if err != nil {
+		return nil, err
+	}
+
+	value, closer, err := p.db.Get(key)
+	if err != nil {
+		if err == pebble.ErrNotFound {
+			return nil, ErrDocumentNotFound
+		}
+		return nil, err
+	}
+
+	defer closer.Close()
+
+	document, err := pebbleValueToDocument(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Got the entities for the document
+	entities, err := p.getEntitiesForDocument(documentId)
+	if err != nil {
+		return nil, err
+	}
+
+	doc := PebbleDocumentToDocument(*document, entities)
+
+	return &doc, nil
+}
+
+// HasDocument returns true if the store contains the document.
+func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error) {
+
+	// Get the document from the store
+	doc, err := p.GetDocument(document.Id)
+	if err == ErrDocumentNotFound {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return doc.Equal(document), nil
 }
 
 // HasEntity returns true if the entity exists in the Pebble store.
 func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 
-	// Preconditions
-	if entity == nil {
-		return false, ErrEntityIsNil
-	}
-
-	err := ValidateEntityId(entity.Id)
-	if err != nil {
-		return false, ErrEntityIdIsEmpty
-	}
-
+	// Get the entity from the store
 	ent, err := p.GetEntity(entity.Id)
-
 	if err == ErrEntityNotFound {
 		return false, nil
 	} else if err != nil {
@@ -275,151 +647,25 @@ func (p *PebbleBipartiteGraphStore) HasEntity(entity *Entity) (bool, error) {
 
 func (p *PebbleBipartiteGraphStore) HasEntityWithId(entityId string) (bool, error) {
 
-	entity, err := p.GetEntity(entityId)
-	if err == ErrEntityNotFound {
-		return false, nil
-	} else if err != nil {
+	key, err := entityIdToPebbleKey(entityId)
+	if err != nil {
 		return false, err
 	}
 
-	return entity != nil, nil
-}
-
-// AddDocument to the Pebble store.
-func (p *PebbleBipartiteGraphStore) AddDocument(document Document) error {
-
-	// Preconditions
-	err := ValidateDocumentId(document.Id)
+	_, closer, err := p.db.Get(key)
 	if err != nil {
-		return ErrDocumentIdIsEmpty
-	}
-
-	pebbleKey := bipartiteDocumentIdToPebbleKey(document.Id)
-
-	pebbleValue, err := bipartiteDocumentToPebbleValue(&document)
-	if err != nil {
-		return err
-	}
-
-	return p.db.Set(pebbleKey, pebbleValue, pebble.NoSync)
-}
-
-// GetDocument from the Pebble store given its ID.
-func (p *PebbleBipartiteGraphStore) GetDocument(documentId string) (*Document, error) {
-
-	// Preconditions
-	err := ValidateDocumentId(documentId)
-	if err != nil {
-		return nil, ErrDocumentIdIsEmpty
-	}
-
-	value, closer, err := p.db.Get(bipartiteDocumentIdToPebbleKey(documentId))
-
-	if err == pebble.ErrNotFound {
-		return nil, ErrDocumentNotFound
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err2 := closer.Close(); err2 != nil {
-		return nil, err2
-	}
-
-	// Convert the Pebble value (bytes) to an Entity
-	return pebbleValueToBipartiteDocument(value)
-}
-
-// HasDocument returns true if the store contains the document.
-func (p *PebbleBipartiteGraphStore) HasDocument(document *Document) (bool, error) {
-
-	// Preconditions
-	if document == nil {
-		return false, ErrDocumentIsNil
-	}
-
-	err := ValidateDocumentId(document.Id)
-	if err != nil {
-		return false, ErrDocumentIdIsEmpty
-	}
-
-	doc, err := p.GetDocument(document.Id)
-
-	if err == ErrDocumentNotFound {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-
-	return document.Equal(doc), nil
-}
-
-// AddLink between an entity and a document (by ID).
-func (p *PebbleBipartiteGraphStore) AddLink(link Link) error {
-
-	// Preconditions
-	err := ValidateEntityId(link.EntityId)
-	if err != nil {
-		return ErrEntityIdIsEmpty
-	}
-
-	err = ValidateDocumentId(link.DocumentId)
-	if err != nil {
-		return ErrDocumentIdIsEmpty
-	}
-
-	// Get the document from the store
-	document, err := p.GetDocument(link.DocumentId)
-	if err != nil {
-		return err
-	}
-
-	// Get the entity from the store
-	entity, err := p.GetEntity(link.EntityId)
-	if err != nil {
-		return err
-	}
-
-	// Add the link from the entity to the document
-	document.AddEntity(link.EntityId)
-
-	// Add the link from the document to the entity
-	entity.AddDocument(link.DocumentId)
-
-	// Store the modified entity
-	if err := p.AddEntity(*entity); err != nil {
-		return err
-	}
-
-	// Store the modified document
-	if err := p.AddDocument(*document); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// makePebbleKeyUpperBound constructs the upper bound of the key for scanning.
-func makePebbleKeyUpperBound(b []byte) []byte {
-	end := make([]byte, len(b))
-	copy(end, b)
-	for i := len(end) - 1; i >= 0; i-- {
-		end[i] = end[i] + 1
-		if end[i] != 0 {
-			return end[:i+1]
+		if err == pebble.ErrNotFound {
+			return false, nil
 		}
+		return false, err
 	}
-	return nil // no upper-bound
-}
 
-// makePebblePrefixIterOptions constructs an IterOptions for scanning all entries with a given
-// prefix.
-func makePebblePrefixIterOptions(prefix []byte) *pebble.IterOptions {
-	return &pebble.IterOptions{
-		LowerBound: prefix,
-		UpperBound: makePebbleKeyUpperBound(prefix),
+	err = closer.Close()
+	if err != nil {
+		return false, err
 	}
+
+	return true, nil
 }
 
 // PebbleDocumentIterator is an iterator for walking through all Documents in the Pebble store.
@@ -445,7 +691,7 @@ func (it *PebbleDocumentIterator) nextDocumentId() (string, error) {
 	} else {
 		it.hasNextId = true
 		key := it.iter.Key() // Next Pebble key
-		nextDocumentId, err = pebbleKeyToBipartiteDocumentId(key)
+		nextDocumentId, err = pebbleKeyToDocumentId(key)
 	}
 
 	toReturn := it.currentId
@@ -470,8 +716,12 @@ func (it *PebbleDocumentIterator) close() error {
 // NewDocumentIdIterator returns a document ID iterator.
 func (p *PebbleBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator, error) {
 
-	documentKey := []byte(documentKeyPrefix)
-	iter := p.db.NewIter(makePebblePrefixIterOptions(documentKey))
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(documentPrefix + separator),
+		UpperBound: []byte(documentPrefix + separatorPlusOne),
+	}
+
+	iter := p.db.NewIter(iterOptions)
 	iter.First()
 
 	var docId string
@@ -483,7 +733,7 @@ func (p *PebbleBipartiteGraphStore) NewDocumentIdIterator() (DocumentIdIterator,
 
 	if iter.Valid() {
 		pebbleKey := iter.Key()
-		docId, err = pebbleKeyToBipartiteDocumentId(pebbleKey)
+		docId, err = pebbleKeyToDocumentId(pebbleKey)
 
 		documentIdIterator.currentId = docId
 		documentIdIterator.hasNextId = true
@@ -542,7 +792,7 @@ func (it *PebbleEntityIterator) nextEntityId() (string, error) {
 	} else {
 		it.hasNextId = true
 		key := it.iter.Key() // Next Pebble key
-		nextEntityId, err = pebbleKeyToBipartiteEntityId(key)
+		nextEntityId, err = pebbleKeyToEntityId(key)
 	}
 
 	toReturn := it.currentId
@@ -567,8 +817,11 @@ func (it *PebbleEntityIterator) close() error {
 // NewDocumentIdIterator returns a document ID iterator.
 func (p *PebbleBipartiteGraphStore) NewEntityIdIterator() (EntityIdIterator, error) {
 
-	entityKey := []byte(entityKeyPrefix)
-	iter := p.db.NewIter(makePebblePrefixIterOptions(entityKey))
+	iterOptions := &pebble.IterOptions{
+		LowerBound: []byte(entityPrefix + separator),
+		UpperBound: []byte(entityPrefix + separatorPlusOne),
+	}
+	iter := p.db.NewIter(iterOptions)
 	iter.First()
 
 	var entityId string
@@ -580,7 +833,7 @@ func (p *PebbleBipartiteGraphStore) NewEntityIdIterator() (EntityIdIterator, err
 
 	if iter.Valid() {
 		pebbleKey := iter.Key()
-		entityId, err = pebbleKeyToBipartiteEntityId(pebbleKey)
+		entityId, err = pebbleKeyToEntityId(pebbleKey)
 
 		entityIdIterator.currentId = entityId
 		entityIdIterator.hasNextId = true

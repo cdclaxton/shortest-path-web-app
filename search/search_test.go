@@ -424,7 +424,7 @@ func TestLinkedEntityPresence(t *testing.T) {
 		engine, err := NewEntitySearch(graphBuilder.Bipartite, graphBuilder.Unipartite)
 		assert.NoError(t, err)
 
-		// Test the case where the entity is not in the unipartite store or the
+		// Test the case where the entity is not in the unipartite store or the bipartite store
 		linkedEntities, err := engine.linkedEntityPresence("e-10")
 		assert.NoError(t, err)
 		assert.Equal(t, []EntityPresence{}, linkedEntities)
