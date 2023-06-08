@@ -10,75 +10,189 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPebbleKeyForEntity(t *testing.T) {
-	id := "e-1"
-	key := bipartiteEntityIdToPebbleKey(id)
+func TestEntityIdToPebbleKey(t *testing.T) {
+	entityIds := []string{"e-1", "1", "1234567890", "abcdef"}
 
-	// Valid entity key
-	entityId, err := pebbleKeyToBipartiteEntityId(key)
-	assert.NoError(t, err)
-	assert.Equal(t, id, entityId)
+	for _, entityId := range entityIds {
+		key, err := entityIdToPebbleKey(entityId)
+		assert.NoError(t, err)
 
-	// Invalid entity key
-	entityId, err = pebbleKeyToBipartiteEntityId([]byte{})
-	assert.Equal(t, "", entityId)
-	assert.Error(t, err)
-
-	entityId, err = pebbleKeyToBipartiteEntityId([]byte("x"))
-	assert.Equal(t, "", entityId)
-	assert.Error(t, err)
+		recoveredEntityId, err := pebbleKeyToEntityId(key)
+		assert.NoError(t, err)
+		assert.Equal(t, entityId, recoveredEntityId)
+	}
 }
 
-func TestPebbleValueForEntity(t *testing.T) {
-	entity, err := NewEntity("e-1", "Person", map[string]string{
-		"Name": "Bob Smith",
-		"Age":  "32",
-	})
-	assert.NoError(t, err)
+func TestEntityToPebbleValue(t *testing.T) {
+	pebbleEntities := []PebbleEntity{
+		{
+			Id:         "e-1",
+			EntityType: "",
+			Attributes: map[string]string{},
+		},
+		{
+			Id:         "e-1",
+			EntityType: "Person",
+			Attributes: map[string]string{},
+		},
+		{
+			Id:         "e-1",
+			EntityType: "Person",
+			Attributes: map[string]string{
+				"name": "John Smith",
+				"age":  "21",
+			},
+		},
+	}
 
-	pebbleValue, err := bipartiteEntityToPebbleValue(&entity)
-	assert.NoError(t, err)
+	for _, pebbleEntity := range pebbleEntities {
+		value, err := entityToPebbleValue(&pebbleEntity)
+		assert.NoError(t, err)
 
-	recoveredEntity, err := pebbleValueToBipartiteEntity(pebbleValue)
-	assert.NoError(t, err)
-
-	assert.Equal(t, entity, *recoveredEntity)
+		recoveredEntity, err := pebbleValueToEntity(value)
+		assert.NoError(t, err)
+		assert.NotNil(t, recoveredEntity)
+		assert.Equal(t, pebbleEntity, *recoveredEntity)
+	}
 }
 
-func TestPebbleKeyForDocument(t *testing.T) {
-	id := "d-1"
-	key := bipartiteDocumentIdToPebbleKey(id)
+func TestValidateDocumentId(t *testing.T) {
+	testCases := []struct {
+		id            string
+		expectedError error
+	}{
+		{
+			id:            "",
+			expectedError: ErrEmptyDocumentId,
+		},
+		{
+			id:            separator,
+			expectedError: ErrDocumentIdContainsIllegalCharacter,
+		},
+		{
+			id:            "d1",
+			expectedError: nil,
+		},
+	}
 
-	// Valid document key
-	documentId, err := pebbleKeyToBipartiteDocumentId(key)
-	assert.NoError(t, err)
-	assert.Equal(t, id, documentId)
-
-	// Invalid entity key
-	documentId, err = pebbleKeyToBipartiteDocumentId([]byte{})
-	assert.Equal(t, "", documentId)
-	assert.Error(t, err)
-
-	documentId, err = pebbleKeyToBipartiteDocumentId([]byte("x"))
-	assert.Equal(t, "", documentId)
-	assert.Error(t, err)
+	for _, testCase := range testCases {
+		err := validateDocumentId(testCase.id)
+		assert.ErrorIs(t, err, testCase.expectedError)
+	}
 }
 
-func TestPebbleValueForDocument(t *testing.T) {
-	document, err := NewDocument("d-1", "Source A", map[string]string{
-		"Name": "Doc-1",
-		"Date": "2022-10-09",
-	})
-	assert.NoError(t, err)
+func TestDocumentIdToPebbleKey(t *testing.T) {
+	documentIds := []string{"1", "d1", "1234", "abc"}
 
-	// Create the Pebble DB value for a document
-	pebbleValue, err := bipartiteDocumentToPebbleValue(&document)
-	assert.NoError(t, err)
+	for _, docId := range documentIds {
+		key, err := documentIdToPebbleKey(docId)
+		assert.NoError(t, err)
 
-	// Convert the Pebble DB value back to a document
-	recoveredDocument, err := pebbleValueToBipartiteDocument(pebbleValue)
-	assert.NoError(t, err)
-	assert.Equal(t, document, *recoveredDocument)
+		recoveredDocId, err := pebbleKeyToDocumentId(key)
+		assert.NoError(t, err)
+		assert.Equal(t, docId, recoveredDocId)
+	}
+}
+
+func TestDocumentToPebbleValue(t *testing.T) {
+	documents := []PebbleDocument{
+		{
+			Id:           "d1",
+			DocumentType: "",
+			Attributes:   map[string]string{},
+		},
+		{
+			Id:           "1234",
+			DocumentType: "Type-A",
+			Attributes:   map[string]string{},
+		},
+		{
+			Id:           "d1",
+			DocumentType: "",
+			Attributes: map[string]string{
+				"date":   "2023-06-08",
+				"author": "John Smith",
+			},
+		},
+	}
+
+	for _, doc := range documents {
+		value, err := documentToPebbleValue(&doc)
+		assert.NoError(t, err)
+
+		recoveredDoc, err := pebbleValueToDocument(value)
+		assert.NoError(t, err)
+		assert.NotNil(t, recoveredDoc)
+		assert.Equal(t, doc, *recoveredDoc)
+	}
+}
+
+func TestEntityDocumentLinkToPebbleKey(t *testing.T) {
+	testCases := []struct {
+		entityId   string
+		documentId string
+	}{
+		{
+			entityId:   "e-1",
+			documentId: "d-1",
+		},
+		{
+			entityId:   "1",
+			documentId: "1",
+		},
+		{
+			entityId:   "1",
+			documentId: "10",
+		},
+		{
+			entityId:   "10",
+			documentId: "1",
+		},
+	}
+
+	for _, testCase := range testCases {
+		key, err := entityDocumentLinkToPebbleKey(testCase.entityId, testCase.documentId)
+		assert.NoError(t, err)
+
+		ent2, doc2, err := pebbleKeyToEntityDocumentLink(key)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.entityId, ent2)
+		assert.Equal(t, testCase.documentId, doc2)
+	}
+}
+
+func TestDocumentEntityLinkToPebbleKey(t *testing.T) {
+	testCases := []struct {
+		documentId string
+		entityId   string
+	}{
+		{
+			documentId: "d-1",
+			entityId:   "e-1",
+		},
+		{
+			documentId: "1",
+			entityId:   "1",
+		},
+		{
+			documentId: "1",
+			entityId:   "10",
+		},
+		{
+			documentId: "10",
+			entityId:   "1",
+		},
+	}
+
+	for _, testCase := range testCases {
+		key, err := documentEntityLinkToPebbleKey(testCase.documentId, testCase.entityId)
+		assert.NoError(t, err)
+
+		doc2, ent2, err := pebbleKeyToDocumentEntityLink(key)
+		assert.NoError(t, err)
+		assert.Equal(t, testCase.entityId, ent2)
+		assert.Equal(t, testCase.documentId, doc2)
+	}
 }
 
 // newBipartitePebbleStore constructs a new (temporary) bipartite store.

@@ -344,6 +344,15 @@ func (p *PebbleUnipartiteGraphStore) EntityIds() (*set.Set[string], error) {
 // EntityIdsAdjacentTo a given entity.
 func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(id string) (*set.Set[string], error) {
 
+	found, err := p.HasEntity(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		return nil, fmt.Errorf("%w: %s", ErrEntityNotFound, id)
+	}
+
 	adjacentIds := set.NewSet[string]()
 
 	iterOptions := &pebble.IterOptions{
@@ -372,10 +381,6 @@ func (p *PebbleUnipartiteGraphStore) EntityIdsAdjacentTo(id string) (*set.Set[st
 
 	if errDuringIteration != nil {
 		return nil, errDuringIteration
-	}
-
-	if adjacentIds.Len() == 0 {
-		return nil, fmt.Errorf("%w: %s", ErrEntityNotFound, id)
 	}
 
 	return adjacentIds, nil
@@ -425,7 +430,11 @@ func (p *PebbleUnipartiteGraphStore) HasEntity(id string) (bool, error) {
 	// Check whether the entity exists on its own
 	found, err := p.hasNode(id)
 	if err != nil {
-		return false, err
+		if err == ErrEntityNotFound {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
 
 	if found {
