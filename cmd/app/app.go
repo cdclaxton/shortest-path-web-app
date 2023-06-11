@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
 	"github.com/cdclaxton/shortest-path-web-app/graphbuilder"
@@ -35,6 +36,8 @@ func readMessage(filepath string) (string, error) {
 }
 
 func main() {
+
+	startTime := time.Now()
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
@@ -178,6 +181,11 @@ func main() {
 			Err(err).
 			Msg("Failed to create job server")
 	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("startUpTime", time.Now().Sub(startTime).String()).
+		Msg("Start up time")
 
 	// Start the job server (ready for users to run jobs)
 	logging.Logger.Info().
