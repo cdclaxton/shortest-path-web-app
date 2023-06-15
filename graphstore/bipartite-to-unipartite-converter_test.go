@@ -196,8 +196,12 @@ func TestBipartiteToUnipartite(t *testing.T) {
 			assert.NoError(t, bi.AddDocument(doc))
 		}
 
+		numWorkers := 2
+		jobChannelSize := 2
+
 		// Convert bipartite graph to unipartite graph
-		assert.NoError(t, BipartiteToUnipartite(bi, uni, testCase.skipEntities))
+		assert.NoError(t, BipartiteToUnipartite(bi, uni, testCase.skipEntities,
+			numWorkers, jobChannelSize))
 
 		// Check the unipartite graph
 		checkConnections(t, uni, testCase.expectedConnections)

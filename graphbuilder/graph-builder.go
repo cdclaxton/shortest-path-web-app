@@ -167,13 +167,15 @@ type UnipartiteGraphConfig struct {
 
 // GraphConfig for the input data, bipartite and unipartite graphs.
 type GraphConfig struct {
-	Data               GraphData             `json:"graphData"`
-	BipartiteConfig    BipartiteGraphConfig  `json:"bipartiteGraphConfig"`
-	UnipartiteConfig   UnipartiteGraphConfig `json:"unipartiteGraphConfig"`
-	IgnoreInvalidLinks bool                  `json:"ignoreInvalidLinks"`
-	NumEntityWorkers   int                   `json:"numEntityWorkers"`
-	NumDocumentWorkers int                   `json:"numDocumentWorkers"`
-	NumLinkWorkers     int                   `json:"numLinkWorkers"`
+	Data                   GraphData             `json:"graphData"`
+	BipartiteConfig        BipartiteGraphConfig  `json:"bipartiteGraphConfig"`
+	UnipartiteConfig       UnipartiteGraphConfig `json:"unipartiteGraphConfig"`
+	IgnoreInvalidLinks     bool                  `json:"ignoreInvalidLinks"`
+	NumEntityWorkers       int                   `json:"numEntityWorkers"`
+	NumDocumentWorkers     int                   `json:"numDocumentWorkers"`
+	NumLinkWorkers         int                   `json:"numLinkWorkers"`
+	NumConversionWorkers   int                   `json:"numConversionWorkers"`
+	ConversionJobQueuesize int                   `json:"conversionJobQueueSize"`
 }
 
 // readGraphConfig from a JSON file.
@@ -322,7 +324,12 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		Msg("Converting the bipartite graph to a unipartite graph")
 
 	startTime = time.Now()
-	graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities)
+	err = graphstore.BipartiteToUnipartite(builder.Bipartite, builder.Unipartite, skipEntities,
+		config.NumConversionWorkers, config.ConversionJobQueuesize)
+	if err != nil {
+		return nil, err
+	}
+
 	unipartiteTimeTaken := time.Now().Sub(startTime)
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
