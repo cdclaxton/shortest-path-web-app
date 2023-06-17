@@ -68,5 +68,7 @@
     "ignoreInvalidLinks": false,
     "numEntityWorkers": 2,
     "numDocumentWorkers": 2,
-    "numLinkWorkers": 2
+    "numLinkWorkers": 2,
+    "numConversionWorkers": 2,
+    "conversionJobQueueSize": 2
 }
