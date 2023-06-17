@@ -12,6 +12,109 @@ import (
 )
 
 func TestFilesChanged(t *testing.T) {
+
+	testCases := []struct {
+		description   string   // Description for the test
+		hasPrevious   bool     // Should there be a previous signature file?
+		previousFiles []string // Previous filepaths
+		currentFiles  []string // Current filepaths
+		change        bool     // Should a change be expected?
+	}{
+		{
+			description:   "no previous files, one current file",
+			hasPrevious:   false,
+			previousFiles: []string{},
+			currentFiles: []string{
+				"./test-data/test-1/a.txt",
+			},
+			change: true,
+		},
+		{
+			description: "one previous file, one current file, no change",
+			hasPrevious: true,
+			previousFiles: []string{
+				"./test-data/test-1/a.txt",
+			},
+			currentFiles: []string{
+				"./test-data/test-1/a.txt",
+			},
+			change: false,
+		},
+		{
+			description: "one previous file, one current file, one (filepath) change",
+			hasPrevious: true,
+			previousFiles: []string{
+				"./test-data/test-1/a.txt",
+			},
+			currentFiles: []string{
+				"./test-data/test-2/a.txt",
+			},
+			change: true,
+		},
+		{
+			description: "two previous files, two current files, no change",
+			hasPrevious: true,
+			previousFiles: []string{
+				"./test-data/test-3/a.txt",
+				"./test-data/test-3/b.txt",
+			},
+			currentFiles: []string{
+				"./test-data/test-3/a.txt",
+				"./test-data/test-3/b.txt",
+			},
+			change: false,
+		},
+		{
+			description: "two previous files, one current files, change",
+			hasPrevious: true,
+			previousFiles: []string{
+				"./test-data/test-3/a.txt",
+				"./test-data/test-3/b.txt",
+			},
+			currentFiles: []string{
+				"./test-data/test-3/a.txt",
+			},
+			change: true,
+		},
+	}
+
+	// Create a temp folder to write the signature file to
+	signatureFolder, err := ioutil.TempDir("", "fileSignature")
+	assert.NoError(t, err)
+	defer os.RemoveAll(signatureFolder)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+
+			previousSignatureFilepath := path.Join(signatureFolder, "signature.json")
+
+			if testCase.hasPrevious {
+				// Generate the previous file signatures
+				previous, err := generateSignaturesOfFiles(testCase.previousFiles)
+				assert.NoError(t, err)
+				assert.NotNil(t, previous)
+
+				// Write the file signature to file
+				err = WriteFileSignatures(previous, previousSignatureFilepath)
+				assert.NoError(t, err)
+			}
+
+			// Determine whether a change occurred
+			actual, sig, err := FilesChanged(testCase.currentFiles, previousSignatureFilepath)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.change, actual)
+
+			if testCase.change {
+				assert.NotNil(t, sig)
+			} else {
+				assert.Nil(t, sig)
+			}
+		})
+	}
+}
+
+func TestFilesChangedInFolder(t *testing.T) {
+
 	testCases := []struct {
 		description    string // Description for the test
 		hasPrevious    bool   // Should there be a previous signature file?
@@ -59,7 +162,6 @@ func TestFilesChanged(t *testing.T) {
 	// Create a temp folder to write the signature file to
 	signatureFolder, err := ioutil.TempDir("", "fileSignature")
 	assert.NoError(t, err)
-
 	defer os.RemoveAll(signatureFolder)
 
 	for _, testCase := range testCases {
@@ -80,7 +182,7 @@ func TestFilesChanged(t *testing.T) {
 
 			// Determine whether a change occurred
 			current := path.Join("./test-data/", testCase.currentFolder)
-			actual, sig, err := FilesChanged(current, previousSignatureFilepath)
+			actual, sig, err := FilesChangedInFolder(current, previousSignatureFilepath)
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.change, actual)
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"time"
@@ -30,17 +29,54 @@ type FileSignatureInfo struct {
 	DateCreated time.Time      `json:"dateCreated"` // Date and time the signature was created
 }
 
-// FilesChanges detects whether the files in a folder have changed based on their file hash.
+// FilesChanged detects whether the a list of files have changed based on their file hash.
+func FilesChanged(filepaths []string, signatureFilepath string) (bool, *FileSignatureInfo, error) {
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Int("numFiles", len(filepaths)).
+		Str("signatureFilePath", signatureFilepath).
+		Msg("Detecting file changes")
+
+	// Try to read the signature file from disk
+	hasPrevious := true
+	previous, err := readFileSignatures(signatureFilepath)
+	if err == ErrSignatureFileDoesNotExist {
+		hasPrevious = false
+	} else if err != nil {
+		return false, nil, err
+	}
+
+	// Generate signatures
+	sigInfo, err := generateSignaturesOfFiles(filepaths)
+	if err != nil {
+		return false, nil, err
+	}
+
+	// If there isn't a previous set of file signatures, return the new signatures
+	if !hasPrevious {
+		return true, sigInfo, nil
+	}
+
+	// Check to see if the current signatures are identical to the previous
+	if signaturesSame(sigInfo.Signatures, previous.Signatures) {
+		return false, nil, nil
+	}
+
+	return true, sigInfo, nil
+}
+
+// FilesChangedInFolder detects whether the files in a folder have changed based on their file hash.
 //
-// If the files have changed, the function returns the file signature information for
-// later use (e.g. to write it to file using WriteFileSignatures).
-func FilesChanged(folder string, signatureFilepath string) (bool, *FileSignatureInfo, error) {
+// If the files have changed, the function returns the file signature information for later use
+// (e.g. to write it to file using WriteFileSignatures).
+func FilesChangedInFolder(folder string, signatureFilepath string) (bool, *FileSignatureInfo, error) {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str("folder", folder).
 		Str("signatureFilePath", signatureFilepath).
-		Msg("Detecting file changes")
+		Msg("Detecting file changes in folder")
 
 	// Try to read the signature file from disk
 	hasPrevious := true
@@ -126,6 +162,31 @@ func readFileSignatures(filepath string) (*FileSignatureInfo, error) {
 	return &fileSignatureInfo, nil
 }
 
+func generateSignaturesOfFiles(filepaths []string) (*FileSignatureInfo, error) {
+
+	sig := FileSignatures{}
+
+	var err error
+	for idx, filepath := range filepaths {
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("filepath", filepath).
+			Int("fileNumber", idx+1).
+			Int("numFiles", len(filepaths)).
+			Msg("Generating file signature")
+
+		sig[filepath], err = hashFile(filepath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &FileSignatureInfo{
+		Signatures:  sig,
+		DateCreated: time.Now(),
+	}, nil
+}
+
 // generateSignatures of all files in the folder.
 func generateSignatures(folder string) (*FileSignatureInfo, error) {
 
@@ -144,7 +205,11 @@ func generateSignatures(folder string) (*FileSignatureInfo, error) {
 			Str("filename", e.Name()).
 			Msg("Generating file signature")
 
-		sig[e.Name()] = hashFile(folder, e.Name())
+		filepath := path.Join(folder, e.Name())
+		sig[e.Name()], err = hashFile(filepath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &FileSignatureInfo{
@@ -154,23 +219,23 @@ func generateSignatures(folder string) (*FileSignatureInfo, error) {
 }
 
 // hashFile generates a SHA-256 hash of the file.
-func hashFile(folder string, filename string) string {
+func hashFile(filepath string) (string, error) {
 
 	// Open the file
-	f, err := os.Open(path.Join(folder, filename))
+	f, err := os.Open(filepath)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer f.Close()
 
 	// Generate a SHA-256 hash
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	// Return a string representation of the hash
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // signaturesSame returns true if the two file signatures are identical.
