@@ -741,7 +741,6 @@ func TestHandleStats(t *testing.T) {
 
 	server.handleStats(w, req)
 	assert.True(t, len(w.Body.String()) > 0)
-	fmt.Println(w.Body.String())
 	assert.True(t, strings.Contains(w.Body.String(), "Statistics"))
 }
 
