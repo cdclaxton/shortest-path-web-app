@@ -21,7 +21,8 @@ func isGraphBuildingRequired(config GraphConfig, signatureFilepath string) (
 	return filedetector.FilesChanged(filepaths, signatureFilepath)
 }
 
-// filesToCheck that are specified in the graph data.
+// filesToCheck that are specified in the graph data (i.e. entity, document, link and skip entities
+// file).
 func filesToCheck(data GraphData) []string {
 
 	// Initialise a slice of files to check
