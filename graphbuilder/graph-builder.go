@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cdclaxton/shortest-path-web-app/filedetector"
 	"github.com/cdclaxton/shortest-path-web-app/graphloader"
 	"github.com/cdclaxton/shortest-path-web-app/graphstore"
 	"github.com/cdclaxton/shortest-path-web-app/logging"
@@ -176,6 +177,7 @@ type GraphConfig struct {
 	NumLinkWorkers         int                   `json:"numLinkWorkers"`
 	NumConversionWorkers   int                   `json:"numConversionWorkers"`
 	ConversionJobQueuesize int                   `json:"conversionJobQueueSize"`
+	SignatureFile          string                `json:"signatureFile"`
 }
 
 // readGraphConfig from a JSON file.
@@ -259,7 +261,7 @@ type GraphBuilder struct {
 	Stats      GraphStats
 }
 
-func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
+func loadAndBuildNewGraph(config GraphConfig) (*GraphBuilder, error) {
 
 	builder := GraphBuilder{}
 
@@ -292,10 +294,10 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 	if err != nil {
 		return nil, err
 	}
-	loadTimeTaken := time.Now().Sub(startTime)
+
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("timeTaken", loadTimeTaken.String()).
+		Dur("timeTaken", time.Since(startTime)).
 		Msg("Time taken to load the bipartite graph")
 
 	// Read the entities to skip
@@ -330,11 +332,100 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 		return nil, err
 	}
 
-	unipartiteTimeTaken := time.Now().Sub(startTime)
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("timeTaken", unipartiteTimeTaken.String()).
+		Dur("timeTaken", time.Since(startTime)).
 		Msg("Time taken to perform bipartite to unipartite conversion")
+
+	return &builder, nil
+}
+
+var (
+	ErrBipartiteGraphIsNotPebble  = errors.New("bipartite graph is not stored in Pebble")
+	ErrUnipartiteGraphIsNotPebble = errors.New("unipartite graph is not stored in Pebble")
+)
+
+// loadGraph from Pebble stores given the config.
+func loadGraph(config GraphConfig) (*GraphBuilder, error) {
+
+	if config.BipartiteConfig.Type != StorageTypePebble {
+		return nil, ErrBipartiteGraphIsNotPebble
+	}
+
+	if config.UnipartiteConfig.Type != StorageTypePebble {
+		return nil, ErrUnipartiteGraphIsNotPebble
+	}
+
+	builder := GraphBuilder{}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("graphStoreType", config.BipartiteConfig.Type).
+		Msg("Opening bipartite graph store")
+
+	var err error
+	builder.Bipartite, err = graphstore.NewPebbleBipartiteGraphStore(config.BipartiteConfig.Folder)
+	if err != nil {
+		return nil, err
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Str("graphStoreType", config.UnipartiteConfig.Type).
+		Msg("Opening unipartite graph store")
+
+	builder.Unipartite, err = graphstore.NewPebbleUnipartiteGraphStore(config.UnipartiteConfig.Folder)
+	if err != nil {
+		return nil, err
+	}
+
+	return &builder, nil
+}
+
+func NewGraphBuilder(config GraphConfig) (*GraphBuilder, bool, error) {
+
+	// Does the graph need loading or building?
+	build, sig, err := isGraphBuildingRequired(config)
+	if err != nil {
+		return nil, false, err
+	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Bool("buildRequired", build).
+		Msg("Detected whether graph building is required")
+
+	var builder *GraphBuilder
+	if build {
+		builder, err = loadAndBuildNewGraph(config)
+	} else {
+		builder, err = loadGraph(config)
+	}
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	// If the graph needed building, write the signature file. If the signature
+	// file cannot be written, create a log message but continue as building the
+	// graphs can take a long time
+	if build && sig != nil && len(config.SignatureFile) != 0 {
+		err = filedetector.WriteFileSignatures(sig, config.SignatureFile)
+		if err != nil {
+			currentDirectory, _ := os.Getwd()
+			logging.Logger.Error().
+				Str(logging.ComponentField, componentName).
+				Err(err).
+				Str("filepath", config.SignatureFile).
+				Str("currentWorkingDirectory", currentDirectory).
+				Msg("Failed to write signature file")
+		} else {
+			logging.Logger.Error().
+				Str(logging.ComponentField, componentName).
+				Str("filepath", config.SignatureFile).
+				Msg("Signature file written")
+		}
+	}
 
 	// Calculate graph stats
 	logging.Logger.Info().
@@ -343,14 +434,14 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, error) {
 
 	err = builder.CalculateStats()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return &builder, nil
+	return builder, build, nil
 }
 
 // NewGraphBuilderFromJson returns a constructed GraphBuilder based on the config from a JSON file.
-func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
+func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, bool, error) {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
@@ -360,7 +451,7 @@ func NewGraphBuilderFromJson(filepath string) (*GraphBuilder, error) {
 	// Read the config from file
 	graphConfig, err := readGraphConfig(filepath)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Modify the data file paths to be based on the location of the config file
@@ -402,11 +493,24 @@ func (gb *GraphBuilder) CalculateStats() error {
 		return err
 	}
 
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Int("numDocuments", bipartiteStats.NumberOfDocuments).
+		Int("numDocumentsWithEntities", bipartiteStats.NumberOfEntitiesWithDocuments).
+		Int("numEntities", bipartiteStats.NumberOfEntities).
+		Int("numEntitiesWithDocuments", bipartiteStats.NumberOfEntitiesWithDocuments).
+		Msg("Calculated bipartite graph stats")
+
 	// Unipartite graph stats
 	unipartiteStats, err := graphstore.CalcUnipartiteStats(gb.Unipartite)
 	if err != nil {
 		return err
 	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Int("numEntities", unipartiteStats.NumberOfEntities).
+		Msg("Calculated unipartite graph stats")
 
 	// Store the graph stats
 	gb.Stats = GraphStats{

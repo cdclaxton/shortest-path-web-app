@@ -4,7 +4,7 @@
 # STEP 1: Build
 # --------------------------------------------------------------------
 
-FROM golang:1.19-buster AS build
+FROM golang:1.20-buster AS build
 
 # Create a working directory inside the image
 WORKDIR /app

@@ -116,11 +116,11 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 
 	// Wait until all the entity and document workers have completed
 	wg.Wait()
-	cancelCtx()
 
 	// Extract the first error from the error channel
 	err := takeFirstErrorFromChannel(errChan)
 	if err != nil {
+		cancelCtx()
 		return err
 	}
 
@@ -132,6 +132,7 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 
 	// Wait until the link workers have completed
 	wg.Wait()
+	cancelCtx()
 
 	// Extract the first error from the error channel
 	return takeFirstErrorFromChannel(errChan)
@@ -229,7 +230,7 @@ func entityWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx i
 			logging.Logger.Info().
 				Str(logging.ComponentField, componentName).
 				Int("entity worker", workerIdx).
-				Msg("Entity worker shutting down")
+				Msg("Entity worker shutting down due to cancel")
 			return
 		default:
 		}
@@ -296,7 +297,7 @@ func documentWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx
 			logging.Logger.Info().
 				Str(logging.ComponentField, componentName).
 				Int("document worker", workerIdx).
-				Msg("Document worker shutting down")
+				Msg("Document worker shutting down due to cancel")
 			return
 		default:
 		}
@@ -378,7 +379,7 @@ func linkWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int
 			logging.Logger.Info().
 				Str(logging.ComponentField, componentName).
 				Int("link worker", workerIdx).
-				Msg("Link worker shutting down")
+				Msg("Link worker shutting down due to cancel")
 			return
 		default:
 		}

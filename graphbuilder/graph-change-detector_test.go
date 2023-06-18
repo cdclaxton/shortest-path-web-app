@@ -295,9 +295,10 @@ func TestIsGraphBuildingRequired(t *testing.T) {
 					UnipartiteConfig: UnipartiteGraphConfig{
 						Type: StorageTypePebble,
 					},
+					SignatureFile: signatureFile,
 				}
 
-				_, sigInfo, err := isGraphBuildingRequired(previousConfig, signatureFile)
+				_, sigInfo, err := isGraphBuildingRequired(previousConfig)
 				assert.NoError(t, err)
 				assert.NotNil(t, sigInfo)
 
@@ -314,10 +315,11 @@ func TestIsGraphBuildingRequired(t *testing.T) {
 				UnipartiteConfig: UnipartiteGraphConfig{
 					Type: testCase.unipartiteType,
 				},
+				SignatureFile: signatureFile,
 			}
 
 			// Check whether graph building is required
-			buildingRequired, sigInfo, err := isGraphBuildingRequired(config, signatureFile)
+			buildingRequired, sigInfo, err := isGraphBuildingRequired(config)
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.expectedBuildingRequired, buildingRequired)
 

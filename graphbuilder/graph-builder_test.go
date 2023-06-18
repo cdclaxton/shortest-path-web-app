@@ -1,6 +1,7 @@
 package graphbuilder
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -302,7 +303,7 @@ func buildExpectedUnipartiteStore(t *testing.T) graphstore.UnipartiteGraphStore 
 	return expectedUnipartite
 }
 
-// Test the graph builder with valid config. Each config points to the
+// Test the graph builder with valid config
 func TestGraphBuilderValidConfig(t *testing.T) {
 
 	testCases := []struct {
@@ -319,43 +320,46 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("Using config: %s", testCase.configFilepath), func(t *testing.T) {
 
-		// Instantiate the graph builder
-		graphBuilder, err := NewGraphBuilderFromJson(testCase.configFilepath)
-		assert.NoError(t, err)
+			// Instantiate the graph builder
+			graphBuilder, build, err := NewGraphBuilderFromJson(testCase.configFilepath)
+			assert.True(t, build)
+			assert.NoError(t, err)
 
-		// Get the expected bipartite graph store
-		expectedBipartite := buildExpectedBipartiteStore(t)
+			// Get the expected bipartite graph store
+			expectedBipartite := buildExpectedBipartiteStore(t)
 
-		// Check the bipartite graph store
-		eq, err := expectedBipartite.Equal(graphBuilder.Bipartite)
-		assert.NoError(t, err)
-		assert.True(t, eq)
+			// Check the bipartite graph store
+			eq, err := expectedBipartite.Equal(graphBuilder.Bipartite)
+			assert.NoError(t, err)
+			assert.True(t, eq)
 
-		// Get the expected unipartite graph
-		expectedUnipartite := buildExpectedUnipartiteStore(t)
+			// Get the expected unipartite graph
+			expectedUnipartite := buildExpectedUnipartiteStore(t)
 
-		// Check the unipartite graph
-		equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
-		assert.NoError(t, err)
-		assert.True(t, equal)
+			// Check the unipartite graph
+			equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
+			assert.NoError(t, err)
+			assert.True(t, equal)
 
-		// Check the stats
-		expectedStats := GraphStats{
-			Bipartite: graphstore.BipartiteStats{
-				NumberOfEntities:              4,
-				NumberOfEntitiesWithDocuments: 4,
-				NumberOfDocuments:             4,
-				NumberOfDocumentsWithEntities: 4,
-			},
-			Unipartite: graphstore.UnipartiteStats{
-				NumberOfEntities: 4,
-			},
-		}
-		assert.Equal(t, expectedStats, graphBuilder.Stats)
+			// Check the stats
+			expectedStats := GraphStats{
+				Bipartite: graphstore.BipartiteStats{
+					NumberOfEntities:              4,
+					NumberOfEntitiesWithDocuments: 4,
+					NumberOfDocuments:             4,
+					NumberOfDocumentsWithEntities: 4,
+				},
+				Unipartite: graphstore.UnipartiteStats{
+					NumberOfEntities: 4,
+				},
+			}
+			assert.Equal(t, expectedStats, graphBuilder.Stats)
 
-		// Destroy the graph databases
-		graphBuilder.Destroy()
+			// Destroy the graph databases
+			graphBuilder.Destroy()
+		})
 	}
 
 }
@@ -392,11 +396,45 @@ func BenchmarkBuildGraph(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		// Instantiate the graph builder
-		graphBuilder, err := NewGraphBuilderFromJson(configFilepath)
+		graphBuilder, build, err := NewGraphBuilderFromJson(configFilepath)
+		assert.True(b, build)
 
 		// Destroy the graph databases
 		if err == nil {
 			graphBuilder.Destroy()
 		}
 	}
+}
+
+func TestNewGraphBuilderWithLoad(t *testing.T) {
+	configFilepath := "../test-data-sets/set-5/data-config-pebble.json"
+
+	// Instantiate the graph builder
+	graphBuilder, build, err := NewGraphBuilderFromJson(configFilepath)
+	assert.NoError(t, err)
+	assert.True(t, build)
+	assert.NotNil(t, graphBuilder)
+
+	// Close the Pebble stores
+	err = graphBuilder.Unipartite.(*graphstore.PebbleUnipartiteGraphStore).Close()
+	assert.NoError(t, err)
+
+	err = graphBuilder.Bipartite.(*graphstore.PebbleBipartiteGraphStore).Close()
+	assert.NoError(t, err)
+
+	// Create a new graph builder that should use the existing Pebble stores
+	graphBuilder2, build, err := NewGraphBuilderFromJson(configFilepath)
+	assert.NoError(t, err)
+	assert.False(t, build)
+	assert.NotNil(t, graphBuilder2)
+
+	// Delete the graph files
+	assert.NoError(t, graphBuilder2.Destroy())
+
+	// Delete the signature file
+	assert.NoError(t, os.Remove("../test-data-sets/set-5/signatures.json"))
+
+	// Make the folders that will be deleted through the Destory() call
+	assert.NoError(t, os.Mkdir("../working/bipartitePebble", 0644))
+	assert.NoError(t, os.Mkdir("../working/unipartitePebble", 0644))
 }

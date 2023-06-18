@@ -41,7 +41,7 @@ func FilesChanged(filepaths []string, signatureFilepath string) (bool, *FileSign
 	// Try to read the signature file from disk
 	hasPrevious := true
 	previous, err := readFileSignatures(signatureFilepath)
-	if err == ErrSignatureFileDoesNotExist {
+	if err == ErrSignatureFileDoesNotExist || err == ErrEmptyFilepath {
 		hasPrevious = false
 	} else if err != nil {
 		return false, nil, err

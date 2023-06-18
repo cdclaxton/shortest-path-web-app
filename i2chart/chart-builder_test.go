@@ -91,7 +91,7 @@ func TestHeader(t *testing.T) {
 func makeBipartiteStore(t *testing.T) graphstore.BipartiteGraphStore {
 
 	filepath := "../test-data-sets/set-0/config-inmemory.json"
-	builder, err := graphbuilder.NewGraphBuilderFromJson(filepath)
+	builder, _, err := graphbuilder.NewGraphBuilderFromJson(filepath)
 	assert.NoError(t, err)
 	return builder.Bipartite
 }
@@ -375,7 +375,7 @@ func TestRowLinkingEntities(t *testing.T) {
 
 	// Make the bipartite graph store
 	dataFilepath := "../test-data-sets/set-1/data-config.json"
-	graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
+	graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
 	assert.NoError(t, err)
 
 	// Make the i2 chart builder
@@ -492,7 +492,7 @@ func TestBuild(t *testing.T) {
 
 	// Make the bipartite graph store
 	dataFilepath := "../test-data-sets/set-1/data-config.json"
-	graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
+	graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(dataFilepath)
 	assert.NoError(t, err)
 
 	// Make the i2 chart builder

@@ -4,7 +4,7 @@ import "github.com/cdclaxton/shortest-path-web-app/filedetector"
 
 // isGraphBuildingRequired checks whether the unipartite and bipartite graphs need constructing
 // from the input data.
-func isGraphBuildingRequired(config GraphConfig, signatureFilepath string) (
+func isGraphBuildingRequired(config GraphConfig) (
 	bool, *filedetector.FileSignatureInfo, error) {
 
 	// Are the bipartite and unipartite graphs backed by Pebble (i.e. persisted)?
@@ -18,7 +18,7 @@ func isGraphBuildingRequired(config GraphConfig, signatureFilepath string) (
 	filepaths := filesToCheck(config.Data)
 
 	// Return whether the files have changed
-	return filedetector.FilesChanged(filepaths, signatureFilepath)
+	return filedetector.FilesChanged(filepaths, config.SignatureFile)
 }
 
 // filesToCheck that are specified in the graph data (i.e. entity, document, link and skip entities

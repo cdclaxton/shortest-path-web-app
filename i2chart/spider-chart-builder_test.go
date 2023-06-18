@@ -345,7 +345,7 @@ func TestBuildChart(t *testing.T) {
 			// One connection
 			results: &spider.SpiderResults{
 				NumberSteps:          1,
-				Subgraph:             *subgraph1,
+				Subgraph:             subgraph1,
 				SeedEntities:         set.NewPopulatedSet("e-1"),
 				SeedEntitiesNotFound: set.NewSet[string](),
 			},
@@ -359,7 +359,7 @@ func TestBuildChart(t *testing.T) {
 			// Two connections
 			results: &spider.SpiderResults{
 				NumberSteps:          1,
-				Subgraph:             *subgraph2,
+				Subgraph:             subgraph2,
 				SeedEntities:         set.NewPopulatedSet("e-1", "e-3"),
 				SeedEntitiesNotFound: set.NewSet[string](),
 			},

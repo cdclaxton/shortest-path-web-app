@@ -56,12 +56,14 @@ func makeSpiderJobRunner(t *testing.T) *SpiderJobRunner {
 	i2ConfigFilepath := path.Join(folder, "i2-spider-config.json")
 
 	// Build and load the graphs
-	builder, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
+	builder, _, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
 	assert.NoError(t, err)
+	assert.NotNil(t, builder)
 
 	// Instantiate the i2 chart builder for spidering
 	chartBuilder, err := i2chart.NewSpiderChartBuilder(i2ConfigFilepath)
 	assert.NoError(t, err)
+	assert.NotNil(t, chartBuilder)
 	chartBuilder.SetBipartite(builder.Bipartite)
 
 	// Instantiate the spider engine
