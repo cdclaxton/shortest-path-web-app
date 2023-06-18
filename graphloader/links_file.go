@@ -154,6 +154,8 @@ func (reader *LinksCsvFileReader) readRecord() (graphstore.Link, bool) {
 		if err != nil {
 			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
+				Str("filepath", reader.linksCsvFile.Path).
+				Int("lineNumber", reader.numberOfRows).
 				Err(err).
 				Msg("Line failed to parse")
 			continue
@@ -199,7 +201,7 @@ func (reader *LinksCsvFileReader) Close() error {
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str("filepath", reader.linksCsvFile.Path).
-		Str("numbeOfRowsRead", strconv.Itoa(reader.numberOfRows)).
+		Str("numberOfRowsRead", strconv.Itoa(reader.numberOfRows)).
 		Str("numberOfLinksRead", strconv.Itoa(reader.numberOfLinks)).
 		Msg("Closing CSV file")
 
