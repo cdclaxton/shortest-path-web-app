@@ -18,10 +18,12 @@ type UnipartiteGraphStore interface {
 	AddDirected(string, string) error                     // Add a directed edge between two entities
 	AddUndirected(string, string) error                   // Add an undirected edge between two entities
 	Clear() error                                         // Clear down the graph
+	Close() error                                         // Close the graph
 	Destroy() error                                       // Destroy the graph (and any backing files)
 	EdgeExists(string, string) (bool, error)              // Are the two entities connected?
 	EntityIds() (*set.Set[string], error)                 // All entity IDs in the graph
 	EntityIdsAdjacentTo(string) (*set.Set[string], error) // Entity IDs adjacent to a given entity ID
+	Finalise() error                                      // Run any tidy up actions
 	HasEntity(string) (bool, error)                       // Does the store contain the entity?
 	NumberEntities() (int, error)                         // Number of entities in the store
 }

@@ -100,6 +100,14 @@ func (graph *InMemoryUnipartiteGraphStore) Clear() error {
 	return nil
 }
 
+func (graph *InMemoryUnipartiteGraphStore) Close() error {
+	return nil
+}
+
+func (graph *InMemoryUnipartiteGraphStore) Finalise() error {
+	return nil
+}
+
 // Destroy the in-memory unipartite graph.
 func (graph *InMemoryUnipartiteGraphStore) Destroy() error {
 

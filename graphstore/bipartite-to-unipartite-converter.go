@@ -82,6 +82,11 @@ func BipartiteToUnipartite(bi BipartiteGraphStore, uni UnipartiteGraphStore,
 	default:
 	}
 
+	err := uni.Finalise()
+	if err != nil {
+		return err
+	}
+
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Msg("Finished bipartite to unipartite conversion")

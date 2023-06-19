@@ -30,6 +30,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/vfs"
 )
 
 const (
@@ -103,7 +104,6 @@ func PebbleDocumentToDocument(pebbleDocument PebbleDocument, entities *set.Set[s
 // NewPebbleBipartiteGraphStore given the dedicated folder where the Pebble files are to be held.
 func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, error) {
 
-	// Preconditions
 	if len(folder) == 0 {
 		return nil, errors.New("folder name is empty")
 	}
@@ -111,9 +111,11 @@ func NewPebbleBipartiteGraphStore(folder string) (*PebbleBipartiteGraphStore, er
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str("folder", folder).
-		Msg("Creating a new bipartite Pebble store")
+		Msg("Opening bipartite Pebble store")
 
-	db, err := pebble.Open(folder, &pebble.Options{})
+	db, err := pebble.Open(folder, &pebble.Options{
+		FS: vfs.Default,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +135,10 @@ func (p *PebbleBipartiteGraphStore) Close() error {
 		Msg("Closing the Pebble bipartite graph store")
 
 	return p.db.Close()
+}
+
+func (p *PebbleBipartiteGraphStore) Finalise() error {
+	return p.db.Flush()
 }
 
 // entityIdToPebbleKey generates the Pebble key for an entity ID.
