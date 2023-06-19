@@ -1,0 +1,75 @@
+{
+    "graphData": {
+        "entitiesFiles": [
+            {
+                "path": "person.csv",
+                "entityType": "Person",
+                "delimiter": ",",
+                "entityIdField": "entity ID",
+                "fieldToAttribute": {
+                    "forename": "Forename",
+                    "surname": "Surname",
+                    "date of birth": "DOB"
+                }
+            },
+            {
+                "path": "address.csv",
+                "entityType": "Address",
+                "delimiter": ",",
+                "entityIdField": "entity ID",
+                "fieldToAttribute": {
+                    "first line": "First line",
+                    "postcode": "Postcode"
+                }
+            }
+        ],
+        "documentsFiles": [
+            {
+                "path": "documents-A.csv",
+                "documentType": "Doc-A",
+                "delimiter": ",",
+                "documentIdField": "document ID",
+                "fieldToAttribute": {
+                    "title": "Title",
+                    "date": "Date"
+                }
+            },
+            {
+                "path": "documents-B.csv",
+                "documentType": "Doc-B",
+                "delimiter": ",",
+                "documentIdField": "document ID",
+                "fieldToAttribute": {
+                    "title": "Title",
+                    "date": "Date"
+                }
+            }
+        ],
+        "linksFiles": [
+            {
+                "path": "links.csv",
+                "entityIdField": "entity ID",
+                "documentIdField": "document ID",
+                "delimiter": ","
+            }
+        ],
+        "skipEntitiesFile": "skip_entities.txt"
+    },
+    "bipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "./working/bipartitePebble/",
+        "deleteFilesInFolder": true
+    },
+    "unipartiteGraphConfig": {
+        "type": "pebble",
+        "folder": "./working/unipartitePebble/",
+        "deleteFilesInFolder": true
+    },
+    "ignoreInvalidLinks": false,
+    "numEntityWorkers": 2,
+    "numDocumentWorkers": 2,
+    "numLinkWorkers": 2,
+    "numConversionWorkers": 2,
+    "conversionJobQueueSize": 2,
+    "signatureFile": "./demo-data-sets/set-1/working/signature.json"
+}
