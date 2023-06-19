@@ -98,7 +98,7 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 
 	// Make a channel to hold errors from the goroutines. The worse case situation is that
 	// every worker fails simultaneously, so a buffered channel is required
-	errChan := make(chan error, loader.numEntityWorkers+loader.numDocumentWorkers+loader.numLinkWorkers)
+	errChan := make(chan error, loader.numEntityWorkers+loader.numDocumentWorkers+loader.numLinkWorkers+1)
 
 	var wg sync.WaitGroup
 
@@ -133,6 +133,11 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 	// Wait until the link workers have completed
 	wg.Wait()
 	cancelCtx()
+
+	err = loader.graphStore.Finalise()
+	if err != nil {
+		errChan <- err
+	}
 
 	// Extract the first error from the error channel
 	return takeFirstErrorFromChannel(errChan)
