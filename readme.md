@@ -349,6 +349,14 @@ docker compose up
 
 The web-app can be accessed from http://192.168.99.100:8090
 
+If necessary, the following commands can be used to clean the Docker volumes:
+
+```bash
+docker volume rm shortest-path-web-app_bipartitePebbleStore
+docker volume rm shortest-path-web-app_unipartitePebbleStore
+docker volume rm shortest-path-web-app_signatureStore
+```
+
 ## Running behind an Apache HTTPD reverse proxy
 
 The `proxy` folder contains configuration files for running the web-app behind an Apache HTTPD
