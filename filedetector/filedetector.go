@@ -42,8 +42,20 @@ func FilesChanged(filepaths []string, signatureFilepath string) (bool, *FileSign
 	hasPrevious := true
 	previous, err := readFileSignatures(signatureFilepath)
 	if err == ErrSignatureFileDoesNotExist || err == ErrEmptyFilepath {
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("signatureFilePath", signatureFilepath).
+			Msg("Signature file doesn't exist")
+
 		hasPrevious = false
 	} else if err != nil {
+
+		logging.Logger.Warn().
+			Str(logging.ComponentField, componentName).
+			Str("signatureFilePath", signatureFilepath).
+			Msg("Failed to read signature file")
+
 		return false, nil, err
 	}
 
@@ -82,8 +94,18 @@ func FilesChangedInFolder(folder string, signatureFilepath string) (bool, *FileS
 	hasPrevious := true
 	previous, err := readFileSignatures(signatureFilepath)
 	if err == ErrSignatureFileDoesNotExist {
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Str("signatureFilePath", signatureFilepath).
+			Msg("Signature file doesn't exist")
+
 		hasPrevious = false
 	} else if err != nil {
+		logging.Logger.Warn().
+			Str(logging.ComponentField, componentName).
+			Str("signatureFilePath", signatureFilepath).
+			Msg("Failed to read signature file")
+
 		return false, nil, err
 	}
 
@@ -239,22 +261,49 @@ func hashFile(filepath string) (string, error) {
 }
 
 // signaturesSame returns true if the two file signatures are identical.
-func signaturesSame(sig1 FileSignatures, sig2 FileSignatures) bool {
+func signaturesSame(current FileSignatures, previous FileSignatures) bool {
 
-	if len(sig1) != len(sig2) {
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Checking if file signatures are the same")
+
+	if len(current) != len(previous) {
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Int("current", len(current)).
+			Int("previous", len(previous)).
+			Msg("Different number of files")
 		return false
 	}
 
-	for filename, hash1 := range sig1 {
-		hash2, found := sig2[filename]
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Same number of files")
+
+	for filename, hash1 := range current {
+		hash2, found := previous[filename]
 		if !found {
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("filename", filename).
+				Msg("File in current signature missing from previous signature")
 			return false
 		}
 
 		if hash1 != hash2 {
+			logging.Logger.Info().
+				Str(logging.ComponentField, componentName).
+				Str("filename", filename).
+				Str("currentHash", hash1).
+				Str("previousHash", hash2).
+				Msg("File has different signatures")
 			return false
 		}
 	}
+
+	logging.Logger.Info().
+		Str(logging.ComponentField, componentName).
+		Msg("Signatures are identical")
 
 	return true
 }
