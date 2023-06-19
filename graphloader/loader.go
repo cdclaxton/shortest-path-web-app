@@ -227,7 +227,7 @@ func entityWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx i
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Int("entity worker", workerIdx).
 				Msg("Entity worker shutting down due to cancel")
@@ -294,7 +294,7 @@ func documentWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Int("document worker", workerIdx).
 				Msg("Document worker shutting down due to cancel")
@@ -376,7 +376,7 @@ func linkWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Int("link worker", workerIdx).
 				Msg("Link worker shutting down due to cancel")
