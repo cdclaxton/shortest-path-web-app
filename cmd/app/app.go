@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
@@ -196,5 +197,18 @@ func main() {
 		Str(logging.ComponentField, componentName).
 		Msg("Starting server")
 
-	jobServer.Start()
+	go jobServer.Start()
+
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan)
+	logging.Logger.Info().Msg("Running until signal")
+
+	sig := <-stopChan
+	logging.Logger.Warn().
+		Str(logging.ComponentField, componentName).
+		Str("signal", sig.String()).
+		Msg("Shutdown signal received")
+
+	builder.Bipartite.Close()
+	builder.Unipartite.Close()
 }
