@@ -409,21 +409,29 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, bool, error) {
 	// If the graph needed building, write the signature file. If the signature
 	// file cannot be written, create a log message but continue as building the
 	// graphs can take a long time
-	if build && sig != nil && len(config.SignatureFile) != 0 {
-		err = filedetector.WriteFileSignatures(sig, config.SignatureFile)
-		if err != nil {
-			currentDirectory, _ := os.Getwd()
-			logging.Logger.Error().
+	if build && sig != nil {
+		if len(config.SignatureFile) == 0 {
+
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
-				Err(err).
-				Str("filepath", config.SignatureFile).
-				Str("currentWorkingDirectory", currentDirectory).
-				Msg("Failed to write signature file")
+				Msg("Signature filepath is blank, so it won't be written")
+
 		} else {
-			logging.Logger.Error().
-				Str(logging.ComponentField, componentName).
-				Str("filepath", config.SignatureFile).
-				Msg("Signature file written")
+			err = filedetector.WriteFileSignatures(sig, config.SignatureFile)
+			if err != nil {
+				currentDirectory, _ := os.Getwd()
+				logging.Logger.Error().
+					Str(logging.ComponentField, componentName).
+					Err(err).
+					Str("filepath", config.SignatureFile).
+					Str("currentWorkingDirectory", currentDirectory).
+					Msg("Failed to write signature file")
+			} else {
+				logging.Logger.Error().
+					Str(logging.ComponentField, componentName).
+					Str("filepath", config.SignatureFile).
+					Msg("Signature file written")
+			}
 		}
 	}
 
