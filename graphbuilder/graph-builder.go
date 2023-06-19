@@ -26,6 +26,10 @@ const (
 	TempUnipartiteFolderName = "pebble-unipartite" // Temporary folder name (prefix) for the unipartite store
 )
 
+var (
+	ErrNoEntitiesOrDocuments = errors.New("no entities and/or documents")
+)
+
 // GraphData specifies the location of the input data to read.
 type GraphData struct {
 	EntitiesFiles    []graphloader.EntitiesCsvFile  `json:"entitiesFiles"`
@@ -443,6 +447,19 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, bool, error) {
 	err = builder.CalculateStats()
 	if err != nil {
 		return nil, false, err
+	}
+
+	if builder.Stats.Bipartite.NumberOfDocuments == 0 || builder.Stats.Bipartite.NumberOfEntities == 0 ||
+		builder.Stats.Unipartite.NumberOfEntities == 0 {
+
+		logging.Logger.Error().
+			Str(logging.ComponentField, componentName).
+			Int("numDocsInBipartite", builder.Stats.Bipartite.NumberOfDocuments).
+			Int("numEntitiesInBipartite", builder.Stats.Bipartite.NumberOfEntities).
+			Int("numEntitiesInUnipartite", builder.Stats.Unipartite.NumberOfEntities).
+			Msg("No entities and/or documents")
+
+		return nil, false, ErrNoEntitiesOrDocuments
 	}
 
 	return builder, build, nil
