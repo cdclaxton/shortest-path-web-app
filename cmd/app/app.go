@@ -188,7 +188,7 @@ func main() {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Dur("startUpTime", time.Since(startTime)).
+		Str("startUpTime", time.Since(startTime).String()).
 		Msg("Start up time")
 
 	// Start the job server (ready for users to run jobs)

@@ -297,7 +297,7 @@ func loadAndBuildNewGraph(config GraphConfig) (*GraphBuilder, error) {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Dur("timeTaken", time.Since(startTime)).
+		Str("timeTaken", time.Since(startTime).String()).
 		Msg("Time taken to load the bipartite graph")
 
 	// Read the entities to skip
@@ -334,7 +334,7 @@ func loadAndBuildNewGraph(config GraphConfig) (*GraphBuilder, error) {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Dur("timeTaken", time.Since(startTime)).
+		Str("timeTaken", time.Since(startTime).String()).
 		Msg("Time taken to perform bipartite to unipartite conversion")
 
 	return &builder, nil
