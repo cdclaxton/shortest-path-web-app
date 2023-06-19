@@ -427,7 +427,7 @@ func NewGraphBuilder(config GraphConfig) (*GraphBuilder, bool, error) {
 					Str("currentWorkingDirectory", currentDirectory).
 					Msg("Failed to write signature file")
 			} else {
-				logging.Logger.Error().
+				logging.Logger.Info().
 					Str(logging.ComponentField, componentName).
 					Str("filepath", config.SignatureFile).
 					Msg("Signature file written")
