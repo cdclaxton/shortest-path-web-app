@@ -11,10 +11,14 @@ services:
       - "${PWD}/test-data-sets/docker/:/data/"
       - unipartitePebbleStore:/pebble/unipartite
       - bipartitePebbleStore:/pebble/bipartite
+      - signatureStore:/signatureStore
 
 volumes:
   bipartitePebbleStore:
     external: false
 
   unipartitePebbleStore:
+    external: false
+
+  signatureStore:
     external: false
