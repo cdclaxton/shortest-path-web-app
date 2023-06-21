@@ -1,12 +1,12 @@
 echo "Running Shortest Path App in demo mode (Pebble backend)"
 
-# Paths referenced in the data-config.json file
-OUTPUT_FOLDER=./working/i2/
-BIPARTITE_FOLDER=./working/bipartitePebble
-UNIPARTITE_FOLDER=./working/unipartitePebble
-
 # Dataset within ./test-data-sets/ to use
-SET=set-3
+SET=set-1
+
+# Paths referenced in the data-config.json file
+OUTPUT_FOLDER=./demo-data-sets/$SET/working/i2/
+BIPARTITE_FOLDER=./demo-data-sets/$SET/working/bipartitePebble
+UNIPARTITE_FOLDER=./demo-data-sets/$SET/working/unipartitePebble
 
 # Make a folder if it doesn't exist or remove its contents if it does.
 makeOrCleanFolder () {
@@ -32,8 +32,8 @@ makeOrCleanFolder () {
 
 # Make the folders if they don't exist or clean them if they do
 makeOrCleanFolder ${OUTPUT_FOLDER} "i2 chart"
-makeOrCleanFolder ${BIPARTITE_FOLDER} "Bipartite graph"
-makeOrCleanFolder ${UNIPARTITE_FOLDER} "Unipartite graph"
+# makeOrCleanFolder ${BIPARTITE_FOLDER} "Bipartite graph"
+# makeOrCleanFolder ${UNIPARTITE_FOLDER} "Unipartite graph"
 
 # Run the web-app
-./web-app -data=./test-data-sets/$SET/data-config.json -i2=./test-data-sets/$SET/i2-config.json -folder=${OUTPUT_FOLDER} -message=./test-data-sets/$SET/message.html
+./web-app -data=./demo-data-sets/$SET/data-config-pebble.json -i2=./demo-data-sets/$SET/i2-config.json -i2spider=./demo-data-sets/$SET/i2-spider-config.json -folder=${OUTPUT_FOLDER} -message=./demo-data-sets/$SET/message.html
