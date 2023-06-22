@@ -1,7 +1,12 @@
 package graphstore
 
 import (
+	"fmt"
+	"math"
+	"math/rand"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/stretchr/testify/assert"
@@ -19,18 +24,21 @@ type connection struct {
 }
 
 // checkConnections in a unipartite graph.
-func checkConnections(t *testing.T, g UnipartiteGraphStore, conns []connection) {
+func checkConnections(t testing.TB, g UnipartiteGraphStore, conns []connection) {
 	for _, conn := range conns {
 		expected := set.NewPopulatedSet(conn.destinations...)
 		actual, err := g.EntityIdsAdjacentTo(conn.source)
 		assert.NoError(t, err)
+		if !expected.Equal(actual) {
+			fmt.Printf("Source: %v, expected dsts: %v, actual dsts: %v\n", conn, expected.String(), actual.String())
+		}
 		assert.True(t, expected.Equal(actual))
 	}
 }
 
 // simpleGraph1 with the structure:
 //
-//    A--B
+//	A--B
 func simpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
@@ -73,11 +81,11 @@ func simpleGraph1(t *testing.T, g UnipartiteGraphStore) {
 
 // simpleGraph2 with the structure:
 //
-//         A--B----
-//         |      |
-//   C--D--E--F---G
-//         |      |
-//         H-------
+//	      A--B----
+//	      |      |
+//	C--D--E--F---G
+//	      |      |
+//	      H-------
 func simpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 	g.Clear()
 	assert.NoError(t, g.AddUndirected("A", "B"))
@@ -137,15 +145,17 @@ func simpleGraph2(t *testing.T, g UnipartiteGraphStore) {
 //
 // Graph 1 is:
 //
-//   A--B--C
+//	A--B--C
 //
 // Graph 2 is:
-//   A--B--C--D
+//
+//	A--B--C--D
 //
 // Graph 3 is:
-//   A--B--C
-//   |     |
-//   -------
+//
+//	A--B--C
+//	|     |
+//	-------
 func equalGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) {
 
 	// Test 1
@@ -181,9 +191,9 @@ func equalGraphs(t *testing.T, g1 UnipartiteGraphStore, g2 UnipartiteGraphStore)
 
 // checkConnected checks that the vertices are connected as expected.
 //
-//         A--B
-//         |
-//   C--D--E
+//	      A--B
+//	      |
+//	C--D--E
 func checkConnected(t *testing.T, g UnipartiteGraphStore) {
 
 	g.Clear()
@@ -305,5 +315,106 @@ func TestCalcUnipartiteStats(t *testing.T) {
 		assert.Equal(t, UnipartiteStats{
 			NumberOfEntities: 4,
 		}, stats)
+	}
+}
+
+// TestUnipartiteConcurrency tests whether the result of concurrent loading of the unipartite graph
+// provides consistent results. The graph that is loaded is the following:
+//
+//	[e-1] ----------- --- [e-2] -------------- [e-3]
+//	  |                     |                     |
+//	  |--------[e-4]--------|                     |
+//	             |                                |
+//	             |                                |
+//	             |------- [e-5] -------------- [e-6]
+func TestUnipartiteConcurrency(t *testing.T) {
+
+	// Make the in-memory unipartite graph stores
+	inMemoryNoConcurrency := NewInMemoryUnipartiteGraphStore()
+	inMemoryWithConcurrency := NewInMemoryUnipartiteGraphStore()
+
+	// Make the Pebble unipartite graph stores
+	pebbleGraphStoreNoConcurrency := newUnipartitePebbleStore(t)
+	defer cleanUpUnipartitePebbleStore(t, pebbleGraphStoreNoConcurrency)
+
+	pebbleGraphStoreWithConcurrency := newUnipartitePebbleStore(t)
+	defer cleanUpUnipartitePebbleStore(t, pebbleGraphStoreWithConcurrency)
+
+	testCases := []struct {
+		description               string
+		unipartiteNoConcurrency   UnipartiteGraphStore
+		unipartiteWithConcurrency UnipartiteGraphStore
+	}{
+		{
+			description:               "in-memory",
+			unipartiteNoConcurrency:   inMemoryNoConcurrency,
+			unipartiteWithConcurrency: inMemoryWithConcurrency,
+		},
+		{
+			description:               "pebble",
+			unipartiteNoConcurrency:   pebbleGraphStoreNoConcurrency,
+			unipartiteWithConcurrency: pebbleGraphStoreWithConcurrency,
+		},
+	}
+
+	// Define edges to load
+	edgeDefinitions := []string{
+		"e1 - e2",
+		"e2 - e3",
+		"e1 - e4",
+		"e2 - e4",
+		"e4 - e5",
+		"e5 - e6",
+		"e6 - e3",
+	}
+
+	edges, err := edgeStringsToEdges(edgeDefinitions, "-")
+	assert.NoError(t, err)
+
+	// Shuffle the edges
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(edges), func(i, j int) {
+		edges[i], edges[j] = edges[j], edges[i]
+	})
+
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+
+			// Load the unipartite graph store without concurrency
+			for _, edge := range edges {
+				err := testCase.unipartiteNoConcurrency.AddUndirected(edge.V1, edge.V2)
+				assert.NoError(t, err)
+			}
+
+			// Concurrently load the unipartite graph store
+			midPoint := int(math.Floor(float64(len(edges)) / 2.0))
+			edges1 := edges[:midPoint]
+			edges2 := edges[midPoint:]
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				for _, edge := range edges1 {
+					testCase.unipartiteWithConcurrency.AddUndirected(edge.V1, edge.V2)
+				}
+				wg.Done()
+			}()
+
+			wg.Add(1)
+			go func() {
+				for _, edge := range edges2 {
+					testCase.unipartiteWithConcurrency.AddUndirected(edge.V1, edge.V2)
+				}
+				wg.Done()
+			}()
+
+			wg.Wait()
+
+			// Check the result is as expected
+			equal, err := UnipartiteGraphStoresEqual(testCase.unipartiteNoConcurrency,
+				testCase.unipartiteWithConcurrency)
+			assert.NoError(t, err)
+			assert.True(t, equal)
+		})
 	}
 }

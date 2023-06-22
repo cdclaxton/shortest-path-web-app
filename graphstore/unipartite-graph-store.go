@@ -2,6 +2,8 @@ package graphstore
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/cdclaxton/shortest-path-web-app/set"
 )
@@ -10,6 +12,27 @@ import (
 type Edge struct {
 	V1 string
 	V2 string
+}
+
+// edgeStringsToEdges converts a slice of edge definitions to a slice of edges. The edge definitions
+// can take the form of "e1 - e2" where the separator is "-".
+func edgeStringsToEdges(definitions []string, edgeSeparator string) ([]Edge, error) {
+
+	edges := []Edge{}
+
+	for _, d := range definitions {
+		parts := strings.Split(d, edgeSeparator)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid edge definition: %s", d)
+		}
+
+		edges = append(edges, Edge{
+			V1: strings.TrimSpace(parts[0]),
+			V2: strings.TrimSpace(parts[1]),
+		})
+	}
+
+	return edges, nil
 }
 
 // A UnipartiteGraphStore represents the store of a graph composed of a single type of vertex.
