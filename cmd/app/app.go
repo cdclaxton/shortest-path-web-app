@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
@@ -200,7 +201,7 @@ func main() {
 	go jobServer.Start()
 
 	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	logging.Logger.Info().Msg("Running until signal")
 
 	sig := <-stopChan
