@@ -57,16 +57,19 @@
     },
     "bipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "/pebble/bipartite",
+        "folder": "../working/bipartitePebble/",
         "deleteFilesInFolder": true
     },
     "unipartiteGraphConfig": {
         "type": "pebble",
-        "folder": "/pebble/unipartite",
+        "folder": "../working/unipartitePebble/",
         "deleteFilesInFolder": true
     },
     "ignoreInvalidLinks": false,
     "numEntityWorkers": 2,
     "numDocumentWorkers": 2,
-    "numLinkWorkers": 2
+    "numLinkWorkers": 2,
+    "numConversionWorkers": 2,
+    "conversionJobQueueSize": 2,
+    "signatureFile": "../test-data-sets/set-5/signatures.json"
 }

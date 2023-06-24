@@ -111,7 +111,7 @@ func TestSearch(t *testing.T) {
 	for _, backend := range backends {
 
 		// Instantiate the graph builder
-		graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
+		graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
 		assert.NoError(t, err)
 
 		// Make the search engine
@@ -258,7 +258,7 @@ func TestExtractDocuments(t *testing.T) {
 	for _, backend := range backends {
 
 		// Instantiate the graph builder
-		graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
+		graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
 		assert.NoError(t, err)
 
 		// Make the search engine
@@ -375,7 +375,7 @@ func TestEntityToBipartiteDetails(t *testing.T) {
 	for _, backend := range backends {
 
 		// Instantiate the graph builder
-		graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
+		graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
 		assert.NoError(t, err)
 
 		assert.NoError(t, graphBuilder.Bipartite.AddEntity(entity))
@@ -417,7 +417,7 @@ func TestLinkedEntityPresence(t *testing.T) {
 	for _, backend := range backends {
 
 		// Instantiate the graph builder
-		graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
+		graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
 		assert.NoError(t, err)
 
 		// Make the search engine
@@ -531,7 +531,7 @@ func TestEntitySearch(t *testing.T) {
 	for _, backend := range backends {
 
 		// Instantiate the graph builder
-		graphBuilder, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
+		graphBuilder, _, err := graphbuilder.NewGraphBuilderFromJson(backend.configFilepath)
 		assert.NoError(t, err)
 
 		// Make the search engine

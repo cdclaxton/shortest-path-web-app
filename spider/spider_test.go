@@ -16,16 +16,16 @@ func TestNewSpider(t *testing.T) {
 
 // makeTestGraph constructs a unipartite graph for testing.
 //
-//    7    8               4 --- 5
-//    \   /      11              |
-//     \ /       |               15
-//      1 ------ 2 ---- 3       /  \
-//      |        |             16  17
-//      9 ----- 10
-//      |        |
-//     12       14              6
-//      |
-//     13
+//	7    8               4 --- 5
+//	\   /      11              |
+//	 \ /       |               15
+//	  1 ------ 2 ---- 3       /  \
+//	  |        |             16  17
+//	  9 ----- 10
+//	  |        |
+//	 12       14              6
+//	  |
+//	 13
 func makeTestGraph(t *testing.T) graphstore.UnipartiteGraphStore {
 
 	graph := graphstore.NewInMemoryUnipartiteGraphStore()
@@ -124,7 +124,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1"),
 			expected: &SpiderResults{
 				NumberSteps:          0,
-				Subgraph:             *graph2,
+				Subgraph:             graph2,
 				SeedEntities:         set.NewPopulatedSet("1"),
 				SeedEntitiesNotFound: set.NewSet[string](),
 			},
@@ -136,7 +136,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A"),
 			expected: &SpiderResults{
 				NumberSteps:          0,
-				Subgraph:             *graph2,
+				Subgraph:             graph2,
 				SeedEntities:         set.NewPopulatedSet("1", "A"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -148,7 +148,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A", "2"),
 			expected: &SpiderResults{
 				NumberSteps:          0,
-				Subgraph:             *graph4,
+				Subgraph:             graph4,
 				SeedEntities:         set.NewPopulatedSet("1", "A", "2"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -160,7 +160,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A"),
 			expected: &SpiderResults{
 				NumberSteps:          1,
-				Subgraph:             *graph5,
+				Subgraph:             graph5,
 				SeedEntities:         set.NewPopulatedSet("1", "A"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -172,7 +172,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A", "3"),
 			expected: &SpiderResults{
 				NumberSteps:          1,
-				Subgraph:             *graph6,
+				Subgraph:             graph6,
 				SeedEntities:         set.NewPopulatedSet("1", "A", "3"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -184,7 +184,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A"),
 			expected: &SpiderResults{
 				NumberSteps:          2,
-				Subgraph:             *graph7,
+				Subgraph:             graph7,
 				SeedEntities:         set.NewPopulatedSet("1", "A"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -196,7 +196,7 @@ func TestExecute(t *testing.T) {
 			seedEntities: set.NewPopulatedSet("1", "A", "4", "6"),
 			expected: &SpiderResults{
 				NumberSteps:          1,
-				Subgraph:             *graph8,
+				Subgraph:             graph8,
 				SeedEntities:         set.NewPopulatedSet("1", "A", "4", "6"),
 				SeedEntitiesNotFound: set.NewPopulatedSet("A"),
 			},
@@ -242,13 +242,13 @@ func TestHasAtLeastOneConnection(t *testing.T) {
 	}{
 		{
 			results: &SpiderResults{
-				Subgraph: *subgraph1,
+				Subgraph: subgraph1,
 			},
 			expected: false,
 		},
 		{
 			results: &SpiderResults{
-				Subgraph: *subgraph2,
+				Subgraph: subgraph2,
 			},
 			expected: true,
 		},

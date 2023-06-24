@@ -1,5 +1,10 @@
 web-app
+experiment
 working/bipartitePebble/*
 working/unipartitePebble/*
+working/*.json
 working/i2/*
 test-data-sets/docker/chartFolder/*
+demo-data-sets/working/*
+demo-data-sets/docker/chartFolder/*
+demo-data-sets/set-1/working/*

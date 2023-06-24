@@ -349,6 +349,14 @@ docker compose up
 
 The web-app can be accessed from http://192.168.99.100:8090
 
+If necessary, the following commands can be used to clean the Docker volumes:
+
+```bash
+docker volume rm shortest-path-web-app_bipartitePebbleStore
+docker volume rm shortest-path-web-app_unipartitePebbleStore
+docker volume rm shortest-path-web-app_signatureStore
+```
+
 ## Running behind an Apache HTTPD reverse proxy
 
 The `proxy` folder contains configuration files for running the web-app behind an Apache HTTPD
@@ -367,6 +375,12 @@ The `/stats` endpoint returns an HTML page with high level statistics about the 
 unipartite graphs.
 
 ## Enhancements
+
+During testing it was useful to ensure the test cache was removed:
+
+```bash
+go clean -testcache && go test ./...
+```
 
 ### Pebble
 
@@ -398,4 +412,12 @@ reading of links happens after the entities and documents have been successfully
 ```bash
 cd graphbuilder
 go test -run=Bench -bench=. -count 1
+```
+
+### Experiment
+
+There is code to run an experiment to tune the Pebble graph store. To build and run the experiment:
+
+```bash
+./build-run-experiment.sh
 ```

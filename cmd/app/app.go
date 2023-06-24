@@ -4,6 +4,8 @@ import (
 	"flag"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/bfs"
@@ -89,13 +91,17 @@ func main() {
 
 	// Create the bipartite and unipartite graphs
 	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Creating bipartite and unipartite graphs")
-	builder, err := graphbuilder.NewGraphBuilderFromJson(*dataConfigPath)
+	builder, build, err := graphbuilder.NewGraphBuilderFromJson(*dataConfigPath)
 	if err != nil {
 		logging.Logger.Fatal().
 			Str(logging.ComponentField, componentName).
 			Err(err).
 			Msg("Failed to create graph builder")
 	}
+
+	logging.Logger.Info().
+		Bool("buildRequired", build).
+		Msg("Unipartite and bipartite graphs built")
 
 	// Create the i2 chart builder
 	logging.Logger.Info().Str(logging.ComponentField, componentName).Msg("Making i2 chart builder")
@@ -184,7 +190,7 @@ func main() {
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("startUpTime", time.Now().Sub(startTime).String()).
+		Str("startUpTime", time.Since(startTime).String()).
 		Msg("Start up time")
 
 	// Start the job server (ready for users to run jobs)
@@ -192,5 +198,18 @@ func main() {
 		Str(logging.ComponentField, componentName).
 		Msg("Starting server")
 
-	jobServer.Start()
+	go jobServer.Start()
+
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	logging.Logger.Info().Msg("Running until signal")
+
+	sig := <-stopChan
+	logging.Logger.Warn().
+		Str(logging.ComponentField, componentName).
+		Str("signal", sig.String()).
+		Msg("Shutdown signal received")
+
+	builder.Bipartite.Close()
+	builder.Unipartite.Close()
 }

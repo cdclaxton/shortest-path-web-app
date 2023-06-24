@@ -170,9 +170,17 @@ func (store *InMemoryBipartiteGraphStore) Clear() error {
 	return nil
 }
 
+func (graph *InMemoryBipartiteGraphStore) Close() error {
+	return nil
+}
+
 // Destroy the bipartite graph store.
 func (store *InMemoryBipartiteGraphStore) Destroy() error {
 	return store.Clear()
+}
+
+func (store *InMemoryBipartiteGraphStore) Finalise() error {
+	return nil
 }
 
 // HasDocument returns true if the graph store contains the document.

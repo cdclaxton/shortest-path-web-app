@@ -27,6 +27,7 @@ import (
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
 	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/vfs"
 )
 
 const (
@@ -53,12 +54,25 @@ type PebbleUnipartiteGraphStore struct {
 // NewPebbleUnipartiteGraphStore given the folder in which to store the Pebble files.
 func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, error) {
 
+	if len(folder) == 0 {
+		return nil, errors.New("folder name is empty")
+	}
+
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
 		Str("folder", folder).
-		Msg("Creating a new unipartite Pebble store")
+		Msg("Opening unipartite Pebble store")
 
-	db, err := pebble.Open(folder, &pebble.Options{})
+	db, err := pebble.Open(folder, &pebble.Options{
+		FS:                          vfs.Default,
+		L0CompactionThreshold:       2,
+		L0StopWritesThreshold:       1000,
+		LBaseMaxBytes:               64 << 20, // 64 MB
+		MaxConcurrentCompactions:    func() int { return 3 },
+		MemTableSize:                64 << 20, // 64 MB
+		MemTableStopWritesThreshold: 4,
+		DisableWAL:                  true,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +104,7 @@ func (p *PebbleUnipartiteGraphStore) Clear() error {
 	iter := p.db.NewIter(nil)
 	for iter.First(); iter.Valid() && deleteError == nil; iter.Next() {
 		key := iter.Key()
-		deleteError = p.db.Delete(key, pebble.Sync)
+		deleteError = p.db.Delete(key, pebble.NoSync)
 	}
 
 	if err := iter.Close(); err != nil {
@@ -113,6 +127,10 @@ func (p *PebbleUnipartiteGraphStore) Destroy() error {
 	}
 
 	return os.RemoveAll(p.folder)
+}
+
+func (p *PebbleUnipartiteGraphStore) Finalise() error {
+	return p.db.Flush()
 }
 
 // validateEntityId validates the entity ID prior to storage.

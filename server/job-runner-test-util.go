@@ -24,11 +24,12 @@ func makeJobRunner(t *testing.T) (*JobRunner, *SpiderJobRunner) {
 	spiderI2ConfigFilepath := path.Join(folder, "i2-spider-config.json")
 
 	// Build and load the graphs
-	builder, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
+	builder, _, err := graphbuilder.NewGraphBuilderFromJson(dataConfigFilepath)
 	assert.NoError(t, err)
 
 	// Entity search engine
 	searchEngine, err := search.NewEntitySearch(builder.Bipartite, builder.Unipartite)
+	assert.NoError(t, err)
 
 	// Instantiate the i2 chart builder
 	chartBuilder, err := i2chart.NewI2ChartBuilder(i2ConfigFilepath)

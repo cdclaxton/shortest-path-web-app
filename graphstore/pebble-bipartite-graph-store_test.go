@@ -240,6 +240,7 @@ func TestAddBipartiteEntity(t *testing.T) {
 		"Name": "Sally Jones",
 		"Age":  "32",
 	})
+	assert.NoError(t, err)
 
 	found, err = store.HasEntity(&e2)
 	assert.NoError(t, err)
@@ -327,6 +328,7 @@ func TestAddBipartiteDocument(t *testing.T) {
 		"Name": "Document 2",
 		"Date": "11/10/2022",
 	})
+	assert.NoError(t, err)
 
 	found, err = store.HasDocument(&d2)
 	assert.NoError(t, err)

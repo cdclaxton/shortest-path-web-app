@@ -163,6 +163,8 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Str("parseError", err.Error()).
+				Str("filepath", reader.documentsCsvFile.Path).
+				Int("lineNumber", reader.numberOfRows).
 				Msg("Line failed to parse")
 			continue
 		}
@@ -177,6 +179,8 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Err(err).
+				Str("filepath", reader.documentsCsvFile.Path).
+				Int("lineNumber", reader.numberOfRows).
 				Msg("Failed to extract attributes from record")
 			continue
 		}
@@ -189,6 +193,8 @@ func (reader *DocumentsCsvFileReader) readRecord() (graphstore.Document, bool) {
 			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
 				Err(err).
+				Str("filepath", reader.documentsCsvFile.Path).
+				Int("lineNumber", reader.numberOfRows).
 				Msg("Failed to build a document from record")
 			continue
 		}

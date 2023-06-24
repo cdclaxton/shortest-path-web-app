@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -44,13 +43,13 @@ func NewGraphStoreLoaderFromCsv(graphStore graphstore.BipartiteGraphStore,
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("numberOfEntityFiles", strconv.Itoa(len(entityFiles))).
-		Str("numberOfDocumentFiles", strconv.Itoa(len(documentFiles))).
-		Str("numberOfLinksFiles", strconv.Itoa(len(linkFiles))).
-		Str("ignoreInvalidLinks", strconv.FormatBool(ignoreInvalidLinks)).
-		Str("numberOfEntityWorkers", strconv.Itoa(numEntityWorkers)).
-		Str("numberOfDocumentWorkers", strconv.Itoa(numDocumentWorkers)).
-		Str("numberOfLinkWorkers", strconv.Itoa(numLinkWorkers)).
+		Int("numberOfEntityFiles", len(entityFiles)).
+		Int("numberOfDocumentFiles", len(documentFiles)).
+		Int("numberOfLinksFiles", len(linkFiles)).
+		Bool("ignoreInvalidLinks", ignoreInvalidLinks).
+		Int("numberOfEntityWorkers", numEntityWorkers).
+		Int("numberOfDocumentWorkers", numDocumentWorkers).
+		Int("numberOfLinkWorkers", numLinkWorkers).
 		Msg("Creating a bipartite graph store loader")
 
 	return &GraphStoreLoaderFromCsv{
@@ -99,7 +98,7 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 
 	// Make a channel to hold errors from the goroutines. The worse case situation is that
 	// every worker fails simultaneously, so a buffered channel is required
-	errChan := make(chan error, loader.numEntityWorkers+loader.numDocumentWorkers+loader.numLinkWorkers)
+	errChan := make(chan error, loader.numEntityWorkers+loader.numDocumentWorkers+loader.numLinkWorkers+1)
 
 	var wg sync.WaitGroup
 
@@ -121,6 +120,7 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 	// Extract the first error from the error channel
 	err := takeFirstErrorFromChannel(errChan)
 	if err != nil {
+		cancelCtx()
 		return err
 	}
 
@@ -132,6 +132,12 @@ func (loader *GraphStoreLoaderFromCsv) Load() error {
 
 	// Wait until the link workers have completed
 	wg.Wait()
+	cancelCtx()
+
+	err = loader.graphStore.Finalise()
+	if err != nil {
+		errChan <- err
+	}
 
 	// Extract the first error from the error channel
 	return takeFirstErrorFromChannel(errChan)
@@ -219,17 +225,17 @@ func entityWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx i
 
 		logging.Logger.Info().
 			Str(logging.ComponentField, componentName).
-			Str("entity worker", strconv.Itoa(workerIdx)).
+			Int("entity worker", workerIdx).
 			Str("filepath", entityFile.Path).
 			Msg("Entity file job received by worker")
 
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
-				Str("entity worker", strconv.Itoa(workerIdx)).
-				Msg("Entity worker shutting down")
+				Int("entity worker", workerIdx).
+				Msg("Entity worker shutting down due to cancel")
 			return
 		default:
 		}
@@ -238,7 +244,7 @@ func entityWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx i
 		if err != nil {
 			logging.Logger.Error().
 				Str(logging.ComponentField, componentName).
-				Str("entity worker", strconv.Itoa(workerIdx)).
+				Int("entity worker", workerIdx).
 				Err(err).
 				Msg("Entity worker has encountered an error")
 			errChan <- err
@@ -286,17 +292,17 @@ func documentWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx
 
 		logging.Logger.Info().
 			Str(logging.ComponentField, componentName).
-			Str("document worker", strconv.Itoa(workerIdx)).
+			Int("document worker", workerIdx).
 			Str("filepath", documentFile.Path).
 			Msg("Document file job received by worker")
 
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
-				Str("document worker", strconv.Itoa(workerIdx)).
-				Msg("Document worker shutting down")
+				Int("document worker", workerIdx).
+				Msg("Document worker shutting down due to cancel")
 			return
 		default:
 		}
@@ -368,17 +374,17 @@ func linkWorker(ctx context.Context, cancelCtx context.CancelFunc, workerIdx int
 
 		logging.Logger.Info().
 			Str(logging.ComponentField, componentName).
-			Str("link worker", strconv.Itoa(workerIdx)).
+			Int("link worker", workerIdx).
 			Str("filepath", linkFile.Path).
 			Msg("Link file job received by worker")
 
 		// Check to see if the worker should prematurely end
 		select {
 		case <-ctx.Done():
-			logging.Logger.Info().
+			logging.Logger.Warn().
 				Str(logging.ComponentField, componentName).
-				Str("link worker", strconv.Itoa(workerIdx)).
-				Msg("Link worker shutting down")
+				Int("link worker", workerIdx).
+				Msg("Link worker shutting down due to cancel")
 			return
 		default:
 		}
