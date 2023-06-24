@@ -12,13 +12,13 @@ import (
 //
 // The big test case is:
 //
-//   [e-1] --- [doc-1] --- [e-2] --- [doc-3] --- [e-3]
-//     |                     |                     |
-//     |------ [doc-2] ------|                     |
-//                |                             [doc-5]
-//              [e-4]                              |
-//                |                                |
-//             [doc-4] --- [e-5] --- [doc-6] --- [e-6]
+//	[e-1] --- [doc-1] --- [e-2] --- [doc-3] --- [e-3]
+//	  |                     |                     |
+//	  |------ [doc-2] ------|                     |
+//	             |                             [doc-5]
+//	           [e-4]                              |
+//	             |                                |
+//	          [doc-4] --- [e-5] --- [doc-6] --- [e-6]
 //
 // The test case with entities that are skipped uses the same graph structure,
 // but entity e-2 is ignored.
@@ -205,5 +205,76 @@ func TestBipartiteToUnipartite(t *testing.T) {
 
 		// Check the unipartite graph
 		checkConnections(t, uni, testCase.expectedConnections)
+	}
+}
+
+func BenchmarkBipartiteToUnipartite(b *testing.B) {
+
+	documents := []Document{
+		{
+			Id:              "doc-1",
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2"),
+		},
+		{
+			Id:              "doc-2",
+			LinkedEntityIds: set.NewPopulatedSet("e-1", "e-2", "e-4"),
+		},
+		{
+			Id:              "doc-3",
+			LinkedEntityIds: set.NewPopulatedSet("e-2", "e-3"),
+		},
+		{
+			Id:              "doc-4",
+			LinkedEntityIds: set.NewPopulatedSet("e-4", "e-5"),
+		},
+		{
+			Id:              "doc-5",
+			LinkedEntityIds: set.NewPopulatedSet("e-3", "e-6"),
+		},
+		{
+			Id:              "doc-6",
+			LinkedEntityIds: set.NewPopulatedSet("e-5", "e-6"),
+		},
+	}
+	skipEntities := set.NewPopulatedSet("e-2")
+	expectedConnections := []connection{
+		{
+			source:       "e-1",
+			destinations: []string{"e-4"},
+		},
+		{
+			source:       "e-3",
+			destinations: []string{"e-6"},
+		},
+		{
+			source:       "e-4",
+			destinations: []string{"e-1", "e-5"},
+		},
+		{
+			source:       "e-5",
+			destinations: []string{"e-4", "e-6"},
+		},
+		{
+			source:       "e-6",
+			destinations: []string{"e-3", "e-5"},
+		},
+	}
+
+	bi := NewInMemoryBipartiteGraphStore()
+
+	// Add the documents to the bipartite graph
+	for _, doc := range documents {
+		assert.NoError(b, bi.AddDocument(doc))
+	}
+
+	b.ResetTimer()
+
+	numWorkers := 2
+	jobChannelSize := 2
+
+	for i := 0; i < b.N; i++ {
+		uni := NewInMemoryUnipartiteGraphStore()
+		BipartiteToUnipartite(bi, uni, skipEntities, numWorkers, jobChannelSize)
+		checkConnections(b, uni, expectedConnections)
 	}
 }

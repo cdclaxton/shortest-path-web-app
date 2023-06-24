@@ -376,6 +376,12 @@ unipartite graphs.
 
 ## Enhancements
 
+During testing it was useful to ensure the test cache was removed:
+
+```bash
+go clean -testcache && go test ./...
+```
+
 ### Pebble
 
 During initial testing with a large volume of data it was found that the ingest time was very high,
@@ -406,4 +412,12 @@ reading of links happens after the entities and documents have been successfully
 ```bash
 cd graphbuilder
 go test -run=Bench -bench=. -count 1
+```
+
+### Experiment
+
+There is code to run an experiment to tune the Pebble graph store. To build and run the experiment:
+
+```bash
+./build-run-experiment.sh
 ```

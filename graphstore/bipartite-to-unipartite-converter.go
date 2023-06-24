@@ -173,6 +173,7 @@ func conversionWorker(workerIdx int, wg *sync.WaitGroup, ctx context.Context,
 		Msg("Starting bipartite to unipartite conversion worker")
 
 	defer wg.Done()
+	numJobsProcessed := 0
 
 	for job := range jobChannel {
 
@@ -240,10 +241,13 @@ func conversionWorker(workerIdx int, wg *sync.WaitGroup, ctx context.Context,
 				}
 			}
 		}
+
+		numJobsProcessed += 1
 	}
 
 	logging.Logger.Info().
 		Str(logging.ComponentField, componentName).
-		Str("workerIndex", strconv.Itoa(workerIdx)).
+		Int("workerIndex", workerIdx).
+		Int("numJobsProcessed", numJobsProcessed).
 		Msg("Closing down bipartite to unipartite conversion worker")
 }

@@ -75,31 +75,35 @@ func BuildFromEdgeList(graph UnipartiteGraphStore, edges []Edge) error {
 }
 
 // UnipartiteGraphStoresEqual returns true if two unipartite graph stores are identical.
-func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) (bool, error) {
+func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore) (bool, string, error) {
 
 	// Preconditions
 	if g1 == nil {
-		return false, errors.New("graph store g1 is nil")
+		return false, "", errors.New("graph store g1 is nil")
 	}
 
 	if g2 == nil {
-		return false, errors.New("graph store g2 is nil")
+		return false, "", errors.New("graph store g2 is nil")
 	}
 
 	// Get lists of entity IDs
 	entityIds1, err := g1.EntityIds()
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	entityIds2, err := g2.EntityIds()
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	// Check whether the entity IDs are identical
 	if !entityIds1.Equal(entityIds2) {
-		return false, nil
+		if entityIds1.Len() < 10 && entityIds2.Len() < 10 {
+			fmt.Printf("entity IDs: %v vs %v\n", entityIds1.Values, entityIds2.Values)
+		}
+
+		return false, fmt.Sprintf("different entity IDs (%d vs %d)", entityIds1.Len(), entityIds2.Len()), nil
 	}
 
 	// Check the connections
@@ -108,20 +112,20 @@ func UnipartiteGraphStoresEqual(g1 UnipartiteGraphStore, g2 UnipartiteGraphStore
 		// Connections from the entity
 		conns1, err := g1.EntityIdsAdjacentTo(entityId)
 		if err != nil {
-			return false, nil
+			return false, fmt.Sprintf("entity missing in g1: %s\n", entityId), nil
 		}
 
 		conns2, err := g2.EntityIdsAdjacentTo(entityId)
 		if err != nil {
-			return false, nil
+			return false, fmt.Sprintf("entity missing in g2: %s\n", entityId), nil
 		}
 
 		if !conns1.Equal(conns2) {
-			return false, nil
+			return false, fmt.Sprintf("different connections: %s (%d vs %d)\n", entityId, conns1.Len(), conns2.Len()), nil
 		}
 	}
 
-	return true, nil
+	return true, "", nil
 }
 
 type UnipartiteStats struct {

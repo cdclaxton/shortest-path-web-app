@@ -59,10 +59,11 @@ func (graph *InMemoryUnipartiteGraphStore) AddDirected(src string, dst string) e
 	}
 
 	// If the source hasn't been seen before, add it to the graph
-	graph.AddEntity(src)
-
-	// Add the connection from the source to the destination
 	graph.mu.Lock()
+	_, found := graph.vertices[src]
+	if !found {
+		graph.vertices[src] = set.NewSet[string]()
+	}
 	x := graph.vertices[src]
 	x.Add(dst)
 	graph.mu.Unlock()

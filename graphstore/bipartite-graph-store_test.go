@@ -264,22 +264,22 @@ func TestGraphStore(t *testing.T) {
 
 		addSingleEntity(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		addSingleDocument(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		addLink(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		addDuplicateEntity(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		addDuplicateDocument(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		documentIterator(t, gs)
 
-		gs.Clear()
+		assert.NoError(t, gs.Clear())
 		entityIterator(t, gs)
 	}
 

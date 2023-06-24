@@ -339,9 +339,10 @@ func TestGraphBuilderValidConfig(t *testing.T) {
 			expectedUnipartite := buildExpectedUnipartiteStore(t)
 
 			// Check the unipartite graph
-			equal, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
+			equal, reason, err := graphstore.UnipartiteGraphStoresEqual(expectedUnipartite, graphBuilder.Unipartite)
 			assert.NoError(t, err)
 			assert.True(t, equal)
+			assert.Equal(t, "", reason)
 
 			// Check the stats
 			expectedStats := GraphStats{

@@ -221,7 +221,7 @@ func TestPebbleKeyToNode(t *testing.T) {
 	}
 }
 
-func createTempPebbleFolder(t *testing.T) string {
+func createTempPebbleFolder(t testing.TB) string {
 	dir, err := ioutil.TempDir("", "pebble")
 	assert.NoError(t, err)
 	return dir
@@ -231,25 +231,35 @@ func deleteTempPebbleFolder(t *testing.T, folder string) {
 	assert.NoError(t, os.RemoveAll(folder))
 }
 
-func newUnipartitePebbleStore(t *testing.T) *PebbleUnipartiteGraphStore {
+func newUnipartitePebbleStore(t testing.TB) *PebbleUnipartiteGraphStore {
 	folder := createTempPebbleFolder(t)
 	store, err := NewPebbleUnipartiteGraphStore(folder)
 	assert.NoError(t, err)
 	return store
 }
 
-func cleanUpUnipartitePebbleStore(t *testing.T, store *PebbleUnipartiteGraphStore) {
+func cleanUpUnipartitePebbleStore(t testing.TB, store *PebbleUnipartiteGraphStore) {
 	assert.NoError(t, store.Destroy())
 }
 
-func TestPebbleUnipartiteGraph(t *testing.T) {
-	store := newUnipartitePebbleStore(t)
-	defer cleanUpUnipartitePebbleStore(t, store)
+func BenchmarkLoadPebbleUnipartiteGraph(b *testing.B) {
+	graph := newUnipartitePebbleStore(b)
+	defer cleanUpUnipartitePebbleStore(b, graph)
 
-	// No graph exists
-	num, err := store.NumberEntities()
-	assert.NoError(t, err)
-	assert.Equal(t, 0, num)
+	maxNumEntities := 100
+	numConnections := 400
 
-	// Add a single entity
+	// Randomly generate edges to load
+	edges := randomEdges(maxNumEntities, numConnections)
+	loadEdges(b, graph, edges)
+
+	for i := 0; i < b.N; i++ {
+
+		// Clean the store
+		b.StopTimer()
+		graph.Clear()
+		b.StartTimer()
+
+		loadEdgesConcurrently(b, graph, edges)
+	}
 }

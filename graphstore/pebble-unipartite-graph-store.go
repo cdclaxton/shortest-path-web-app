@@ -64,7 +64,14 @@ func NewPebbleUnipartiteGraphStore(folder string) (*PebbleUnipartiteGraphStore, 
 		Msg("Opening unipartite Pebble store")
 
 	db, err := pebble.Open(folder, &pebble.Options{
-		FS: vfs.Default,
+		FS:                          vfs.Default,
+		L0CompactionThreshold:       2,
+		L0StopWritesThreshold:       1000,
+		LBaseMaxBytes:               64 << 20, // 64 MB
+		MaxConcurrentCompactions:    func() int { return 3 },
+		MemTableSize:                64 << 20, // 64 MB
+		MemTableStopWritesThreshold: 4,
+		DisableWAL:                  true,
 	})
 	if err != nil {
 		return nil, err
@@ -97,7 +104,7 @@ func (p *PebbleUnipartiteGraphStore) Clear() error {
 	iter := p.db.NewIter(nil)
 	for iter.First(); iter.Valid() && deleteError == nil; iter.Next() {
 		key := iter.Key()
-		deleteError = p.db.Delete(key, pebble.Sync)
+		deleteError = p.db.Delete(key, pebble.NoSync)
 	}
 
 	if err := iter.Close(); err != nil {

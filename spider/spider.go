@@ -71,7 +71,7 @@ func (s *SpiderResults) HasAtLeastOneConnection() (bool, error) {
 // Equal returns true if the SpiderResults are equal.
 func (s *SpiderResults) Equal(s2 *SpiderResults) (bool, error) {
 
-	graphsEqual, err := graphstore.UnipartiteGraphStoresEqual(s.Subgraph, s2.Subgraph)
+	graphsEqual, _, err := graphstore.UnipartiteGraphStoresEqual(s.Subgraph, s2.Subgraph)
 
 	if err != nil {
 		return false, err
@@ -83,7 +83,7 @@ func (s *SpiderResults) Equal(s2 *SpiderResults) (bool, error) {
 		graphsEqual, nil
 }
 
-// Spider is a component that generates a sub-graph by walking connnections from a given set of
+// Spider is a component that generates a sub-graph by walking connections from a given set of
 // 'seed' entities.
 type Spider struct {
 	unipartiteGraph graphstore.UnipartiteGraphStore
