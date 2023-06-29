@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/cdclaxton/shortest-path-web-app/filedetector"
@@ -513,23 +514,51 @@ func (gb *GraphBuilder) Destroy() error {
 func (gb *GraphBuilder) CalculateStats() error {
 
 	// Bipartite graph stats
-	bipartiteStats, err := graphstore.CalcBipartiteStats(gb.Bipartite)
-	if err != nil {
-		return err
+	var bipartiteStats graphstore.BipartiteStats
+	var bipartiteStatsError error
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		bipartiteStats, bipartiteStatsError = graphstore.CalcBipartiteStats(gb.Bipartite)
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Int("numDocuments", bipartiteStats.NumberOfDocuments).
+			Int("numDocumentsWithEntities", bipartiteStats.NumberOfEntitiesWithDocuments).
+			Int("numEntities", bipartiteStats.NumberOfEntities).
+			Int("numEntitiesWithDocuments", bipartiteStats.NumberOfEntitiesWithDocuments).
+			Msg("Calculated bipartite graph stats")
+
+		wg.Done()
+	}()
+
+	var unipartiteStats graphstore.UnipartiteStats
+	var unipartiteStatsError error
+
+	wg.Add(1)
+	go func() {
+		unipartiteStats, unipartiteStatsError = graphstore.CalcUnipartiteStats(gb.Unipartite)
+
+		logging.Logger.Info().
+			Str(logging.ComponentField, componentName).
+			Int("numDocuments", bipartiteStats.NumberOfDocuments).
+			Int("numDocumentsWithEntities", bipartiteStats.NumberOfEntitiesWithDocuments).
+			Int("numEntities", bipartiteStats.NumberOfEntities).
+			Int("numEntitiesWithDocuments", bipartiteStats.NumberOfEntitiesWithDocuments).
+			Msg("Calculated bipartite graph stats")
+
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	if bipartiteStatsError != nil {
+		return bipartiteStatsError
 	}
 
-	logging.Logger.Info().
-		Str(logging.ComponentField, componentName).
-		Int("numDocuments", bipartiteStats.NumberOfDocuments).
-		Int("numDocumentsWithEntities", bipartiteStats.NumberOfEntitiesWithDocuments).
-		Int("numEntities", bipartiteStats.NumberOfEntities).
-		Int("numEntitiesWithDocuments", bipartiteStats.NumberOfEntitiesWithDocuments).
-		Msg("Calculated bipartite graph stats")
-
-	// Unipartite graph stats
-	unipartiteStats, err := graphstore.CalcUnipartiteStats(gb.Unipartite)
-	if err != nil {
-		return err
+	if unipartiteStatsError != nil {
+		return unipartiteStatsError
 	}
 
 	logging.Logger.Info().

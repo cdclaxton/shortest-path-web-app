@@ -2,6 +2,7 @@ package graphstore
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/cdclaxton/shortest-path-web-app/logging"
 	"github.com/cdclaxton/shortest-path-web-app/set"
@@ -277,16 +278,38 @@ type BipartiteStats struct {
 	NumberOfDocumentsWithEntities int
 }
 
+// CalcBipartiteStats calculates the number of entities and documents in the bipartite graph store.
 func CalcBipartiteStats(bg BipartiteGraphStore) (BipartiteStats, error) {
 
-	numEntities, numEntitiesWithDocuments, err := calcBipartiteEntityStats(bg)
-	if err != nil {
-		return BipartiteStats{}, err
+	var wg sync.WaitGroup
+	var bipartiteEntityError error
+	var numEntities int
+	var numEntitiesWithDocuments int
+
+	wg.Add(1)
+	go func() {
+		numEntities, numEntitiesWithDocuments, bipartiteEntityError = calcBipartiteEntityStats(bg)
+		wg.Done()
+	}()
+
+	var bipartiteDocumentError error
+	var numDocuments int
+	var numDocumentsWithEntities int
+
+	wg.Add(1)
+	go func() {
+		numDocuments, numDocumentsWithEntities, bipartiteDocumentError = calcBipartiteDocumentStats(bg)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	if bipartiteEntityError != nil {
+		return BipartiteStats{}, bipartiteEntityError
 	}
 
-	numDocuments, numDocumentsWithEntities, err := calcBipartiteDocumentStats(bg)
-	if err != nil {
-		return BipartiteStats{}, err
+	if bipartiteDocumentError != nil {
+		return BipartiteStats{}, bipartiteEntityError
 	}
 
 	return BipartiteStats{
@@ -297,6 +320,7 @@ func CalcBipartiteStats(bg BipartiteGraphStore) (BipartiteStats, error) {
 	}, nil
 }
 
+// calcBipartiteEntityStats calculates the entity stats.
 func calcBipartiteEntityStats(bg BipartiteGraphStore) (int, int, error) {
 
 	numberEntities := 0
@@ -332,6 +356,7 @@ func calcBipartiteEntityStats(bg BipartiteGraphStore) (int, int, error) {
 	return numberEntities, numberEntitiesWithDocuments, nil
 }
 
+// calcBipartiteDocumentStats calculates the document stats.
 func calcBipartiteDocumentStats(bg BipartiteGraphStore) (int, int, error) {
 
 	numberDocuments := 0
